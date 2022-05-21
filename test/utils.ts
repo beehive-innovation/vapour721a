@@ -1,6 +1,6 @@
 import { Logger } from "@ethersproject/logger";
 import { version } from "./_version";
-import { Factory, NewChildEvent } from "../typechain/Factory"
+import { Factory, NewChildEvent } from "../typechain/Factory";
 import { ContractTransaction, Contract, BigNumber, Overrides, ethers } from "ethers";
 import { Result } from "ethers/lib/utils";
 import fs from "fs";

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity ^0.8.10;
+pragma solidity 0.8.10;
 
 import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -9,7 +9,9 @@ import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import {VMState, StateConfig} from "@beehiveinnovation/rain-protocol/contracts/vm/libraries/VMState.sol";
 import {AllStandardOps, ALL_STANDARD_OPS_START, ALL_STANDARD_OPS_LENGTH} from "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 
-struct Config {
+struct Rain721AConfig {
+    string name;
+    string symbol;
     StateConfig priceScript;
     StateConfig canMintScript;
     address[] currencies;
@@ -21,7 +23,9 @@ contract Rain721A is ERC721A, RainVM, VMState {
 
     uint256 internal constant ACCOUNT = 1;
 
-    uint256 internal constant LOCAL_OPS_LENGTH = 2;
+    uint256 internal constant CURRENT_UNITS = 2;
+
+    uint256 internal constant LOCAL_OPS_LENGTH = 3;
 
     uint256 private immutable localOpsStart =
         ALL_STANDARD_OPS_START + ALL_STANDARD_OPS_LENGTH;
@@ -31,13 +35,15 @@ contract Rain721A is ERC721A, RainVM, VMState {
     address[] private currencies;
     address payable recipient;
 
-    event Initialize(Config _config);
+    event Initialize(Rain721AConfig config_);
 
-    constructor(Config memory _config) ERC721A("Rain721A", "") {
-        priceScript = _restore(_snapshot(_newState(_config.priceScript)));
-        canMintScript = _restore(_snapshot(_newState(_config.canMintScript)));
-        currencies = _config.currencies;
-        recipient = _config.recipient;
+    constructor(Rain721AConfig memory config_)
+        ERC721A(config_.name, config_.symbol)
+    {
+        priceScript = _restore(_snapshot(_newState(config_.priceScript)));
+        canMintScript = _restore(_snapshot(_newState(config_.canMintScript)));
+        currencies = config_.currencies;
+        recipient = config_.recipient;
     }
 
     function _startTokenId() internal view virtual override returns (uint256) {
@@ -62,7 +68,7 @@ contract Rain721A is ERC721A, RainVM, VMState {
         }
 
         State memory state_ = priceScript;
-        eval("", state_, sourceIndex);
+        eval(quantity, state_, sourceIndex);
         state_.stack[state_.stackIndex - 1] =
             state_.stack[state_.stackIndex - 1] *
             quantity;
@@ -134,6 +140,10 @@ contract Rain721A is ERC721A, RainVM, VMState {
                     state_.stack[state_.stackIndex] = uint256(
                         uint160(account_)
                     );
+                    state_.stackIndex++;
+                } else if (opcode_ == CURRENT_UNITS) {
+                    uint256 units_ = abi.decode(context_, (uint256));
+                    state_.stack[state_.stackIndex] = units_;
                     state_.stackIndex++;
                 }
             }

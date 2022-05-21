@@ -1,13 +1,14 @@
 const { expect }  = require("chai");
 const { ethers } = require("hardhat");
 
-import { Rain721A, ConfigStruct } from "../typechain/Rain721A";
+import { Rain721A, Rain721AConfigStruct } from "../typechain/Rain721A";
 import type { Token } from "../typechain/Token";
 import type { ReserveToken } from "../typechain/ReserveToken";
 import type { ReserveTokenERC1155 } from "../typechain/ReserveTokenERC1155";
 import type { ReserveTokenERC721 } from "../typechain/ReserveTokenERC721";
 import type { ERC20BalanceTierFactory } from "../typechain/ERC20BalanceTierFactory";
 import type { ERC20BalanceTier } from "../typechain/ERC20BalanceTier";
+import type { Rain721AFactory } from "../typechain/Rain721AFactory";
 import { Rain1155, price, condition, Type, Conditions } from "rain-game-sdk";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { eighteenZeros, getEventArgs, ZERO_ADDRESS} from "./utils"
@@ -21,7 +22,7 @@ const LEVELS = Array.from(Array(8).keys()).map((value) =>
 
 export let rain721a: Rain721A;
 export let SDK: Rain1155;
-
+export let factory: Rain721AFactory;
 export let USDT: ReserveToken;
 
 export let BNB: Token;
@@ -53,7 +54,11 @@ before(async () => {
 
   SDK = new Rain1155(signer1.address, signer1); // for script generation only
 
-  const contract = await ethers.getContractFactory("Rain721A");
+  const Factory = await ethers.getContractFactory("Rain721AFactory");
+  factory = await Factory.deploy();
+  await factory.deployed();
+
+  // const contract = await ethers.getContractFactory("Rain721A");
 
   const Erc20 = await ethers.getContractFactory("Token");
   const stableCoins = await ethers.getContractFactory("ReserveToken");
@@ -175,16 +180,21 @@ before(async () => {
   const [ priceScript, currencies ]  = SDK.generatePriceScript(priceConfig);
   const canMintScript = SDK.generateCanMintScript(canMintConfig);
 
-  const config: ConfigStruct = {
+  const config: Rain721AConfigStruct = {
+    name: "Rain721A",
+    symbol: "RAIN",
     canMintScript: canMintScript,
     priceScript: priceScript,
     currencies: currencies,
     recipient: creator.address
   };
 
-  rain721a = await contract.deploy(config);
-  await rain721a.deployed();
+  let newChild = await factory.createChild(config);
+  const [rain721aAddress, sender] = await getEventArgs(newChild, "NewChild", factory, factory.address);
+  console.log({rain721aAddress, sender})
 
+  rain721a = new ethers.Contract(rain721aAddress, (await artifacts.readArtifact("Rain721A")).abi, signer1)
+  await rain721a.deployed();
 })
 
 describe("Rain721A test", () => {
