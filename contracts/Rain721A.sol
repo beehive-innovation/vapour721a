@@ -68,7 +68,7 @@ contract Rain721A is ERC721A, RainVM, VMState {
         }
 
         State memory state_ = priceScript;
-        eval(quantity, state_, sourceIndex);
+        eval(abi.encode(quantity), state_, sourceIndex);
         state_.stack[state_.stackIndex - 1] =
             state_.stack[state_.stackIndex - 1] *
             quantity;
