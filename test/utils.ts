@@ -1,6 +1,5 @@
 import { Logger } from "@ethersproject/logger";
 import { version } from "./_version";
-import { Factory, NewChildEvent } from "../typechain/Factory";
 import { ContractTransaction, Contract, BigNumber, Overrides, ethers } from "ethers";
 import { Result } from "ethers/lib/utils";
 import fs from "fs";
@@ -325,22 +324,22 @@ export function BNtoInt(x: BigNumber): number {
   return parseInt(x._hex);
 }
 
-export const getChild = async (
-  factory: Factory,
-  transaction: ContractTransaction
-): Promise<string> => {
-  const { child } = (await getEventArgs(
-    transaction,
-    "NewChild",
-    factory
-  )) as NewChildEvent["args"];
+// export const getChild = async (
+//   factory: Factory,
+//   transaction: ContractTransaction
+// ): Promise<string> => {
+//   const { child } = (await getEventArgs(
+//     transaction,
+//     "NewChild",
+//     factory
+//   )) as NewChildEvent["args"];
 
-  if (!ethers.utils.isAddress(child)) {
-    throw new Error(`invalid address: ${child} (${child.length} chars)`);
-  }
+//   if (!ethers.utils.isAddress(child)) {
+//     throw new Error(`invalid address: ${child} (${child.length} chars)`);
+//   }
 
-  return child;
-};
+//   return child;
+// };
 
 export const fetchFile = (_path: string): string => {
   try {

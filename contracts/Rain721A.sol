@@ -1,79 +1,218 @@
 // SPDX-License-Identifier: MIT
-
 pragma solidity 0.8.10;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "erc721a/contracts/ERC721A.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@beehiveinnovation/rain-protocol/contracts/tier/libraries/TierReport.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
-import {VMState, StateConfig} from "@beehiveinnovation/rain-protocol/contracts/vm/libraries/VMState.sol";
-import {AllStandardOps, ALL_STANDARD_OPS_START, ALL_STANDARD_OPS_LENGTH} from "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
+import {AllStandardOps} from "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
+import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
 
-struct Rain721AConfig {
+import "./Random.sol";
+import "./SeedDance.sol";
+import "hardhat/console.sol";
+
+struct ConstructorConfig {
     string name;
     string symbol;
-    StateConfig priceScript;
-    StateConfig canMintScript;
+    string defaultURI;
+    string baseURI;
+    uint256 supplyLimit;
     address[] currencies;
-    address payable recipient;
+    address recipient;
+    address owner;
+    address vmStateBuilder;
+    StateConfig vmStateConfig;
 }
 
-contract Rain721A is ERC721A, RainVM, VMState {
-    uint256 internal constant TIER_REPORT_AT_BLOCK = 0;
+contract Rain721A is ERC721A, RainVM, SeedDance, Ownable {
+    using Strings for uint256;
+    uint256 public supplyLimit;
 
-    uint256 internal constant ACCOUNT = 1;
+    TimeBound timeBound;
 
-    uint256 internal constant CURRENT_UNITS = 2;
-
-    uint256 internal constant LOCAL_OPS_LENGTH = 3;
-
-    uint256 private immutable localOpsStart =
-        ALL_STANDARD_OPS_START + ALL_STANDARD_OPS_LENGTH;
-
-    State private priceScript;
-    State private canMintScript;
-    address[] private currencies;
+    address private vmStatePointer;
+    address[] public currencies;
     address payable recipient;
 
-    event Initialize(Rain721AConfig config_);
+    address public shuffled;
 
-    constructor(Rain721AConfig memory config_)
+    string public defaultURI;
+    string public baseURI;
+
+    mapping(address => uint256) private paymentTokenIndex;
+
+    event Construct(ConstructorConfig config_);
+
+    constructor(ConstructorConfig memory config_)
         ERC721A(config_.name, config_.symbol)
     {
-        priceScript = _restore(_snapshot(_newState(config_.priceScript)));
-        canMintScript = _restore(_snapshot(_newState(config_.canMintScript)));
+        console.log("VMStateBuilder : ", config_.vmStateBuilder);
         currencies = config_.currencies;
-        recipient = config_.recipient;
+        supplyLimit = config_.supplyLimit;
+        baseURI = config_.baseURI;
+        defaultURI = config_.defaultURI;
+
+        // Bounds memory canMintBound;
+        // canMintBound.entrypoint = 0;
+
+        // Bounds memory priceBound;
+        // priceBound.entrypoint = 1;
+
+        // Bounds[] memory bounds_ = new Bounds[](2);
+
+        // bounds_[0] = canMintBound;
+        // bounds_[1] = priceBound;
+
+        // for (uint256 i = 0; i < config_.currencies.length; i++) {
+        //     paymentTokenIndex[config_.currencies[i]] = i + 1;
+        // }
+
+        // bytes memory vmStateBytes_ = VMStateBuilder(config_.vmStateBuilder)
+        //     .buildState(address(this), config_.vmStateConfig, bounds_);
+
+        // console.log("vmStateBytes");
+        // console.logBytes(vmStateBytes_);
+
+        // vmStatePointer = SSTORE2.write(vmStateBytes_);
+        setRecipient(config_.recipient);
+        transferOwnership(config_.owner);
+
+        emit Construct(config_);
     }
 
     function _startTokenId() internal view virtual override returns (uint256) {
         return 1;
     }
 
-    function canMint(address _account) public view returns (bool) {
-        State memory state_ = canMintScript;
-        eval(abi.encode(_account), state_, 0);
+    function tokenURI(uint256 tokenId)
+        public
+        view
+        virtual
+        override
+        returns (string memory)
+    {
+        if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
+        console.log(Random.shuffleIdAtIndex(shuffled, tokenId).toString());
+        if (shuffled == address(0)) return defaultURI;
+        return
+            string(
+                abi.encodePacked(
+                    baseURI,
+                    "/",
+                    Random.shuffleIdAtIndex(shuffled, tokenId - 1).toString(),
+                    ".json"
+                )
+            );
+    }
 
+    function _loadState() internal view returns (State memory) {
+        return LibState.fromBytesPacked(SSTORE2.read(vmStatePointer));
+    }
+
+    function startReveal(Seed initialSeed_, TimeBound calldata timeBound_)
+        external
+        onlyOwner
+    {
+        _start(initialSeed_);
+        timeBound = timeBound_;
+    }
+
+    function commit(Commitment commit_, uint256 units_) external payable {
+        require(totalSupply() + units_ <= supplyLimit, "MAX_LIMIT");
+        _commit(commit_);
+        // for (uint256 i = 0; i < currencies.length; i = i + 1) {
+        //     uint256[] memory stack_ = getPrice(currencies[i], units_);
+        //     if (stack_[0] == 0) {
+        //         Address.sendValue(recipient, stack_[1]);
+        //     } else if (stack_[0] == 1) {
+        //         ITransfer(currencies[i]).transferFrom(
+        //             msg.sender,
+        //             recipient,
+        //             stack_[1]
+        //         );
+        //     } else if (stack_[0] == 2) {
+        //         ITransfer(currencies[i]).safeTransferFrom(
+        //             msg.sender,
+        //             recipient,
+        //             stack_[1],
+        //             stack_[2],
+        //             ""
+        //         );
+        //     }
+        // }
+        _mint(_msgSender(), units_);
+    }
+
+    function reveal(Secret secret_) external {
+        _reveal(timeBound, secret_);
+    }
+
+    function revealIds() external onlyOwner {
+        shuffled = SSTORE2.write(
+            Random.shuffle(Seed.unwrap(_sharedSeed), supplyLimit)
+        );
+    }
+
+    function setRecipient(address newRecipient) public {
+        require(
+            msg.sender == recipient || recipient == address(0),
+            "RECIPIENT ONLY"
+        );
+        require(
+            newRecipient.code.length == 0 && newRecipient != address(0),
+            "INVALID ADDRESS."
+        );
+        recipient = payable(newRecipient);
+    }
+
+    function canMint(address account_) public view returns (bool) {
+        bytes memory context_ = new bytes(0x20);
+        assembly {
+            mstore(add(context_, 0x20), account_)
+        }
+        State memory state_ = _loadState();
+        eval(context_, state_, 0);
         return (state_.stack[state_.stackIndex - 1] == 1);
     }
 
-    function getPrice(address _paymentToken, uint256 quantity)
+    function getPrice(address paymentToken_, uint256 units_)
         public
         view
         returns (uint256[] memory)
     {
-        uint256 sourceIndex = 0;
-        while (_paymentToken != currencies[sourceIndex]) {
-            sourceIndex++;
+        State memory state_ = _loadState();
+        eval("", state_, 1);
+        uint256[] memory stack = state_.stack;
+
+        uint256 stackPointer;
+        uint256 paymentTokenIndex_ = paymentTokenIndex[paymentToken_];
+        require(paymentTokenIndex_ != 0, "INVALID_TOKEN");
+
+        for (uint256 i = 0; i < paymentTokenIndex_ - 1; i++) {
+            if (stack[stackPointer] == 0) {
+                unchecked {
+                    stackPointer = stackPointer + 2;
+                }
+            } else if (stack[stackPointer] == 1) {
+                unchecked {
+                    stackPointer = stackPointer + 3;
+                }
+            }
         }
 
-        State memory state_ = priceScript;
-        eval(abi.encode(quantity), state_, sourceIndex);
-        state_.stack[state_.stackIndex - 1] =
-            state_.stack[state_.stackIndex - 1] *
-            quantity;
+        uint256[] memory price = new uint256[](3);
+        if (stack[stackPointer] == 0) {
+            price[0] = stack[stackPointer];
+            price[1] = stack[stackPointer + 1] * units_;
+        } else if (stack[stackPointer] == 1) {
+            price[0] = stack[stackPointer];
+            price[1] = stack[stackPointer + 1];
+            price[2] = stack[stackPointer + 2] * units_;
+        }
 
-        return state_.stack;
+        return price;
     }
 
     function _beforeTokenTransfers(
@@ -82,72 +221,11 @@ contract Rain721A is ERC721A, RainVM, VMState {
         uint256 startTokenId,
         uint256 quantity
     ) internal virtual override {
-        if (from == address(0)) require(canMint(to), "Cant Mint");
+        // if (from == address(0)) require(canMint(to), "CANT MINT");
     }
 
-    function mint(uint256 quantity) external payable {
-        for (uint256 i = 0; i < currencies.length; i = i + 1) {
-            uint256[] memory stack_ = getPrice(currencies[i], quantity);
-            if (stack_[0] == 0) {
-                require(msg.value >= stack_[1], "Insufficient funds.");
-                Address.sendValue(recipient, stack_[1]);
-            } else if (stack_[0] == 1) {
-                ITransfer(currencies[i]).transferFrom(
-                    msg.sender,
-                    recipient,
-                    stack_[1]
-                );
-            } else if (stack_[0] == 2) {
-                ITransfer(currencies[i]).safeTransferFrom(
-                    msg.sender,
-                    recipient,
-                    stack_[1],
-                    stack_[2],
-                    ""
-                );
-            }
-        }
-
-        _safeMint(msg.sender, quantity);
-    }
-
-    function applyOp(
-        bytes memory context_,
-        State memory state_,
-        uint256 opcode_,
-        uint256 operand_
-    ) internal view virtual override {
-        unchecked {
-            if (opcode_ < localOpsStart) {
-                AllStandardOps.applyOp(
-                    state_,
-                    opcode_ - ALL_STANDARD_OPS_START,
-                    operand_
-                );
-            } else {
-                opcode_ -= localOpsStart;
-                require(opcode_ < LOCAL_OPS_LENGTH, "MAX_OPCODE");
-                // There's only one opcode, which stacks the address to report.
-                if (opcode_ == TIER_REPORT_AT_BLOCK) {
-                    state_.stack[state_.stackIndex - 2] = TierReport
-                        .tierAtBlockFromReport(
-                            state_.stack[state_.stackIndex - 2],
-                            state_.stack[state_.stackIndex - 1]
-                        );
-                    state_.stackIndex--;
-                } else if (opcode_ == ACCOUNT) {
-                    address account_ = abi.decode(context_, (address));
-                    state_.stack[state_.stackIndex] = uint256(
-                        uint160(account_)
-                    );
-                    state_.stackIndex++;
-                } else if (opcode_ == CURRENT_UNITS) {
-                    uint256 units_ = abi.decode(context_, (uint256));
-                    state_.stack[state_.stackIndex] = units_;
-                    state_.stackIndex++;
-                }
-            }
-        }
+    function fnPtrs() public pure override returns (bytes memory) {
+        return AllStandardOps.fnPtrs();
     }
 }
 
