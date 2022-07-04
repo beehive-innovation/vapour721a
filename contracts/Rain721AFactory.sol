@@ -50,10 +50,11 @@ contract Rain721AFactory is IFactory, ReentrancyGuard {
     }
 
     /// Typed wrapper around IFactory.createChild.
-    function createChildTyped(ConstructorConfig calldata config_)
-        external
-        returns (Rain721A child_)
-    {
-        child_ = Rain721A(this.createChild(abi.encode(config_)));
+    function createChildTyped(
+        ConstructorConfig calldata constructorConfig_,
+        InitializeConfig calldata initializeConfig_
+    ) external returns (Rain721A child_) {
+        child_ = Rain721A(this.createChild(abi.encode(constructorConfig_)));
+        Rain721A(child_).initialize(initializeConfig_);
     }
 }

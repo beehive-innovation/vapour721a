@@ -5,97 +5,17 @@ import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-
+import { AllStandardOps } from "rain-game-sdk";
+import { Rain721AFactory, NewChildEvent} from "../typechain/Rain721AFactory"
 const logger = new Logger(version);
 
 
 export const eighteenZeros = "000000000000000000"
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 
-export enum Type {
-  ERC20,
-  ERC1155
-}
 
-export enum Conditions {
-  NONE,
-  BLOCK_NUMBER,
-  BALANCE_TIER,
-  ERC20BALANCE,
-  ERC721BALANCE,
-  ERC1155BALANCE,
-}
-
-export enum Rarity {
-    NONE,
-    COMMON,
-    UNCOMMON,
-    RARE,
-    ULTRARARE
-}
-
-export enum Role {
-  Admin,
-  Creator
-}
-
-export enum AllStandardOps {
-  SKIP,
-  VAL,
-  DUP,
-  ZIPMAP,
-  DEBUG,
-  BLOCK_NUMBER,
-  BLOCK_TIMESTAMP,
-  SENDER,
-  THIS_ADDRESS,
-  SCALE18_MUL,
-  SCALE18_DIV,
-  SCALE18,
-  SCALEN,
-  SCALE_BY,
-  SCALE18_ONE,
-  SCALE18_DECIMALS,
-  ADD,
-  SATURATING_ADD,
-  SUB,
-  SATURATING_SUB,
-  MUL,
-  SATURATING_MUL,
-  DIV,
-  MOD,
-  EXP,
-  MIN,
-  MAX,
-  ISZERO,
-  EAGER_IF,
-  EQUAL_TO,
-  LESS_THAN,
-  GREATER_THAN,
-  EVERY,
-  ANY,
-  REPORT,
-  NEVER,
-  ALWAYS,
-  SATURATING_DIFF,
-  UPDATE_BLOCKS_FOR_TIER_RANGE,
-  SELECT_LTE,
-  IERC20_BALANCE_OF,
-  IERC20_TOTAL_SUPPLY,
-  IERC721_BALANCE_OF,
-  IERC721_OWNER_OF,
-  IERC1155_BALANCE_OF,
-  IERC1155_BALANCE_OF_BATCH,
-  length,
-}
-
-enum GameAssetsOpcode {
-  REPORT_AT_BLOCK = 0 + AllStandardOps.length,
-  ACCOUNT
-}
 export const Opcode = {
   ...AllStandardOps,
-  ...GameAssetsOpcode,
 };
 
 
@@ -324,22 +244,22 @@ export function BNtoInt(x: BigNumber): number {
   return parseInt(x._hex);
 }
 
-// export const getChild = async (
-//   factory: Factory,
-//   transaction: ContractTransaction
-// ): Promise<string> => {
-//   const { child } = (await getEventArgs(
-//     transaction,
-//     "NewChild",
-//     factory
-//   )) as NewChildEvent["args"];
+export const getChild = async (
+  factory: Rain721AFactory,
+  transaction: ContractTransaction
+): Promise<string> => {
+  const { child } = (await getEventArgs(
+    transaction,
+    "NewChild",
+    factory
+  )) as NewChildEvent["args"];
 
-//   if (!ethers.utils.isAddress(child)) {
-//     throw new Error(`invalid address: ${child} (${child.length} chars)`);
-//   }
+  if (!ethers.utils.isAddress(child)) {
+    throw new Error(`invalid address: ${child} (${child.length} chars)`);
+  }
 
-//   return child;
-// };
+  return child;
+};
 
 export const fetchFile = (_path: string): string => {
   try {
@@ -365,4 +285,8 @@ export const exec = (cmd: string): string | Buffer => {
   } catch (e) {
     throw new Error(`Failed to run command \`${cmd}\``);
   }
+};
+
+export const getTokenID = (tokenURI: string): number => {
+  return parseInt(tokenURI.split('/')[1]);
 };
