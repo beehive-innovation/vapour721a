@@ -1,9 +1,7 @@
-import path from "path";
-import hre, { ethers } from "hardhat";
+import { ethers } from "hardhat";
 import { Rain721A, TimeBoundStruct, ConstructorConfigStruct, InitializeConfigStruct, InitializeEvent } from "../../typechain/Rain721A";
-import { fetchFile, getChild, getEventArgs, ZERO_ADDRESS } from "../utils";
+import { getChild, getEventArgs, ZERO_ADDRESS } from "../utils";
 import { condition, Conditions, price, Rain1155, Type } from "rain-game-sdk";
-import { Token } from "../../typechain/Token";
 import { assert } from "console";
 import { expect } from "chai";
 import { config, owner, rain721aFactory, recipient, rTKN } from "../1_setup";

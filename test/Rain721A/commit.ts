@@ -1,5 +1,4 @@
 import { expect } from "chai";
-import { assert } from "console";
 import { BigNumber } from "ethers";
 import { keccak256, randomBytes } from "ethers/lib/utils";
 import { ethers } from "hardhat";
