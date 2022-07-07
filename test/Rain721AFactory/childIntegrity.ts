@@ -1,7 +1,6 @@
 import { artifacts, ethers } from "hardhat";
 import { expect } from "chai";
 import { Rain721A } from "../../typechain/Rain721A";
-import { ZERO_ADDRESS } from "../utils";
 
 export const checkChildIntegrity = async (rain721AFactory, child, constructorConfig) => {
   let rain721a = (await ethers.getContractAt(
@@ -29,10 +28,6 @@ export const checkChildIntegrity = async (rain721AFactory, child, constructorCon
     constructorConfig.baseURI,
     `tokenURI is ${rain721a.tokenURI(2)} not ${constructorConfig.baseURI}`
   );
-  expect(await rain721a.defaultURI()).to.equals(
-    constructorConfig.defaultURI,
-    `tokenURI is ${rain721a.tokenURI(2)} not ${constructorConfig.defaultURI}`
-  );
   expect(await rain721a.supplyLimit()).to.equals(
     constructorConfig.supplyLimit,
     `totalSupply is ${rain721a.totalSupply()} not ${constructorConfig.supplyLimit}`
@@ -40,9 +35,5 @@ export const checkChildIntegrity = async (rain721AFactory, child, constructorCon
   expect(await rain721a.recipient()).to.equals(
     constructorConfig.recipient,
     `totalSupply is ${rain721a.recipient()} not ${constructorConfig.recipient}`
-  );
-  expect(await rain721a.shuffled()).to.equals(
-    ZERO_ADDRESS,
-    `totalSupply is ${rain721a.shuffled()} not ${ZERO_ADDRESS}`
   );
 };

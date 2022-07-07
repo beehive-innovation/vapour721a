@@ -4,7 +4,6 @@ import { ethers } from "hardhat";
 import {
   ConstructorConfigStruct,
   InitializeConfigStruct,
-  Rain721A,
 } from "../../typechain/Rain721A";
 import { eighteenZeros, getEventArgs } from "../utils";
 import { checkChildIntegrity } from "./childIntegrity";
@@ -61,15 +60,10 @@ beforeEach(async () => {
   constructorConfig = {
     name: "rain721a",
     symbol: "RAIN721A",
-    defaultURI: "DEFAULT_URI",
     baseURI: "BASE_URI",
     supplyLimit: 1000,
     recipient: recipient_.address,
     owner: owner_.address,
-    timeBound: {
-      baseDuration: 60,
-      maxExtraTime: 60
-    }
   };
 
   const priceConfig: price[] = [
@@ -98,7 +92,7 @@ beforeEach(async () => {
 
   encodedConfig = ethers.utils.defaultAbiCoder.encode(
     [
-      "tuple(string name, string symbol, string defaultURI, string baseURI, uint256 supplyLimit, address recipient, address owner, tuple(uint256 baseDuration, uint256 maxExtraTime) timeBound)",
+      "tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner)",
     ],
     [constructorConfig]
   );

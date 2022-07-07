@@ -2,11 +2,10 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
 import { keccak256, randomBytes } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { condition, Conditions, ERC20, price, Rain1155, Type } from "rain-game-sdk";
+import { condition, Conditions, price, Rain1155, Type } from "rain-game-sdk";
 import { AllStandardOpsStateBuilder } from "../typechain/AllStandardOpsStateBuilder";
-import { Rain721A, ConstructorConfigStruct, InitializeConfigStruct, TimeBoundStruct } from "../typechain/Rain721A";
+import { Rain721A, ConstructorConfigStruct, InitializeConfigStruct } from "../typechain/Rain721A";
 import { Token } from "../typechain/Token";
-import { getTokenID, ZERO_ADDRESS } from "./utils";
 
 export let rain721a: Rain721A;
 
@@ -73,20 +72,13 @@ describe("Rain721A test", () => {
 
         const [vmStateConfig, currencies] = Rain1155.generateScript([canMint], prices);
 
-        const timeBound: TimeBoundStruct = {
-            baseDuration: 60,
-            maxExtraTime: 60
-        }
-
         rain721aConstructorConfig = {
             name: "nft",
             symbol: "NFT",
-            defaultURI: "DEFAULT_URI",
             baseURI: "BASE_URI",
             supplyLimit: 36,
             recipient: recipient.address,
             owner: owner.address,
-            timeBound: timeBound
         }
 
         rain721aInitializeConfig = {
@@ -107,16 +99,9 @@ describe("Rain721A test", () => {
 
     it("Should deploy the Rain721A contract", async () => {
         expect(rain721a.address).to.not.null;
-        expect(await rain721a.defaultURI()).to.equals(rain721aConstructorConfig.defaultURI);
         expect(await rain721a.baseURI()).to.equals(rain721aConstructorConfig.baseURI);
         expect(await rain721a.supplyLimit()).to.equals(rain721aConstructorConfig.supplyLimit);
         expect(await rain721a.owner()).to.equals(rain721aConstructorConfig.owner);
-
-        expect(await rain721a.shuffled()).to.equals(ZERO_ADDRESS);
-    });
-
-    it("Should fail to reveal Ids",async () => {
-        await expect(rain721a.connect(owner).revealIds()).to.be.revertedWith("CANT_REVEAL_IDS");
     });
 
     it("8 buyers should be able to commit", async () => {
@@ -144,67 +129,25 @@ describe("Rain721A test", () => {
         await rTKN.connect(buyer6).approve(rain721a.address, 7);
         await rTKN.connect(buyer7).approve(rain721a.address, 8);
 
-        await rain721a.connect(buyer0).commit(commitments[0], 1);
-        await rain721a.connect(buyer1).commit(commitments[1], 2);
-        await rain721a.connect(buyer2).commit(commitments[2], 3);
-        await rain721a.connect(buyer3).commit(commitments[3], 4);
-        await rain721a.connect(buyer4).commit(commitments[4], 5);
-        await rain721a.connect(buyer5).commit(commitments[5], 6);
-        await rain721a.connect(buyer6).commit(commitments[6], 7);
-        await rain721a.connect(buyer7).commit(commitments[7], 8);
+        await rain721a.connect(buyer0).mintNFT(1);
+        await rain721a.connect(buyer1).mintNFT(2);
+        await rain721a.connect(buyer2).mintNFT(3);
+        await rain721a.connect(buyer3).mintNFT(4);
+        await rain721a.connect(buyer4).mintNFT(5);
+        await rain721a.connect(buyer5).mintNFT(6);
+        await rain721a.connect(buyer6).mintNFT(7);
+        await rain721a.connect(buyer7).mintNFT(8);
         
         expect(await rain721a.totalSupply()).to.equals(rain721aConstructorConfig.supplyLimit)
     });
 
-    it("Should return default tokenURI",async () => {
-        expect(await rain721a.tokenURI(1)).to.equals(rain721aConstructorConfig.defaultURI);
-        expect(await rain721a.tokenURI(8)).to.equals(rain721aConstructorConfig.defaultURI);
-        expect(await rain721a.tokenURI(16)).to.equals(rain721aConstructorConfig.defaultURI);
-        expect(await rain721a.tokenURI(24)).to.equals(rain721aConstructorConfig.defaultURI);
-        expect(await rain721a.tokenURI(32)).to.equals(rain721aConstructorConfig.defaultURI);
-    });
-
     it("Should fail to mint - SUPPLY_LIMIT",async () => {
-        await expect(rain721a.connect(owner).commit(commitments[0], 1)).to.be.revertedWith("MAX_LIMIT");
+        await expect(rain721a.connect(owner).mintNFT(1)).to.be.revertedWith("MAX_LIMIT");
     });
 
-    it("Should fail to reveal",async () => {
-        await expect(rain721a.connect(buyer0).reveal(commitments[0])).to.be.revertedWith("CANT_REVEAL");
-    });
-
-    it("Should start a rain dance - start reveling ids",async () => {
-        const initialSeed = randomBytes(32);
-        await rain721a.connect(owner).startReveal(initialSeed); 
-    });
-
-    it("Should be able to reveal",async () => {
-        await rain721a.connect(buyer0).reveal(secrets[0]);
-        // console.log("Buyer0 revealed");
-        await rain721a.connect(buyer1).reveal(secrets[1]);
-        // console.log("Buyer1 revealed");
-        await rain721a.connect(buyer2).reveal(secrets[2]);
-        // console.log("Buyer2 revealed");
-        await rain721a.connect(buyer3).reveal(secrets[3]);
-        // console.log("Buyer3 revealed");
-        await rain721a.connect(buyer4).reveal(secrets[4]);
-        // console.log("Buyer4 revealed");
-        await rain721a.connect(buyer5).reveal(secrets[5]);
-        // console.log("Buyer5 revealed");
-        await rain721a.connect(buyer6).reveal(secrets[6]);
-        // console.log("Buyer6 revealed");
-        await rain721a.connect(buyer7).reveal(secrets[7]);
-        // console.log("Buyer7 revealed");
-    });
-
-    it("Should return random tokenURIs",async () => {
-        
-        await rain721a.connect(owner).revealIds();
-        expect(await rain721a.shuffled()).to.not.equals(ZERO_ADDRESS);
-
+    it("Should return correct tokenURIs",async () => {
         for(let i=1;i<=rain721aConstructorConfig.supplyLimit; i++){
-            if(getTokenID(await rain721a.tokenURI(i)) == i){
-                console.log("Got same tokenID for ID : ", i)
-            }
+            expect(await rain721a.tokenURI(i)).to.equals(`${rain721aConstructorConfig.baseURI}/${i}.json`)
         }
     });
 });

@@ -26,8 +26,6 @@ export let factoryDeployer: SignerWithAddress,
 let constructorConfig: ConstructorConfigStruct;
 let initializeConfig: InitializeConfigStruct;
 
-let encodedConfig;
-
 let stateBuilder: AllStandardOpsStateBuilder;
 let USDT: Token;
 
@@ -62,15 +60,10 @@ beforeEach(async () => {
   constructorConfig = {
     name: "rain721a",
     symbol: "RAIN721A",
-    defaultURI: "DEFAULT_URI",
     baseURI: "BASE_URI",
     supplyLimit: 1000,
     recipient: recipient_.address,
-    owner: owner_.address,
-    timeBound: {
-      baseDuration: 60,
-      maxExtraTime: 60
-    }
+    owner: owner_.address
   };
 
   const priceConfig: price[] = [

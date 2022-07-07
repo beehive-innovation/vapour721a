@@ -3,24 +3,19 @@ pragma solidity 0.8.10;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "erc721a/contracts/ERC721A.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import {AllStandardOps} from "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
-import "./Random.sol";
-import "./SeedDance.sol";
 import "hardhat/console.sol";
 
 struct ConstructorConfig {
     string name;
     string symbol;
-    string defaultURI;
     string baseURI;
     uint256 supplyLimit;
     address recipient;
     address owner;
-    TimeBound timeBound;
 }
 
 struct InitializeConfig {
@@ -29,19 +24,14 @@ struct InitializeConfig {
     StateConfig vmStateConfig;
 }
 
-contract Rain721A is ERC721A, RainVM, SeedDance, Ownable {
+contract Rain721A is ERC721A, RainVM, Ownable {
     using Strings for uint256;
     uint256 public supplyLimit;
-
-    TimeBound timeBound;
 
     address private vmStatePointer;
     address[] public currencies;
     address payable public recipient;
 
-    address public shuffled;
-
-    string public defaultURI;
     string public baseURI;
 
     mapping(address => uint256) private paymentTokenIndex;
@@ -49,15 +39,12 @@ contract Rain721A is ERC721A, RainVM, SeedDance, Ownable {
     event Construct(ConstructorConfig config_);
     event Initialize(InitializeConfig config_);
     event RecipientChanged(address newRecipient);
-    event IdRevealed(uint256 _timeStamp);
 
     constructor(ConstructorConfig memory config_)
         ERC721A(config_.name, config_.symbol)
     {
         supplyLimit = config_.supplyLimit;
         baseURI = config_.baseURI;
-        defaultURI = config_.defaultURI;
-        timeBound = config_.timeBound;
 
         setRecipient(config_.recipient);
         transferOwnership(config_.owner);
@@ -72,13 +59,13 @@ contract Rain721A is ERC721A, RainVM, SeedDance, Ownable {
         for (uint256 i = 0; i < currencies.length; i++)
             paymentTokenIndex[currencies[i]] = i + 1;
 
-        Bounds memory canMint;
-        canMint.entrypoint = 0;
-        Bounds memory price;
-        price.entrypoint = 1;
+        Bounds memory canMintBound;
+        canMintBound.entrypoint = 0;
+        Bounds memory priceBound;
+        priceBound.entrypoint = 1;
         Bounds[] memory boundss_ = new Bounds[](2);
-        boundss_[0] = canMint;
-        boundss_[1] = price;
+        boundss_[0] = canMintBound;
+        boundss_[1] = priceBound;
         bytes memory vmStateBytes_ = VMStateBuilder(config_.vmStateBuilder)
             .buildState(address(this), config_.vmStateConfig, boundss_);
         vmStatePointer = SSTORE2.write(vmStateBytes_);
@@ -98,32 +85,17 @@ contract Rain721A is ERC721A, RainVM, SeedDance, Ownable {
         returns (string memory)
     {
         if (!_exists(tokenId)) revert URIQueryForNonexistentToken();
-        console.log(Random.shuffleIdAtIndex(shuffled, tokenId).toString());
-        if (shuffled == address(0)) return defaultURI;
         return
-            string(
-                abi.encodePacked(
-                    baseURI,
-                    "/",
-                    Random.shuffleIdAtIndex(shuffled, tokenId - 1).toString(),
-                    ".json"
-                )
-            );
+            string(abi.encodePacked(baseURI, "/", tokenId.toString(), ".json"));
     }
 
     function _loadState() internal view returns (State memory) {
         return LibState.fromBytesPacked(SSTORE2.read(vmStatePointer));
     }
 
-    function startReveal(Seed initialSeed_) external {
-        require(totalSupply() == supplyLimit, "CANT_START_REVEAL");
-        _start(initialSeed_);
-    }
-
-    function commit(Commitment commit_, uint256 units_) external payable {
+    function mintNFT(uint256 units_) external payable {
         require(vmStatePointer != address(0), "NOT_INITIALIZED");
         require((_currentIndex - 1) + units_ <= supplyLimit, "MAX_LIMIT");
-        _commit(commit_);
         for (uint256 i = 0; i < currencies.length; i = i + 1) {
             uint256[] memory stack_ = getPrice(currencies[i], units_);
             // if (stack_[0] == 0) {
@@ -146,18 +118,6 @@ contract Rain721A is ERC721A, RainVM, SeedDance, Ownable {
             }
         }
         _mint(_msgSender(), units_);
-    }
-
-    function reveal(Secret secret_) external {
-        _reveal(timeBound, secret_);
-    }
-
-    function revealIds() external {
-        require(totalSupply() == supplyLimit, "CANT_REVEAL_IDS");
-        shuffled = SSTORE2.write(
-            Random.shuffle(Seed.unwrap(_sharedSeed), supplyLimit)
-        );
-        emit IdRevealed(block.timestamp);
     }
 
     function setRecipient(address newRecipient) public {

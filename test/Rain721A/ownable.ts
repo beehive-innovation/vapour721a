@@ -1,5 +1,5 @@
 import { ethers } from "hardhat";
-import { Rain721A, TimeBoundStruct, ConstructorConfigStruct, InitializeConfigStruct, OwnershipTransferredEvent } from "../../typechain/Rain721A";
+import { Rain721A, ConstructorConfigStruct, InitializeConfigStruct, OwnershipTransferredEvent } from "../../typechain/Rain721A";
 import { getChild, getEventArgs } from "../utils";
 import { condition, Conditions, price, Rain1155, Type } from "rain-game-sdk";
 import { expect } from "chai";
@@ -9,7 +9,7 @@ let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
 let rain721a: Rain721A;
 
-describe("Rain721A Initialise test", () => {
+describe("Rain721A Ownable test", () => {
     before(async () => {
         const canMint: condition[] = [
             {
@@ -28,21 +28,14 @@ describe("Rain721A Initialise test", () => {
         ];
     
         const [vmStateConfig_, currencies_] = Rain1155.generateScript([canMint], prices);
-        
-        const timeBound: TimeBoundStruct = {
-            baseDuration: 60,
-            maxExtraTime: 60
-        }
     
         rain721aConstructorConfig = {
             name: "nft",
             symbol: "NFT",
-            defaultURI: "DEFAULT_URI",
             baseURI: "BASE_URI",
             supplyLimit: 36,
             recipient: recipient.address,
             owner: owner.address,
-            timeBound: timeBound
         }
     
         rain721aInitializeConfig = {

@@ -1,5 +1,5 @@
 import { artifacts, ethers } from "hardhat";
-import { Rain721A, ConstructorConfigStruct, StateConfigStruct, TimeBoundStruct, InitializeConfigStruct } from "../../typechain/Rain721A";
+import { Rain721A, ConstructorConfigStruct, StateConfigStruct, InitializeConfigStruct } from "../../typechain/Rain721A";
 import { AllStandardOpsStateBuilder } from "../../typechain/AllStandardOpsStateBuilder";
 import { ReserveToken } from "../../typechain/ReserveToken";
 import { Rain721AFactory } from "../../typechain/Rain721AFactory";
@@ -71,11 +71,6 @@ describe("Rain721AFactory Test", () => {
     ];
 
     const [vmStateConfig_, currencies_] = Rain1155.generateScript([canMintConfig1], priceConfig1);
-    
-    let timeBound1: TimeBoundStruct = {
-      baseDuration: 60,
-      maxExtraTime: 60
-    }
 
     const constructorConfig1: ConstructorConfigStruct = {
       name: "RAIN1",
@@ -83,9 +78,7 @@ describe("Rain721AFactory Test", () => {
       supplyLimit: 1000,
       recipient: recipient_.address,
       owner: owner_.address,
-      defaultURI: "DEFAULT_URI",
       baseURI: "BASE_URI",
-      timeBound: timeBound1
     }
 
     const initialiseConfig1: InitializeConfigStruct = {
@@ -109,9 +102,6 @@ describe("Rain721AFactory Test", () => {
     expect(recipient).to.equals(constructorConfig1.recipient);
     expect(owner).to.equals(constructorConfig1.owner);
     expect(baseURI).to.equals(constructorConfig1.baseURI);
-    expect(defaultURI).to.equals(constructorConfig1.defaultURI);
-    expect(timeBound.baseDuration).to.deep.equals(constructorConfig1.timeBound.baseDuration);
-    expect(timeBound.maxExtraTime).to.deep.equals(constructorConfig1.timeBound.maxExtraTime);
 
     expect(await rain721a1.name()).to.equals(constructorConfig1.name);
     expect(await rain721a1.symbol()).to.equals(constructorConfig1.symbol);
@@ -152,20 +142,13 @@ describe("Rain721AFactory Test", () => {
 
     const [ vmStateConfig_, currencies_] = Rain1155.generateScript([canMintConfig2], priceConfig2);
 
-    let timeBound1: TimeBoundStruct = {
-      baseDuration: 60,
-      maxExtraTime: 60
-    }
-
     const constructorConfig2: ConstructorConfigStruct = {
       name: "RAIN2",
       symbol: "RN2",
+      baseURI: "BASE_URI",
       supplyLimit: 500,
       recipient: recipient_.address,
       owner: owner_.address,
-      defaultURI: "DEFAULT_URI1",
-      baseURI: "BASE_URI1",
-      timeBound: timeBound1
     }
 
     const initialiseConfig2: InitializeConfigStruct = {
@@ -191,9 +174,6 @@ describe("Rain721AFactory Test", () => {
     expect(recipient).to.equals(constructorConfig2.recipient);
     expect(owner).to.equals(constructorConfig2.owner);
     expect(baseURI).to.equals(constructorConfig2.baseURI);
-    expect(defaultURI).to.equals(constructorConfig2.defaultURI);
-    expect(timeBound.baseDuration).to.deep.equals(constructorConfig2.timeBound.baseDuration);
-    expect(timeBound.maxExtraTime).to.deep.equals(constructorConfig2.timeBound.maxExtraTime);
 
     expect(await rain721a2.name()).to.equals(constructorConfig2.name);
     expect(await rain721a2.symbol()).to.equals(constructorConfig2.symbol);
