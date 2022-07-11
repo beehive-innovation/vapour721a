@@ -11,15 +11,29 @@ import {Result} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import {execSync} from "child_process";
-import {AllStandardOps} from "rain-game-sdk";
+import {AllStandardOps} from "rain-sdk";
 import {Rain721AFactory, NewChildEvent} from "../typechain/Rain721AFactory";
 const logger = new Logger(version);
 
 export const eighteenZeros = "000000000000000000";
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
+export enum StorageOpcodes {
+	SUPPLY_LIMIT,
+	AMOUNT_WITHDRAWN,
+	AMOUNT_PAYABLE,
+}
+
+export enum LocalOpcodes {
+	IERC721A_TOTAL_SUPPLY = AllStandardOps.length,
+	IERC721A_TOTAL_MINTED,
+	IERC721A_NUMBER_MINTED,
+	IERC721A_NUMBER_BURNED,
+}
+
 export const Opcode = {
 	...AllStandardOps,
+	...LocalOpcodes,
 };
 
 export type Bytes = ArrayLike<number>;

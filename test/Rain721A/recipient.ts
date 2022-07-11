@@ -1,6 +1,5 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
-import {condition, Conditions, price, Rain1155, Type} from "rain-game-sdk";
 import {StateConfig, VM} from "rain-sdk";
 import {
 	ConstructEvent,
@@ -17,14 +16,7 @@ import {
 	recipient,
 	rTKN,
 } from "../1_setup";
-import {
-	concat,
-	eighteenZeros,
-	getChild,
-	getEventArgs,
-	op,
-	ZERO_ADDRESS,
-} from "../utils";
+import {concat, getChild, getEventArgs, op, ZERO_ADDRESS} from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;

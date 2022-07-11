@@ -6,7 +6,7 @@ import {
 	OwnershipTransferredEvent,
 } from "../../typechain/Rain721A";
 import {concat, eighteenZeros, getChild, op} from "../utils";
-import {condition, Conditions, price, Rain1155, Type, VM} from "rain-game-sdk";
+import {VM} from "rain-sdk";
 import {expect} from "chai";
 import {
 	buyer0,

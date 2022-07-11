@@ -1,6 +1,5 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
-import {condition, Conditions, price, Rain1155, Type} from "rain-game-sdk";
 import {StateConfig, VM} from "rain-sdk";
 import {
 	ConstructorConfigStruct,
@@ -32,13 +31,9 @@ describe("Rain721a tokenURI test", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [
-				concat([
-					op(VM.Opcodes.CONSTANT, 0),
-					op(VM.Opcodes.CONSTANT, 1),
-					op(VM.Opcodes.CONSTANT, 2),
-				]),
+				concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
 			],
-			constants: [1, 1, ethers.BigNumber.from("1" + eighteenZeros)],
+			constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
 		};
 
 		rain721aConstructorConfig = {

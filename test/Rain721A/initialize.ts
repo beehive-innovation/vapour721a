@@ -13,11 +13,9 @@ import {
 	op,
 	ZERO_ADDRESS,
 } from "../utils";
-import {condition, Conditions, price, Rain1155, Type} from "rain-game-sdk";
 import {assert} from "console";
 import {expect} from "chai";
 import {config, owner, rain721aFactory, recipient, rTKN} from "../1_setup";
-import {USDT} from "../Rain721AFactory/Rain721AFactory.sol";
 import {StateConfig, VM} from "rain-sdk";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
