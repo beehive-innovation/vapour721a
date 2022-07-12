@@ -22,7 +22,7 @@ let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
 let rain721a: Rain721A;
 
-describe("Rain721A receipient test", () => {
+describe("Rain721A recipient test", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
@@ -45,7 +45,7 @@ describe("Rain721A receipient test", () => {
 		};
 	});
 
-	it("Should set the correct receipient", async () => {
+	it("Should set the correct recipient", async () => {
 		const deployTrx = await rain721aFactory.createChildTyped(
 			rain721aConstructorConfig,
 			rain721aInitializeConfig

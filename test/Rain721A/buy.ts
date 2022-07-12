@@ -146,6 +146,7 @@ describe("Rain721a Buy test", () => {
 	});
 
 	describe("Should fail to buy more than supply Limit", () => {
+		const nftPrice = ethers.BigNumber.from(1 + eighteenZeros);
 		before(async () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
@@ -158,7 +159,7 @@ describe("Rain721a Buy test", () => {
 						op(Opcode.CONSTANT, 0),
 					]),
 				],
-				constants: [ethers.BigNumber.from(1 + eighteenZeros)],
+				constants: [nftPrice],
 			};
 			rain721aConstructorConfig = {
 				name: "nft",
@@ -182,16 +183,16 @@ describe("Rain721a Buy test", () => {
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
-			await rain721a.connect(buyer2).mintNFT(1);
+			await rain721a.connect(buyer2).mintNFT(1, {value: nftPrice});
 
 			expect(await rain721a.balanceOf(buyer2.address)).to.equals(1);
 			expect(await rain721a.totalSupply()).to.equals(1);
 		});
 
 		it("should fail to buy after supply limit reached", async () => {
-			await expect(rain721a.connect(buyer1).mintNFT(1)).to.revertedWith(
-				"MintZeroQuantity()"
-			);
+			await expect(
+				rain721a.connect(buyer1).mintNFT(1, {value: nftPrice})
+			).to.revertedWith("MintZeroQuantity()");
 		});
 	});
 });

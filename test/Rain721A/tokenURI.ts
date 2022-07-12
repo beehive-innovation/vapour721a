@@ -106,7 +106,7 @@ describe("Rain721a tokenURI test", () => {
 		);
 	});
 
-	it("Should retrun correct tokenURI", async () => {
+	it("Should return correct tokenURI", async () => {
 		for (let i = 1; i <= 5; i++)
 			expect(await rain721a.tokenURI(i)).to.equals(
 				`${rain721aConstructorConfig.baseURI}/${i}.json`

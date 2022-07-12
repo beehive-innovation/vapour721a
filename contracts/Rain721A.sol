@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "erc721a/contracts/ERC721A.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
@@ -55,7 +55,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	// storage variables
 	uint256 public supplyLimit;
 	uint256 private amountWithdrawn;
-	uint256 private amountPayable;
+	uint256 public amountPayable;
 
 	address private vmStatePointer;
 	address public currency;
@@ -136,6 +136,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	function mintNFT(uint256 units_) external payable {
 		require(vmStatePointer != address(0), "NOT_INITIALIZED");
 		State memory state_ = _loadState();
+
 		bytes memory context_ = new bytes(0x20);
 		assembly {
 			mstore(add(context_, 0x20), units_)
@@ -146,10 +147,17 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 			state_.stack[state_.stackIndex - 2],
 			state_.stack[state_.stackIndex - 1]
 		);
-		console.log(maxUnits_, price_);
 
 		uint256 units = maxUnits_.min(units_);
-		amountPayable = amountPayable + price_;
+		uint256 price = price_ * units;
+
+		if (currency == address(0)) {
+			require(msg.value >= price, "INSUFFICIENT_FUNDS");
+			uint256 excess_ = msg.value - price;
+			if (excess_ > 0) Address.sendValue(payable(msg.sender), excess_);
+		} else IERC20(currency).transferFrom(msg.sender, address(this), price);
+
+		amountPayable = amountPayable + price;
 		_mint(msg.sender, units);
 	}
 
@@ -166,23 +174,23 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		emit RecipientChanged(newRecipient);
 	}
 
-	function _beforeTokenTransfers(
-		address from,
-		address to,
-		uint256 startTokenId,
-		uint256 quantity
-	) internal virtual override {
-		bytes memory context_ = new bytes(0x20);
-		assembly {
-			mstore(add(context_, 0x20), to)
-		}
-		State memory state_ = _loadState();
-		eval(context_, state_, 0);
+	// function _beforeTokenTransfers(
+	// 	address from,
+	// 	address to,
+	// 	uint256 startTokenId,
+	// 	uint256 quantity
+	// ) internal virtual override {
+	// 	bytes memory context_ = new bytes(0x20);
+	// 	assembly {
+	// 		mstore(add(context_, 0x20), to)
+	// 	}
+	// 	State memory state_ = _loadState();
+	// 	eval(context_, state_, 0);
 
-		uint256 units_ = quantity.min(state_.stack[0]);
+	// 	uint256 units_ = quantity.min(state_.stack[0]);
 
-		if (from == address(0)) require(units_ != 0, "CANT MINT");
-	}
+	// 	if (from == address(0)) require(units_ != 0, "CANT MINT");
+	// }
 
 	function opTotalSupply(uint256, uint256 stackTopLocation_)
 		internal
@@ -202,13 +210,10 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		view
 		returns (uint256)
 	{
-		uint256 location_;
-		assembly {
-			location_ := sub(stackTopLocation_, 0x20)
-		}
 		uint256 totalMinted_ = _totalMinted();
 		assembly {
-			mstore(location_, totalMinted_)
+			mstore(stackTopLocation_, totalMinted_)
+			stackTopLocation_ := add(stackTopLocation_, 0x20)
 		}
 		return stackTopLocation_;
 	}
@@ -275,14 +280,17 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		return bytes.concat(AllStandardOps.fnPtrs(), localFnPtrs());
 	}
 
+	function burn(uint256 tokenId) external {
+		_burn(tokenId, true);
+	}
+
 	function withdraw() external {
 		require(recipient == msg.sender, "RECIPIENT_ONLY");
 		require(amountPayable > 0, "ZERO_FUND");
 		amountWithdrawn = amountWithdrawn + amountPayable;
 		emit Withdraw(msg.sender, amountPayable, amountWithdrawn);
-		amountPayable = 0;
-
 		if (currency == address(0)) Address.sendValue(recipient, amountPayable);
 		else IERC20(currency).transfer(recipient, amountPayable);
+		amountPayable = 0;
 	}
 }

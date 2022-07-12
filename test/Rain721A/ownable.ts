@@ -5,7 +5,7 @@ import {
 	InitializeConfigStruct,
 	OwnershipTransferredEvent,
 } from "../../typechain/Rain721A";
-import {concat, eighteenZeros, getChild, op} from "../utils";
+import {concat, getChild, op} from "../utils";
 import {VM} from "rain-sdk";
 import {expect} from "chai";
 import {

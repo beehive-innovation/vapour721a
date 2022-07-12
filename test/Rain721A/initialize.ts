@@ -22,8 +22,8 @@ let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
 let rain721a: Rain721A;
 
-describe("Rain721A Initialise test", () => {
-	it("Should deploy Rain721A Contract and Initialise", async () => {
+describe("Rain721A Initialize test", () => {
+	it("Should deploy Rain721A Contract and Initialize", async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [
 				concat([
@@ -66,7 +66,7 @@ describe("Rain721A Initialise test", () => {
 		)) as InitializeEvent["args"];
 		assert(
 			config_.vmStateBuilder == config.allStandardOpsStateBuilder,
-			"Worng stateBuilder address"
+			"Wrong stateBuilder address"
 		);
 		expect(config_.currency).to.equals(rTKN.address);
 	});
@@ -77,7 +77,7 @@ describe("Rain721A Initialise test", () => {
 		);
 	});
 
-	it("Should be able to Initialize after creating with createChild memthod", async () => {
+	it("Should be able to Initialize after creating with createChild method", async () => {
 		let encodedConfig = ethers.utils.defaultAbiCoder.encode(
 			[
 				"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner)",
@@ -101,7 +101,7 @@ describe("Rain721A Initialise test", () => {
 		assert(child != ZERO_ADDRESS, "Rain721A Address not find");
 		assert(
 			config_.vmStateBuilder == config.allStandardOpsStateBuilder,
-			"Worng stateBuilder address"
+			"Wrong stateBuilder address"
 		);
 		expect(config_.currency).to.deep.equals(rain721aInitializeConfig.currency);
 	});
