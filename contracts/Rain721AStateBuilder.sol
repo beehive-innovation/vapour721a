@@ -19,13 +19,13 @@ contract Rain721AStateBuilder is StandardStateBuilder {
 			fnPtrs_ = new bytes(LOCAL_OPS_LENGTH * 0x20);
 			function(uint256) pure returns (uint256)[LOCAL_OPS_LENGTH] memory fns_ = [
 				// totalSupplly
-				AllStandardOps.one,
+				AllStandardOps.zero,
 				// totalMinted
-				AllStandardOps.two,
+				AllStandardOps.zero,
 				// number minted
-				AllStandardOps.three,
+				AllStandardOps.one,
 				// number burned
-				AllStandardOps.four
+				AllStandardOps.one
 			];
 			for (uint256 i_ = 0; i_ < LOCAL_OPS_LENGTH; i_++) {
 				fnPtrs_.insertStackMovePtr(i_, fns_[i_]);
@@ -46,11 +46,11 @@ contract Rain721AStateBuilder is StandardStateBuilder {
 				// totalSupplly
 				AllStandardOps.one,
 				// totalMinted
-				AllStandardOps.two,
+				AllStandardOps.one,
 				// number minted
-				AllStandardOps.three,
+				AllStandardOps.one,
 				// number burned
-				AllStandardOps.four
+				AllStandardOps.one
 			];
 			for (uint256 i_ = 0; i_ < LOCAL_OPS_LENGTH; i_++) {
 				fnPtrs_.insertStackMovePtr(i_, fns_[i_]);
