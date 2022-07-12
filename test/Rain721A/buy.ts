@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
-import {StateConfig, VM} from "rain-sdk";
+import {RainJS, StateConfig, VM} from "rain-sdk";
 import {
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
@@ -157,9 +157,8 @@ describe.only("Rain721a Buy test", () => {
 						op(Opcode.CONSTANT, 0),
 					]),
 				],
-				constants: [ethers.BigNumber.from(1 + eighteenZeros), 1],
+				constants: [ethers.BigNumber.from(1 + eighteenZeros)],
 			};
-
 			rain721aConstructorConfig = {
 				name: "nft",
 				symbol: "NFT",

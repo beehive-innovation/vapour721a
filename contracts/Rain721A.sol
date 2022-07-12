@@ -34,23 +34,23 @@ struct InitializeConfig {
 	StateConfig vmStateConfig;
 }
 
+uint256 constant STORAGE_OPCODES_LENGTH = 3;
+
+// the total numbers of tokens
+uint256 constant LOCAL_OP_TOTAL_SUPPLY = ALL_STANDARD_OPS_LENGTH;
+// the total unites minted
+uint256 constant LOCAL_OP_TOTAL_MINTED = LOCAL_OP_TOTAL_SUPPLY + 1;
+// number of tokens minted by `owner`.
+uint256 constant LOCAL_OP_NUMBER_MINTED = LOCAL_OP_TOTAL_MINTED + 1;
+// number of tokens burned by `owner`.
+uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
+
+uint256 constant LOCAL_OPS_LENGTH = 4;
+
 contract Rain721A is ERC721A, RainVM, Ownable {
 	using Strings for uint256;
 	using Math for uint256;
 	using LibFnPtrs for bytes;
-
-	uint256 immutable STORAGE_OPCODES_LENGTH = 3;
-
-	// the total numbers of tokens
-	uint256 constant LOCAL_OP_TOTAL_SUPPLY = ALL_STANDARD_OPS_LENGTH;
-	// the total unites minted
-	uint256 constant LOCAL_OP_TOTAL_MINTED = LOCAL_OP_TOTAL_SUPPLY + 1;
-	// number of tokens minted by `owner`.
-	uint256 constant LOCAL_OP_NUMBER_MINTED = LOCAL_OP_TOTAL_MINTED + 1;
-	// number of tokens burned by `owner`.
-	uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
-
-	uint256 immutable LOCAL_OPS_LENGTH = 4;
 
 	// storage variables
 	uint256 public supplyLimit;
@@ -191,8 +191,9 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		uint256 totalSupply_ = totalSupply();
 		assembly {
 			mstore(stackTopLocation_, totalSupply_)
+			stackTopLocation_ := add(stackTopLocation_, 0x20)
 		}
-		return stackTopLocation_ + 1;
+		return stackTopLocation_;
 	}
 
 	function opTotalMinted(uint256, uint256 stackTopLocation_)
@@ -222,7 +223,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 			location_ := sub(stackTopLocation_, 0x20)
 			account_ := mload(location_)
 		}
-		uint256 totalMinted_ = _numberMinted(account_);
+		uint256 totalMinted_ = _numberMinted(address(uint160(account_)));
 		assembly {
 			mstore(location_, totalMinted_)
 		}
@@ -240,7 +241,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 			location_ := sub(stackTopLocation_, 0x20)
 			account_ := mload(location_)
 		}
-		uint256 totalMinted_ = _numberBurned(account_);
+		uint256 totalMinted_ = _numberBurned(address(uint160(account_)));
 		assembly {
 			mstore(location_, totalMinted_)
 		}

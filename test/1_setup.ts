@@ -1,7 +1,7 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import hre, {ethers} from "hardhat";
 import path from "path";
-import {AllStandardOpsStateBuilder} from "../typechain/AllStandardOpsStateBuilder";
+import {Rain721AStateBuilder} from "../typechain/Rain721AStateBuilder";
 import {
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
@@ -13,7 +13,7 @@ import {ReserveTokenERC1155} from "../typechain/ReserveTokenERC1155";
 import {fetchFile, writeFile} from "./utils";
 
 export let rain721aFactory: Rain721AFactory;
-export let allStandardOpsStateBuilder: AllStandardOpsStateBuilder;
+export let rain721AStateBuilder: Rain721AStateBuilder;
 export let rain721a: Rain721A;
 export let rain721aConstructorConfig: ConstructorConfigStruct;
 export let rain721aInitializeConfig: InitializeConfigStruct;
@@ -51,11 +51,11 @@ before(async () => {
 	rain721aFactory = (await Rain721AFactory.deploy()) as Rain721AFactory;
 	await rain721aFactory.deployed();
 
-	const AllStandardOpsStateBuilder = await ethers.getContractFactory(
-		"AllStandardOpsStateBuilder"
+	const Rain721AStateBuilder = await ethers.getContractFactory(
+		"Rain721AStateBuilder"
 	);
-	allStandardOpsStateBuilder =
-		(await AllStandardOpsStateBuilder.deploy()) as AllStandardOpsStateBuilder;
+	rain721AStateBuilder =
+		(await Rain721AStateBuilder.deploy()) as AllStandardOpsStateBuilder;
 	await allStandardOpsStateBuilder.deployed();
 
 	const Erc20 = await ethers.getContractFactory("Token");
