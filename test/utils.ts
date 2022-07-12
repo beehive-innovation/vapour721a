@@ -349,3 +349,7 @@ export const exec = (cmd: string): string | Buffer => {
 export const getTokenID = (tokenURI: string): number => {
 	return parseInt(tokenURI.split("/")[1]);
 };
+
+export function debug(): Uint8Array {
+	return op(Opcode.DEBUG);
+}

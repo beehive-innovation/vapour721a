@@ -146,6 +146,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 			state_.stack[state_.stackIndex - 2],
 			state_.stack[state_.stackIndex - 1]
 		);
+		console.log(maxUnits_, price_);
 
 		uint256 units = maxUnits_.min(units_);
 		amountPayable = amountPayable + price_;

@@ -5,14 +5,14 @@ import {
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 } from "../../typechain/Rain721A";
-import {concat, eighteenZeros, getEventArgs, op} from "../utils";
+import {concat, getEventArgs, op} from "../utils";
 import {checkChildIntegrity} from "./childIntegrity";
 
 import {expect} from "chai";
-import {AllStandardOpsStateBuilder} from "../../typechain/AllStandardOpsStateBuilder";
 import {ReserveToken} from "../../typechain/ReserveToken";
 import {Token} from "../../typechain/Token";
 import {StateConfig, VM} from "rain-sdk";
+import {rain721AStateBuilder} from "../1_setup";
 export let rain721AFactory: Rain721AFactory;
 
 export let factoryDeployer: SignerWithAddress,
@@ -24,7 +24,6 @@ export let factoryDeployer: SignerWithAddress,
 let constructorConfig: ConstructorConfigStruct;
 let initializeConfig: InitializeConfigStruct;
 
-let stateBuilder: AllStandardOpsStateBuilder;
 let USDT: Token;
 
 beforeEach(async () => {
@@ -39,13 +38,6 @@ beforeEach(async () => {
 
 	USDT = (await stableCoins.deploy()) as ReserveToken;
 	await USDT.deployed();
-
-	const stateBuilderFactory = await ethers.getContractFactory(
-		"AllStandardOpsStateBuilder"
-	);
-	stateBuilder =
-		(await stateBuilderFactory.deploy()) as AllStandardOpsStateBuilder;
-	await stateBuilder.deployed();
 
 	const Rain721AFactory = await ethers.getContractFactory("Rain721AFactory");
 
@@ -69,7 +61,7 @@ beforeEach(async () => {
 	};
 
 	initializeConfig = {
-		vmStateBuilder: stateBuilder.address,
+		vmStateBuilder: rain721AStateBuilder.address,
 		vmStateConfig: vmStateConfig,
 		currency: USDT.address,
 	};

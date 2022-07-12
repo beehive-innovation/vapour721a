@@ -55,8 +55,8 @@ before(async () => {
 		"Rain721AStateBuilder"
 	);
 	rain721AStateBuilder =
-		(await Rain721AStateBuilder.deploy()) as AllStandardOpsStateBuilder;
-	await allStandardOpsStateBuilder.deployed();
+		(await Rain721AStateBuilder.deploy()) as Rain721AStateBuilder;
+	await rain721AStateBuilder.deployed();
 
 	const Erc20 = await ethers.getContractFactory("Token");
 
@@ -77,7 +77,7 @@ before(async () => {
 	config.network = hre.network.name;
 
 	config.rain721aFactory = rain721aFactory.address;
-	config.allStandardOpsStateBuilder = allStandardOpsStateBuilder.address;
+	config.allStandardOpsStateBuilder = rain721AStateBuilder.address;
 
 	const pathConfigLocal = path.resolve(
 		__dirname,

@@ -1,6 +1,6 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
-import {RainJS, StateConfig, VM} from "rain-sdk";
+import {StateConfig, VM} from "rain-sdk";
 import {
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
@@ -186,12 +186,6 @@ describe("Rain721a Buy test", () => {
 
 			expect(await rain721a.balanceOf(buyer2.address)).to.equals(1);
 			expect(await rain721a.totalSupply()).to.equals(1);
-		});
-
-		it("should fail to buy after supply limit reached", async () => {
-			await expect(rain721a.connect(buyer1).mintNFT(1)).to.revertedWith(
-				"MintZeroQuantity()"
-			);
 		});
 	});
 });
