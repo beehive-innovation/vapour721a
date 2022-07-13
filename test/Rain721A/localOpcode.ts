@@ -13,7 +13,6 @@ import {
 	owner,
 	rain721aFactory,
 	recipient,
-	rTKN,
 } from "../1_setup";
 import {
 	concat,
@@ -182,14 +181,12 @@ describe("Rain721A localOpcodes test", () => {
 				sources: [
 					concat([
 						// quantity
-						op(Opcode.CONTEXT, 0),
 						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
-						op(Opcode.MIN, 2),
 						// price
 						op(Opcode.CONSTANT, 1), // 5
-						op(Opcode.SENDER),
+						op(Opcode.CONTEXT, 0),
 						op(Opcode.IERC721A_NUMBER_MINTED),
 						op(Opcode.GREATER_THAN),
 						op(Opcode.CONSTANT, 0), // nftPrice
@@ -261,14 +258,12 @@ describe("Rain721A localOpcodes test", () => {
 				sources: [
 					concat([
 						// quantity
-						op(Opcode.CONTEXT, 0),
 						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
-						op(Opcode.MIN, 2),
 						// price
 						op(Opcode.CONSTANT, 1), // 5
-						op(Opcode.SENDER),
+						op(Opcode.CONTEXT, 0),
 						op(Opcode.IERC721A_NUMBER_BURNED),
 						op(Opcode.GREATER_THAN),
 						op(Opcode.CONSTANT, 0), // nftPrice

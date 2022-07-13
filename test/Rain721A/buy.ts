@@ -151,7 +151,9 @@ describe("Rain721a Buy test", () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
 					concat([
-						op(Opcode.CONTEXT, 0),
+						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+						op(Opcode.IERC721A_TOTAL_MINTED),
+						op(Opcode.SUB, 2),
 						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
 						op(Opcode.IERC721A_TOTAL_SUPPLY),
 						op(Opcode.SUB, 2),

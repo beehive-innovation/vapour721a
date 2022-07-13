@@ -133,20 +133,28 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		return LibState.fromBytesPacked(SSTORE2.read(vmStatePointer));
 	}
 
-	function mintNFT(uint256 units_) external payable {
+	function calculateBuy(address account_)
+		public
+		returns (uint256 maxUnits_, uint256 price_)
+	{
 		require(vmStatePointer != address(0), "NOT_INITIALIZED");
 		State memory state_ = _loadState();
 
 		bytes memory context_ = new bytes(0x20);
 		assembly {
-			mstore(add(context_, 0x20), units_)
+			mstore(add(context_, 0x20), account_)
 		}
+
 		eval(context_, state_, 0);
 
-		(uint256 maxUnits_, uint256 price_) = (
+		(maxUnits_, price_) = (
 			state_.stack[state_.stackIndex - 2],
 			state_.stack[state_.stackIndex - 1]
 		);
+	}
+
+	function mintNFT(uint256 units_) external payable {
+		(uint256 maxUnits_, uint256 price_) = calculateBuy(msg.sender);
 
 		uint256 units = maxUnits_.min(units_);
 		uint256 price = price_ * units;
@@ -179,18 +187,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	// 	address to,
 	// 	uint256 startTokenId,
 	// 	uint256 quantity
-	// ) internal virtual override {
-	// 	bytes memory context_ = new bytes(0x20);
-	// 	assembly {
-	// 		mstore(add(context_, 0x20), to)
-	// 	}
-	// 	State memory state_ = _loadState();
-	// 	eval(context_, state_, 0);
-
-	// 	uint256 units_ = quantity.min(state_.stack[0]);
-
-	// 	if (from == address(0)) require(units_ != 0, "CANT MINT");
-	// }
+	// ) internal virtual override {}
 
 	function opTotalSupply(uint256, uint256 stackTopLocation_)
 		internal
