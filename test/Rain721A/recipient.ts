@@ -38,17 +38,19 @@ describe("Rain721A recipient test", () => {
 			owner: owner.address,
 		};
 
-		rain721aInitializeConfig = {
-			vmStateBuilder: config.allStandardOpsStateBuilder,
-			vmStateConfig: vmStateConfig,
-			currency: rTKN.address,
-		};
 	});
 
 	it("Should set the correct recipient", async () => {
+
+		const vmStateConfig: StateConfig = {
+			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+			constants: [1],
+		};
+		
 		const deployTrx = await rain721aFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rain721aInitializeConfig
+			rTKN.address,
+			vmStateConfig
 		);
 		const child = await getChild(rain721aFactory, deployTrx);
 

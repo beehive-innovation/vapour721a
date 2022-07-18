@@ -7,6 +7,11 @@ import "./Rain721A.sol";
 
 contract Rain721AFactory is IFactory, ReentrancyGuard {
     mapping(address => bool) private contracts;
+    address vmStateBuilder;
+
+    constructor(address vmStateBuilder_){
+        vmStateBuilder = vmStateBuilder_;
+    }
 
     function _createChild(bytes calldata data_)
         internal
@@ -52,9 +57,14 @@ contract Rain721AFactory is IFactory, ReentrancyGuard {
     /// Typed wrapper around IFactory.createChild.
     function createChildTyped(
         ConstructorConfig calldata constructorConfig_,
-        InitializeConfig calldata initializeConfig_
+        address currency_,
+        StateConfig memory vmStateConfig_
     ) external returns (Rain721A child_) {
         child_ = Rain721A(this.createChild(abi.encode(constructorConfig_)));
-        Rain721A(child_).initialize(initializeConfig_);
+        Rain721A(child_).initialize(InitializeConfig({
+            currency: currency_,
+            vmStateConfig: vmStateConfig_,
+            vmStateBuilder: vmStateBuilder
+        }));
     }
 }

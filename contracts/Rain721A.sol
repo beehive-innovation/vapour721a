@@ -132,9 +132,10 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	function _loadState() internal view returns (State memory) {
 		return LibState.fromBytesPacked(SSTORE2.read(vmStatePointer));
 	}
-
+	
 	function calculateBuy(address account_)
 		public
+		view
 		returns (uint256 maxUnits_, uint256 price_)
 	{
 		require(vmStatePointer != address(0), "NOT_INITIALIZED");

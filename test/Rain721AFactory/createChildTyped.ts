@@ -12,8 +12,7 @@ import {expect} from "chai";
 import {ReserveToken} from "../../typechain/ReserveToken";
 import {Token} from "../../typechain/Token";
 import {StateConfig, VM} from "rain-sdk";
-import {rain721AStateBuilder} from "../1_setup";
-export let rain721AFactory: Rain721AFactory;
+import {rain721aFactory} from "../1_setup";
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -22,11 +21,10 @@ export let factoryDeployer: SignerWithAddress,
 	owner_: SignerWithAddress;
 
 let constructorConfig: ConstructorConfigStruct;
-let initializeConfig: InitializeConfigStruct;
 
 let USDT: Token;
 
-beforeEach(async () => {
+before(async () => {
 	const signers = await ethers.getSigners();
 	factoryDeployer = signers[0];
 	signer1 = signers[1];
@@ -39,13 +37,6 @@ beforeEach(async () => {
 	USDT = (await stableCoins.deploy()) as ReserveToken;
 	await USDT.deployed();
 
-	const Rain721AFactory = await ethers.getContractFactory("Rain721AFactory");
-
-	rain721AFactory = (await Rain721AFactory.connect(
-		factoryDeployer
-	).deploy()) as Rain721AFactory;
-
-	expect(rain721AFactory.address).to.be.not.null;
 	constructorConfig = {
 		name: "rain721a",
 		symbol: "RAIN721A",
@@ -55,29 +46,25 @@ beforeEach(async () => {
 		owner: owner_.address,
 	};
 
+});
+
+it("Anyone should be able to create child (createChildTyped)", async () => {
+
 	const vmStateConfig: StateConfig = {
 		sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
 		constants: [1],
 	};
 
-	initializeConfig = {
-		vmStateBuilder: rain721AStateBuilder.address,
-		vmStateConfig: vmStateConfig,
-		currency: USDT.address,
-	};
-});
-
-it("Anyone should be able to create child (createChildTyped)", async () => {
-	const createChildTx = await rain721AFactory
+	const createChildTx = await rain721aFactory
 		.connect(signer2)
-		.createChildTyped(constructorConfig, initializeConfig);
+		.createChildTyped(constructorConfig, USDT.address, vmStateConfig);
 
 	const {sender, child} = await getEventArgs(
 		createChildTx,
 		"NewChild",
-		rain721AFactory
+		rain721aFactory
 	);
-	expect(sender).to.equals(rain721AFactory.address);
+	expect(sender).to.equals(rain721aFactory.address);
 
-	await checkChildIntegrity(rain721AFactory, child, constructorConfig);
+	await checkChildIntegrity(rain721aFactory, child, constructorConfig);
 });

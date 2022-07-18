@@ -54,15 +54,10 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			rain721aInitializeConfig = {
-				vmStateBuilder: config.allStandardOpsStateBuilder,
-				vmStateConfig: vmStateConfig,
-				currency: ZERO_ADDRESS,
-			};
-
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rain721aInitializeConfig
+				ZERO_ADDRESS,
+				vmStateConfig
 			);
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
@@ -130,15 +125,10 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			rain721aInitializeConfig = {
-				vmStateBuilder: config.allStandardOpsStateBuilder,
-				vmStateConfig: vmStateConfig,
-				currency: ZERO_ADDRESS,
-			};
-
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rain721aInitializeConfig
+				ZERO_ADDRESS,
+				vmStateConfig
 			);
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
@@ -211,15 +201,10 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			rain721aInitializeConfig = {
-				vmStateBuilder: config.allStandardOpsStateBuilder,
-				vmStateConfig: vmStateConfig,
-				currency: ZERO_ADDRESS,
-			};
-
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rain721aInitializeConfig
+				ZERO_ADDRESS,
+				vmStateConfig
 			);
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
@@ -288,15 +273,10 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			rain721aInitializeConfig = {
-				vmStateBuilder: config.allStandardOpsStateBuilder,
-				vmStateConfig: vmStateConfig,
-				currency: ZERO_ADDRESS,
-			};
-
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rain721aInitializeConfig
+				ZERO_ADDRESS,
+				vmStateConfig
 			);
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;

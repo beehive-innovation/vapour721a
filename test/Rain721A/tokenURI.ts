@@ -53,7 +53,8 @@ describe("Rain721a tokenURI test", () => {
 
 		const deployTrx = await rain721aFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rain721aInitializeConfig
+			rTKN.address,
+			vmStateConfig
 		);
 		const child = await getChild(rain721aFactory, deployTrx);
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;

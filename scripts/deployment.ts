@@ -8,7 +8,7 @@ const sleep = (delay) =>
 async function main() {
 	const blockNumber = (await ethers.provider.getBlock("latest")).number;
 
-	console.log("Deploying smartcontract");
+	console.log("Deploying smartContract");
 	const Rain721A = await ethers.getContractFactory("Rain721A");
 	const rain721A = await Rain721A.deploy();
 	await rain721A.deployed();
@@ -33,7 +33,7 @@ async function main() {
 
 	await sleep(30);
 
-	console.log("Verifying smartcontract");
+	console.log("Verifying smartContract");
 	await hre.run("verify:verify", {
 		address: rain721A.address,
 		contract: "contracts/Rain721A.sol:Rain721A",

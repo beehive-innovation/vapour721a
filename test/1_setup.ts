@@ -47,16 +47,17 @@ before(async () => {
 	buyer6 = signers[8];
 	buyer7 = signers[9];
 
-	const Rain721AFactory = await ethers.getContractFactory("Rain721AFactory");
-	rain721aFactory = (await Rain721AFactory.deploy()) as Rain721AFactory;
-	await rain721aFactory.deployed();
-
 	const Rain721AStateBuilder = await ethers.getContractFactory(
 		"Rain721AStateBuilder"
 	);
 	rain721AStateBuilder =
 		(await Rain721AStateBuilder.deploy()) as Rain721AStateBuilder;
 	await rain721AStateBuilder.deployed();
+
+	const Rain721AFactory = await ethers.getContractFactory("Rain721AFactory");
+	rain721aFactory = (await Rain721AFactory.deploy(rain721AStateBuilder.address)) as Rain721AFactory;
+	await rain721aFactory.deployed();
+
 
 	const Erc20 = await ethers.getContractFactory("Token");
 

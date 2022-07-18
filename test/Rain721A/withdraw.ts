@@ -54,15 +54,10 @@ describe("Rain721a Withdraw test", () => {
 				owner: owner.address,
 			};
 
-			rain721aInitializeConfig = {
-				vmStateBuilder: config.allStandardOpsStateBuilder,
-				vmStateConfig: vmStateConfig,
-				currency: ZERO_ADDRESS,
-			};
-
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rain721aInitializeConfig
+				ZERO_ADDRESS,
+				vmStateConfig
 			);
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
@@ -155,15 +150,10 @@ describe("Rain721a Withdraw test", () => {
 				owner: owner.address,
 			};
 
-			rain721aInitializeConfig = {
-				vmStateBuilder: config.allStandardOpsStateBuilder,
-				vmStateConfig: vmStateConfig,
-				currency: rTKN.address,
-			};
-
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rain721aInitializeConfig
+				rTKN.address,
+				vmStateConfig
 			);
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;

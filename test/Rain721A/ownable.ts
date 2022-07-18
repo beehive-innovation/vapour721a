@@ -46,7 +46,8 @@ describe("Rain721A Ownable test", () => {
 
 		const deployTrx = await rain721aFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rain721aInitializeConfig
+			rTKN.address,
+			vmStateConfig
 		);
 		const child = await getChild(rain721aFactory, deployTrx);
 

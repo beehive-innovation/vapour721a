@@ -52,7 +52,8 @@ describe("Rain721A Initialize test", () => {
 
 		const trx = await rain721aFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rain721aInitializeConfig
+			rTKN.address,
+			vmStateConfig
 		);
 		const child = await getChild(rain721aFactory, trx);
 
