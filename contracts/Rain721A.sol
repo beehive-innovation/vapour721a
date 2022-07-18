@@ -159,7 +159,6 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 
 		uint256 units = maxUnits_.min(units_);
 		uint256 price = price_ * units;
-
 		if (currency == address(0)) {
 			require(msg.value >= price, "INSUFFICIENT_FUNDS");
 			uint256 excess_ = msg.value - price;

@@ -8,11 +8,11 @@ const sleep = (delay) =>
 async function main() {
 	const blockNumber = (await ethers.provider.getBlock("latest")).number;
 
-	console.log("Deploying smartContract");
-	const Rain721A = await ethers.getContractFactory("Rain721A");
-	const rain721A = await Rain721A.deploy();
-	await rain721A.deployed();
-	console.log("contract deployed : ", rain721A.address);
+	console.log("Deploying stateBuilder");
+	const Rain721AStateBuilder = await ethers.getContractFactory("Rain721AStateBuilder");
+	const rain721AStateBuilder = await Rain721AStateBuilder.deploy();
+	await rain721AStateBuilder.deployed();
+	console.log("contract deployed : ", rain721AStateBuilder.address);
 
 	const pathExampleConfig = path.resolve(
 		__dirname,
@@ -20,9 +20,9 @@ async function main() {
 	);
 	const config = JSON.parse(fetchFile(pathExampleConfig));
 
-	config.network = "mumbai";
+	config.network = hre.network.name;
 
-	config.rain721a = rain721A.address;
+	config.rain721aStateBuilder = rain721AStateBuilder.address;
 
 	const pathConfigLocal = path.resolve(
 		__dirname,
@@ -34,8 +34,8 @@ async function main() {
 
 	console.log("Verifying smartContract");
 	await hre.run("verify:verify", {
-		address: rain721A.address,
-		contract: "contracts/Rain721A.sol:Rain721A",
+		address: rain721AStateBuilder.address,
+		contract: "contracts/Rain721AStateBuilder.sol:Rain721AStateBuilder",
 		constructorArguments: [],
 	});
 }
