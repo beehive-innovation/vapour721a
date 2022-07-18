@@ -91,10 +91,10 @@ describe("Rain721A Initialize test", () => {
 
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
-		let intializeTrx = await rain721a.initialize(rain721aInitializeConfig);
+		let initializeTrx = await rain721a.initialize(rain721aInitializeConfig);
 
 		const [config_] = (await getEventArgs(
-			intializeTrx,
+			initializeTrx,
 			"Initialize",
 			rain721a
 		)) as InitializeEvent["args"];

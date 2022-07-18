@@ -2,6 +2,7 @@ import {expect} from "chai";
 import {ethers} from "hardhat";
 import {StateConfig, VM} from "rain-sdk";
 import {
+	BuyConfigStruct,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	Rain721A,
@@ -93,14 +94,20 @@ describe("Rain721a tokenURI test", () => {
 			.connect(buyer7)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
 
-		await rain721a.connect(buyer0).mintNFT(100);
-		await rain721a.connect(buyer1).mintNFT(100);
-		await rain721a.connect(buyer2).mintNFT(100);
-		await rain721a.connect(buyer3).mintNFT(100);
-		await rain721a.connect(buyer4).mintNFT(100);
-		await rain721a.connect(buyer5).mintNFT(100);
-		await rain721a.connect(buyer6).mintNFT(100);
-		await rain721a.connect(buyer7).mintNFT(100);
+		const buyConfig: BuyConfigStruct = {
+			minimumUnits: 1,
+			desiredUnits: 100,
+			maximumPrice: ethers.BigNumber.from(100 + eighteenZeros),
+		};
+
+		await rain721a.connect(buyer0).mintNFT(buyConfig);
+		await rain721a.connect(buyer1).mintNFT(buyConfig);
+		await rain721a.connect(buyer2).mintNFT(buyConfig);
+		await rain721a.connect(buyer3).mintNFT(buyConfig);
+		await rain721a.connect(buyer4).mintNFT(buyConfig);
+		await rain721a.connect(buyer5).mintNFT(buyConfig);
+		await rain721a.connect(buyer6).mintNFT(buyConfig);
+		await rain721a.connect(buyer7).mintNFT(buyConfig);
 
 		expect(await rain721a.totalSupply()).to.equals(
 			rain721aConstructorConfig.supplyLimit

@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "erc721a/contracts/ERC721A.sol";
+import "@beehiveinnovation/rain-protocol/contracts/math/FixedPointMath.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
@@ -34,6 +35,12 @@ struct InitializeConfig {
 	StateConfig vmStateConfig;
 }
 
+struct BuyConfig {
+    uint256 maximumPrice;
+    uint256 minimumUnits;
+    uint256 desiredUnits;
+}
+
 uint256 constant STORAGE_OPCODES_LENGTH = 3;
 
 // the total numbers of tokens
@@ -51,15 +58,17 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	using Strings for uint256;
 	using Math for uint256;
 	using LibFnPtrs for bytes;
+	using FixedPointMath for uint256;
+
 
 	// storage variables
-	uint256 public supplyLimit;
-	uint256 private amountWithdrawn;
-	uint256 public amountPayable;
+	uint256 public _supplyLimit;
+	uint256 private _amountWithdrawn;
+	uint256 public _amountPayable;
 
-	address private vmStatePointer;
-	address public currency;
-	address payable public recipient;
+	address private _vmStatePointer;
+	address public _currency;
+	address payable public _recipient;
 
 	string public baseURI;
 
@@ -67,15 +76,15 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	event Initialize(InitializeConfig config_);
 	event RecipientChanged(address newRecipient);
 	event Withdraw(
-		address withdrawer,
-		uint256 amountWithdrawn,
-		uint256 totalWithdrawn
+		address _withdrawer,
+		uint256 _amountWithdrawn,
+		uint256 _totalWithdrawn
 	);
 
 	constructor(ConstructorConfig memory config_)
 		ERC721A(config_.name, config_.symbol)
 	{
-		supplyLimit = config_.supplyLimit;
+		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
 
 		setRecipient(config_.recipient);
@@ -85,9 +94,9 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	}
 
 	function initialize(InitializeConfig memory config_) external {
-		require(vmStatePointer == address(0), "INITIALIZED");
+		require(_vmStatePointer == address(0), "INITIALIZED");
 
-		currency = config_.currency;
+		_currency = config_.currency;
 
 		Bounds memory vmScript;
 		vmScript.entrypoint = 0;
@@ -95,7 +104,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		boundss_[0] = vmScript;
 		bytes memory vmStateBytes_ = VMStateBuilder(config_.vmStateBuilder)
 			.buildState(address(this), config_.vmStateConfig, boundss_);
-		vmStatePointer = SSTORE2.write(vmStateBytes_);
+		_vmStatePointer = SSTORE2.write(vmStateBytes_);
 
 		emit Initialize(config_);
 	}
@@ -109,7 +118,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	{
 		uint256 slot_;
 		assembly {
-			slot_ := supplyLimit.slot
+			slot_ := _supplyLimit.slot
 		}
 		return StorageOpcodesRange(slot_, STORAGE_OPCODES_LENGTH);
 	}
@@ -130,21 +139,23 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	}
 
 	function _loadState() internal view returns (State memory) {
-		return LibState.fromBytesPacked(SSTORE2.read(vmStatePointer));
+		return LibState.fromBytesPacked(SSTORE2.read(_vmStatePointer));
 	}
 	
-	function calculateBuy(address account_)
+	function calculateBuy(address account_, uint256 targetUnits_)
 		public
 		view
 		returns (uint256 maxUnits_, uint256 price_)
 	{
-		require(vmStatePointer != address(0), "NOT_INITIALIZED");
+		require(_vmStatePointer != address(0), "NOT_INITIALIZED");
 		State memory state_ = _loadState();
 
-		bytes memory context_ = new bytes(0x20);
+		bytes memory context_ = new bytes(0x40);
 		assembly {
 			mstore(add(context_, 0x20), account_)
+            mstore(add(add(context_, 0x20), 0x20), targetUnits_)
 		}
+
 
 		eval(context_, state_, 0);
 
@@ -154,31 +165,38 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		);
 	}
 
-	function mintNFT(uint256 units_) external payable {
-		(uint256 maxUnits_, uint256 price_) = calculateBuy(msg.sender);
+	function mintNFT(BuyConfig calldata config_) external payable {
+		require(0 < config_.minimumUnits, "0_MINIMUM");
+        require(
+            config_.minimumUnits <= config_.desiredUnits,
+            "MINIMUM_OVER_DESIRED"
+        );
 
-		uint256 units = maxUnits_.min(units_);
-		uint256 price = price_ * units;
-		if (currency == address(0)) {
-			require(msg.value >= price, "INSUFFICIENT_FUNDS");
-			uint256 excess_ = msg.value - price;
-			if (excess_ > 0) Address.sendValue(payable(msg.sender), excess_);
-		} else IERC20(currency).transferFrom(msg.sender, address(this), price);
+		uint256 remainingUnits_ = _supplyLimit - _totalMinted();
+		uint256 targetUnits_ = config_.desiredUnits.min(remainingUnits_);
 
-		amountPayable = amountPayable + price;
+		(uint256 maxUnits_, uint256 price_) = calculateBuy(msg.sender, targetUnits_);
+
+		uint256 units = maxUnits_.min(targetUnits_);
+
+		require(price_ <= config_.maximumPrice, "MAXIMUM_PRICE");
+        uint256 cost_ = price_ * units;
+		IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
+
+		_amountPayable = _amountPayable + cost_;
 		_mint(msg.sender, units);
 	}
 
 	function setRecipient(address newRecipient) public {
 		require(
-			msg.sender == recipient || recipient == address(0),
+			msg.sender == _recipient || _recipient == address(0),
 			"RECIPIENT_ONLY"
 		);
 		require(
 			newRecipient.code.length == 0 && newRecipient != address(0),
 			"INVALID_ADDRESS."
 		);
-		recipient = payable(newRecipient);
+		_recipient = payable(newRecipient);
 		emit RecipientChanged(newRecipient);
 	}
 
@@ -282,12 +300,12 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 	}
 
 	function withdraw() external {
-		require(recipient == msg.sender, "RECIPIENT_ONLY");
-		require(amountPayable > 0, "ZERO_FUND");
-		amountWithdrawn = amountWithdrawn + amountPayable;
-		emit Withdraw(msg.sender, amountPayable, amountWithdrawn);
-		if (currency == address(0)) Address.sendValue(recipient, amountPayable);
-		else IERC20(currency).transfer(recipient, amountPayable);
-		amountPayable = 0;
+		require(_recipient == msg.sender, "RECIPIENT_ONLY");
+		require(_amountPayable > 0, "ZERO_FUND");
+		_amountWithdrawn = _amountWithdrawn + _amountPayable;
+		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
+		if (_currency == address(0)) Address.sendValue(_recipient, _amountPayable);
+		else IERC20(_currency).transfer(_recipient, _amountPayable);
+		_amountPayable = 0;
 	}
 }

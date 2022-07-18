@@ -2,6 +2,7 @@ import {expect} from "chai";
 import {ethers} from "hardhat";
 import {RainJS, StateConfig, VM} from "rain-sdk";
 import {
+	BuyConfigStruct,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	Rain721A,
@@ -36,16 +37,16 @@ describe("ERC20 token test", () => {
 		const vmStateConfig: StateConfig = {
 			sources: [
 				concat([
-                    op(Opcode.CONSTANT, 0), // 5
-                    op(Opcode.CONTEXT, 0), // address of minter
-                    op(Opcode.IERC721A_NUMBER_MINTED),
-                    op(Opcode.SUB, 2),
-                    op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
-                    op(Opcode.IERC721A_TOTAL_SUPPLY),
-                    op(Opcode.SUB, 2),
-                    op(Opcode.MIN, 2),
-                    op(Opcode.CONSTANT, 1),
-                ]),
+					op(Opcode.CONSTANT, 0), // 5
+					op(Opcode.CONTEXT, 0), // address of minter
+					op(Opcode.IERC721A_NUMBER_MINTED),
+					op(Opcode.SUB, 2),
+					op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+					op(Opcode.IERC721A_TOTAL_SUPPLY),
+					op(Opcode.SUB, 2),
+					op(Opcode.MIN, 2),
+					op(Opcode.CONSTANT, 1),
+				]),
 			],
 			constants: [MAX_CAP, ethers.BigNumber.from("1" + eighteenZeros)],
 		};
@@ -75,7 +76,13 @@ describe("ERC20 token test", () => {
 			.connect(buyer0)
 			.approve(rain721a.address, ethers.BigNumber.from(5 + eighteenZeros));
 
-		const trx = await rain721a.connect(buyer0).mintNFT(MAX_CAP);
+		const buyConfig: BuyConfigStruct = {
+			minimumUnits: 1,
+			desiredUnits: MAX_CAP,
+			maximumPrice: ethers.BigNumber.from(MAX_CAP + eighteenZeros),
+		};
+
+		const trx = await rain721a.connect(buyer0).mintNFT(buyConfig);
 
 		expect(await rain721a.balanceOf(buyer0.address)).to.equals(MAX_CAP);
 	});
@@ -89,7 +96,14 @@ describe("ERC20 token test", () => {
 			.connect(buyer0)
 			.approve(rain721a.address, ethers.BigNumber.from(units + eighteenZeros));
 
-		await expect(rain721a.connect(buyer0).mintNFT(units)).to.revertedWith("MintZeroQuantity()");
+		const buyConfig: BuyConfigStruct = {
+			minimumUnits: 1,
+			desiredUnits: 5,
+			maximumPrice: ethers.BigNumber.from(1 + eighteenZeros),
+		};
+		await expect(rain721a.connect(buyer0).mintNFT(buyConfig)).to.revertedWith(
+			"MintZeroQuantity()"
+		);
 
 		expect(await rain721a.balanceOf(buyer0.address)).to.equals(MAX_CAP);
 	});

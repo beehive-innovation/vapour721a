@@ -55,9 +55,10 @@ before(async () => {
 	await rain721AStateBuilder.deployed();
 
 	const Rain721AFactory = await ethers.getContractFactory("Rain721AFactory");
-	rain721aFactory = (await Rain721AFactory.deploy(rain721AStateBuilder.address)) as Rain721AFactory;
+	rain721aFactory = (await Rain721AFactory.deploy(
+		rain721AStateBuilder.address
+	)) as Rain721AFactory;
 	await rain721aFactory.deployed();
-
 
 	const Erc20 = await ethers.getContractFactory("Token");
 

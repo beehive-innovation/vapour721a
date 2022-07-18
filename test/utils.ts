@@ -14,8 +14,10 @@ import {execSync} from "child_process";
 import {AllStandardOps} from "rain-sdk";
 import {Rain721AFactory, NewChildEvent} from "../typechain/Rain721AFactory";
 const logger = new Logger(version);
-
 export const eighteenZeros = "000000000000000000";
+export const BN = (num: number): BigNumber => {
+	return ethers.BigNumber.from(num + eighteenZeros);
+};
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
 export enum StorageOpcodes {

@@ -2,6 +2,7 @@ import {expect} from "chai";
 import {ethers} from "hardhat";
 import {RainJS, StateConfig, VM} from "rain-sdk";
 import {
+	BuyConfigStruct,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	Rain721A,
@@ -32,52 +33,6 @@ let rain721aInitializeConfig: InitializeConfigStruct;
 let rain721a: Rain721A;
 
 describe("Rain721a Buy test", () => {
-	describe("NATIVE token test", () => {
-		before(async () => {
-			const vmStateConfig: StateConfig = {
-				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
-				],
-				constants: [20, ethers.BigNumber.from("1" + eighteenZeros)],
-			};
-
-			rain721aConstructorConfig = {
-				name: "nft",
-				symbol: "NFT",
-				baseURI: "BASE_URI",
-				supplyLimit: 100,
-				recipient: recipient.address,
-				owner: owner.address,
-			};
-
-			const deployTrx = await rain721aFactory.createChildTyped(
-				rain721aConstructorConfig,
-				ZERO_ADDRESS,
-				vmStateConfig
-			);
-			const child = await getChild(rain721aFactory, deployTrx);
-			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
-		});
-
-		it("Should Buy 1 nft with native token", async () => {
-			const trx = await rain721a
-				.connect(buyer0)
-				.mintNFT(1, {value: ethers.BigNumber.from("1" + eighteenZeros)});
-
-			expect(await rain721a.balanceOf(buyer0.address)).to.equals(1);
-		});
-
-		it("Should Buy multiple nft with native token", async () => {
-			const units = 20;
-
-			const trx = await rain721a
-				.connect(buyer1)
-				.mintNFT(units, {value: ethers.BigNumber.from(units + eighteenZeros)});
-
-			expect(await rain721a.balanceOf(buyer1.address)).to.equals(20);
-		});
-	});
-
 	describe("ERC20 token test", () => {
 		before(async () => {
 			const vmStateConfig: StateConfig = {
@@ -112,7 +67,12 @@ describe("Rain721a Buy test", () => {
 				.connect(buyer0)
 				.approve(rain721a.address, ethers.BigNumber.from(1 + eighteenZeros));
 
-			const trx = await rain721a.connect(buyer0).mintNFT(1);
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 1,
+				maximumPrice: ethers.BigNumber.from(1 + eighteenZeros),
+			};
+			const trx = await rain721a.connect(buyer0).mintNFT(buyConfig);
 
 			expect(await rain721a.balanceOf(buyer0.address)).to.equals(1);
 		});
@@ -129,7 +89,13 @@ describe("Rain721a Buy test", () => {
 					ethers.BigNumber.from(units + eighteenZeros)
 				);
 
-			const trx = await rain721a.connect(buyer1).mintNFT(units);
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: units,
+				maximumPrice: ethers.BigNumber.from(units + eighteenZeros),
+			};
+
+			const trx = await rain721a.connect(buyer1).mintNFT(buyConfig);
 
 			expect(await rain721a.balanceOf(buyer1.address)).to.equals(20);
 		});
@@ -164,22 +130,43 @@ describe("Rain721a Buy test", () => {
 
 			const deployTrx = await rain721aFactory.createChildTyped(
 				rain721aConstructorConfig,
-				ZERO_ADDRESS,
+				rTKN.address,
 				vmStateConfig
 			);
+
 			const child = await getChild(rain721aFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
-			await rain721a.connect(buyer2).mintNFT(1, {value: nftPrice});
+			await rTKN.connect(buyer2).mintTokens(1);
+			await rTKN.connect(buyer2).approve(rain721a.address, nftPrice);
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 1,
+				maximumPrice: nftPrice,
+			};
+
+			await rain721a.connect(buyer2).mintNFT(buyConfig);
 
 			expect(await rain721a.balanceOf(buyer2.address)).to.equals(1);
 			expect(await rain721a.totalSupply()).to.equals(1);
 		});
 
 		it("should fail to buy after supply limit reached", async () => {
-			await expect(
-				rain721a.connect(buyer1).mintNFT(1, {value: nftPrice})
-			).to.revertedWith("MintZeroQuantity()");
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 1,
+				maximumPrice: ethers.BigNumber.from(1 + eighteenZeros),
+			};
+
+			await rTKN.connect(buyer1).mintTokens(1);
+			await rTKN
+				.connect(buyer1)
+				.approve(rain721a.address, ethers.BigNumber.from(1 + eighteenZeros));
+
+			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).to.revertedWith(
+				"MintZeroQuantity()"
+			);
 		});
 	});
 });

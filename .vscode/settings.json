@@ -1,6 +1,8 @@
 {
 	"search.useIgnoreFiles": true,
 	"cSpell.words": [
+		"accum",
+		"erand",
 		"ethersproject",
 		"IERC",
 		"nomiclabs",

@@ -45,11 +45,9 @@ before(async () => {
 		recipient: recipient_.address,
 		owner: owner_.address,
 	};
-
 });
 
 it("Anyone should be able to create child (createChildTyped)", async () => {
-
 	const vmStateConfig: StateConfig = {
 		sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
 		constants: [1],
