@@ -1,22 +1,22 @@
-import {ethers} from "hardhat";
+import { ethers } from "hardhat";
 import {
 	Rain721A,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	OwnershipTransferredEvent,
 } from "../../typechain/Rain721A";
-import {concat, getChild, op} from "../utils";
-import {VM} from "rain-sdk";
-import {expect} from "chai";
+import { concat, getChild, op } from "../utils";
+import { VM } from "rain-sdk";
+import { expect } from "chai";
 import {
 	buyer0,
 	config,
 	owner,
-	rain721aFactory,
+	rain721AFactory,
 	recipient,
-	rTKN,
+	currency,
 } from "../1_setup";
-import {StateConfig} from "rain-sdk";
+import { StateConfig } from "rain-sdk";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
@@ -41,15 +41,15 @@ describe("Rain721A Ownable test", () => {
 		rain721aInitializeConfig = {
 			vmStateBuilder: config.allStandardOpsStateBuilder,
 			vmStateConfig: vmStateConfig,
-			currency: rTKN.address,
+			currency: currency.address,
 		};
 
-		const deployTrx = await rain721aFactory.createChildTyped(
+		const deployTrx = await rain721AFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rTKN.address,
+			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721aFactory, deployTrx);
+		const child = await getChild(rain721AFactory, deployTrx);
 
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 	});

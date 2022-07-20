@@ -1,6 +1,6 @@
-import {expect} from "chai";
-import {ethers} from "hardhat";
-import {StateConfig, VM} from "rain-sdk";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
@@ -18,11 +18,11 @@ import {
 	buyer7,
 	config,
 	owner,
-	rain721aFactory,
+	rain721AFactory,
 	recipient,
-	rTKN,
+	currency,
 } from "../1_setup";
-import {concat, eighteenZeros, getChild, op} from "../utils";
+import { concat, eighteenZeros, getChild, op } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
@@ -49,48 +49,48 @@ describe("Rain721a tokenURI test", () => {
 		rain721aInitializeConfig = {
 			vmStateBuilder: config.allStandardOpsStateBuilder,
 			vmStateConfig: vmStateConfig,
-			currency: rTKN.address,
+			currency: currency.address,
 		};
 
-		const deployTrx = await rain721aFactory.createChildTyped(
+		const deployTrx = await rain721AFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rTKN.address,
+			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721aFactory, deployTrx);
+		const child = await getChild(rain721AFactory, deployTrx);
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
-		await rTKN.connect(buyer0).mintTokens(100);
-		await rTKN.connect(buyer1).mintTokens(100);
-		await rTKN.connect(buyer2).mintTokens(100);
-		await rTKN.connect(buyer3).mintTokens(100);
-		await rTKN.connect(buyer4).mintTokens(100);
-		await rTKN.connect(buyer5).mintTokens(100);
-		await rTKN.connect(buyer6).mintTokens(100);
-		await rTKN.connect(buyer7).mintTokens(100);
+		await currency.connect(buyer0).mintTokens(100);
+		await currency.connect(buyer1).mintTokens(100);
+		await currency.connect(buyer2).mintTokens(100);
+		await currency.connect(buyer3).mintTokens(100);
+		await currency.connect(buyer4).mintTokens(100);
+		await currency.connect(buyer5).mintTokens(100);
+		await currency.connect(buyer6).mintTokens(100);
+		await currency.connect(buyer7).mintTokens(100);
 
-		await rTKN
+		await currency
 			.connect(buyer0)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer1)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer2)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer3)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer4)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer5)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer6)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
-		await rTKN
+		await currency
 			.connect(buyer7)
 			.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
 

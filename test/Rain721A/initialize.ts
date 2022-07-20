@@ -1,4 +1,4 @@
-import {ethers} from "hardhat";
+import { ethers } from "hardhat";
 import {
 	Rain721A,
 	ConstructorConfigStruct,
@@ -13,10 +13,10 @@ import {
 	op,
 	ZERO_ADDRESS,
 } from "../utils";
-import {assert} from "console";
-import {expect} from "chai";
-import {config, owner, rain721aFactory, recipient, rTKN} from "../1_setup";
-import {StateConfig, VM} from "rain-sdk";
+import { assert } from "console";
+import { expect } from "chai";
+import { config, owner, rain721AFactory, recipient, currency } from "../1_setup";
+import { StateConfig, VM } from "rain-sdk";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
@@ -47,15 +47,15 @@ describe("Rain721A Initialize test", () => {
 		rain721aInitializeConfig = {
 			vmStateBuilder: config.allStandardOpsStateBuilder,
 			vmStateConfig: vmStateConfig,
-			currency: rTKN.address,
+			currency: currency.address,
 		};
 
-		const trx = await rain721aFactory.createChildTyped(
+		const trx = await rain721AFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rTKN.address,
+			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721aFactory, trx);
+		const child = await getChild(rain721AFactory, trx);
 
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
@@ -69,7 +69,7 @@ describe("Rain721A Initialize test", () => {
 			config_.vmStateBuilder == config.allStandardOpsStateBuilder,
 			"Wrong stateBuilder address"
 		);
-		expect(config_.currency).to.equals(rTKN.address);
+		expect(config_.currency).to.equals(currency.address);
 	});
 
 	it("SHould fail to initialize again.", async () => {
@@ -85,9 +85,9 @@ describe("Rain721A Initialize test", () => {
 			],
 			[rain721aConstructorConfig]
 		);
-		let createTrx = await rain721aFactory.createChild(encodedConfig);
+		let createTrx = await rain721AFactory.createChild(encodedConfig);
 
-		let child = await getChild(rain721aFactory, createTrx);
+		let child = await getChild(rain721AFactory, createTrx);
 
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 

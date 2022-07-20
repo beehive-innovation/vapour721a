@@ -1,6 +1,6 @@
-import {expect} from "chai";
-import {ethers} from "hardhat";
-import {StateConfig, VM} from "rain-sdk";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { StateConfig, VM } from "rain-sdk";
 import {
 	ConstructEvent,
 	ConstructorConfigStruct,
@@ -12,11 +12,11 @@ import {
 	buyer7,
 	config,
 	owner,
-	rain721aFactory,
+	rain721AFactory,
 	recipient,
-	rTKN,
+	currency,
 } from "../1_setup";
-import {concat, getChild, getEventArgs, op, ZERO_ADDRESS} from "../utils";
+import { concat, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721aInitializeConfig: InitializeConfigStruct;
@@ -45,12 +45,12 @@ describe("Rain721A recipient test", () => {
 			constants: [1],
 		};
 
-		const deployTrx = await rain721aFactory.createChildTyped(
+		const deployTrx = await rain721AFactory.createChildTyped(
 			rain721aConstructorConfig,
-			rTKN.address,
+			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721aFactory, deployTrx);
+		const child = await getChild(rain721AFactory, deployTrx);
 
 		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
@@ -77,7 +77,7 @@ describe("Rain721A recipient test", () => {
 
 	it("Should fail to change recipient to contract address", async () => {
 		await expect(
-			rain721a.connect(recipient).setRecipient(rTKN.address)
+			rain721a.connect(recipient).setRecipient(currency.address)
 		).to.revertedWith("INVALID_ADDRESS");
 	});
 });

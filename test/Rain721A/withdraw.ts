@@ -1,10 +1,9 @@
-import {expect} from "chai";
-import {ethers} from "hardhat";
-import {StateConfig, VM} from "rain-sdk";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
-	InitializeConfigStruct,
 	Rain721A,
 	WithdrawEvent,
 } from "../../typechain/Rain721A";
@@ -12,11 +11,11 @@ import {
 	buyer0,
 	buyer1,
 	owner,
-	rain721aFactory,
+	rain721AFactory,
 	recipient,
-	rTKN,
+	currency,
 } from "../1_setup";
-import {BN, concat, eighteenZeros, getChild, getEventArgs, op} from "../utils";
+import { BN, concat, eighteenZeros, getChild, getEventArgs, op } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
 let rain721a: Rain721A;
@@ -42,20 +41,20 @@ describe("Rain721a Withdraw test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTrx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721aFactory, deployTrx);
+			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
 		it("Should withdraw with erc20 token for 1 nft", async () => {
-			await rTKN.connect(buyer0).mintTokens(10);
-			await rTKN.connect(buyer0).approve(rain721a.address, BN(10));
+			await currency.connect(buyer0).mintTokens(10);
+			await currency.connect(buyer0).approve(rain721a.address, BN(10));
 
-			await rTKN
+			await currency
 				.connect(buyer0)
 				.approve(rain721a.address, ethers.BigNumber.from(nftPrice));
 
@@ -69,7 +68,7 @@ describe("Rain721a Withdraw test", () => {
 
 			expect(await rain721a.balanceOf(buyer0.address)).to.equals(1);
 
-			const before_balance = await rTKN.balanceOf(recipient.address);
+			const before_balance = await currency.balanceOf(recipient.address);
 
 			const withdrawTrx = await rain721a.connect(recipient).withdraw();
 
@@ -79,7 +78,7 @@ describe("Rain721a Withdraw test", () => {
 				rain721a
 			)) as WithdrawEvent["args"];
 
-			const after_balance = await rTKN.balanceOf(recipient.address);
+			const after_balance = await currency.balanceOf(recipient.address);
 
 			expect(withdrawer).to.equals(recipient.address);
 			expect(amountWithdrawn).to.equals(nftPrice);
@@ -91,9 +90,9 @@ describe("Rain721a Withdraw test", () => {
 			const units = 20;
 			const expectedAmountWithdrawn = nftPrice.mul(units);
 			const expectedTotalWithdrawn = expectedAmountWithdrawn.add(nftPrice);
-			await rTKN.connect(buyer1).mintTokens(units);
+			await currency.connect(buyer1).mintTokens(units);
 
-			await rTKN.connect(buyer1).approve(rain721a.address, BN(units));
+			await currency.connect(buyer1).approve(rain721a.address, BN(units));
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -105,7 +104,7 @@ describe("Rain721a Withdraw test", () => {
 
 			expect(await rain721a.balanceOf(buyer1.address)).to.equals(units);
 
-			const before_balance = await rTKN.balanceOf(recipient.address);
+			const before_balance = await currency.balanceOf(recipient.address);
 
 			const withdrawTrx = await rain721a.connect(recipient).withdraw();
 
@@ -115,7 +114,7 @@ describe("Rain721a Withdraw test", () => {
 				rain721a
 			)) as WithdrawEvent["args"];
 
-			const after_balance = await rTKN.balanceOf(recipient.address);
+			const after_balance = await currency.balanceOf(recipient.address);
 
 			expect(withdrawer).to.equals(recipient.address);
 			expect(amountWithdrawn).to.equals(expectedAmountWithdrawn);
