@@ -165,7 +165,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		);
 	}
 
-	function mintNFT(BuyConfig calldata config_) external payable {
+	function mintNFT(BuyConfig calldata config_) external {
 		require(0 < config_.minimumUnits, "0_MINIMUM");
         require(
             config_.minimumUnits <= config_.desiredUnits,
@@ -177,14 +177,15 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 
 		(uint256 maxUnits_, uint256 price_) = calculateBuy(msg.sender, targetUnits_);
 
-		uint256 units = maxUnits_.min(targetUnits_);
+		uint256 units_ = maxUnits_.min(targetUnits_);
+		require(units_ >= config_.minimumUnits, "INSUFFICIENT_STOCK");
 
 		require(price_ <= config_.maximumPrice, "MAXIMUM_PRICE");
-        uint256 cost_ = price_ * units;
+        uint256 cost_ = price_ * units_;
 		IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
 
 		_amountPayable = _amountPayable + cost_;
-		_mint(msg.sender, units);
+		_mint(msg.sender, units_);
 	}
 
 	function setRecipient(address newRecipient) public {
@@ -200,13 +201,6 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		emit RecipientChanged(newRecipient);
 	}
 
-	// function _beforeTokenTransfers(
-	// 	address from,
-	// 	address to,
-	// 	uint256 startTokenId,
-	// 	uint256 quantity
-	// ) internal virtual override {}
-
 	function opTotalSupply(uint256, uint256 stackTopLocation_)
 		internal
 		view
@@ -218,7 +212,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 			stackTopLocation_ := add(stackTopLocation_, 0x20)
 		}
 		return stackTopLocation_;
-	}
+	} 
 
 	function opTotalMinted(uint256, uint256 stackTopLocation_)
 		internal
@@ -304,8 +298,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 		require(_amountPayable > 0, "ZERO_FUND");
 		_amountWithdrawn = _amountWithdrawn + _amountPayable;
 		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
-		if (_currency == address(0)) Address.sendValue(_recipient, _amountPayable);
-		else IERC20(_currency).transfer(_recipient, _amountPayable);
+		IERC20(_currency).transfer(_recipient, _amountPayable);
 		_amountPayable = 0;
 	}
 }

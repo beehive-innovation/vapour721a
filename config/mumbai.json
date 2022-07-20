@@ -1,6 +1,6 @@
 {
   "network": "mumbai",
-  "rain721aStateBuilder": "0xf8ec400728aAC2F787490C67EA4E8908Fa0aB535",
-  "rain721aFactory": "0xA7ACac2de765754b887f9a4450295BDAb000290c",
-  "rain721aFactoryBlock": 27224222
+  "rain721aStateBuilder": "0xaB7C3F9432F700E0fb0db3bA78F2D941b8a2ad21",
+  "rain721aFactory": "0x6130365Efb7Abc5280e60d6bcbeFcDb908cfAB1e",
+  "rain721aFactoryBlock": 27231424
 }
