@@ -1,35 +1,30 @@
-import {expect} from "chai";
-import {ethers} from "hardhat";
-import {RainJS, StateConfig, VM} from "rain-sdk";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
-	InitializeConfigStruct,
 	Rain721A,
 } from "../../typechain/Rain721A";
 import {
 	buyer0,
 	buyer1,
 	buyer2,
-	config,
 	owner,
-	rain721aFactory,
+	rain721AFactory,
 	recipient,
-	rTKN,
+	currency,
 } from "../1_setup";
 import {
 	concat,
-	debug,
 	eighteenZeros,
 	getChild,
 	op,
 	Opcode,
 	StorageOpcodes,
-	ZERO_ADDRESS,
 } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721aInitializeConfig: InitializeConfigStruct;
 let rain721a: Rain721A;
 
 describe("Rain721a Buy test", () => {
@@ -51,19 +46,19 @@ describe("Rain721a Buy test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTrx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721aFactory, deployTrx);
+			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
 		it("Should Buy 1 nft with erc20 token", async () => {
-			await rTKN.connect(buyer0).mintTokens(1);
+			await currency.connect(buyer0).mintTokens(1);
 
-			await rTKN
+			await currency
 				.connect(buyer0)
 				.approve(rain721a.address, ethers.BigNumber.from(1 + eighteenZeros));
 
@@ -80,9 +75,9 @@ describe("Rain721a Buy test", () => {
 		it("Should Buy multiple nft with erc20 token", async () => {
 			const units = 20;
 
-			await rTKN.connect(buyer1).mintTokens(1 * units);
+			await currency.connect(buyer1).mintTokens(1 * units);
 
-			await rTKN
+			await currency
 				.connect(buyer1)
 				.approve(
 					rain721a.address,
@@ -128,17 +123,17 @@ describe("Rain721a Buy test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTrx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
 
-			const child = await getChild(rain721aFactory, deployTrx);
+			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 
-			await rTKN.connect(buyer2).mintTokens(1);
-			await rTKN.connect(buyer2).approve(rain721a.address, nftPrice);
+			await currency.connect(buyer2).mintTokens(1);
+			await currency.connect(buyer2).approve(rain721a.address, nftPrice);
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -159,8 +154,8 @@ describe("Rain721a Buy test", () => {
 				maximumPrice: ethers.BigNumber.from(1 + eighteenZeros),
 			};
 
-			await rTKN.connect(buyer1).mintTokens(1);
-			await rTKN
+			await currency.connect(buyer1).mintTokens(1);
+			await currency
 				.connect(buyer1)
 				.approve(rain721a.address, ethers.BigNumber.from(1 + eighteenZeros));
 

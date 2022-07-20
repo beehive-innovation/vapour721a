@@ -1,20 +1,18 @@
-import {expect} from "chai";
-import {ethers} from "hardhat";
-import {StateConfig, VM} from "rain-sdk";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { StateConfig } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
-	InitializeConfigStruct,
 	Rain721A,
 } from "../../typechain/Rain721A";
 import {
 	buyer1,
 	buyer2,
-	config,
 	owner,
-	rain721aFactory,
+	rain721AFactory,
 	recipient,
-	rTKN,
+	currency,
 } from "../1_setup";
 import {
 	BN,
@@ -24,14 +22,67 @@ import {
 	op,
 	Opcode,
 	StorageOpcodes,
-	ZERO_ADDRESS,
 } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721aInitializeConfig: InitializeConfigStruct;
 let rain721a: Rain721A;
+
 const nftPrice = ethers.BigNumber.from(1 + eighteenZeros);
+
 describe("Rain721A localOpcodes test", () => {
+	describe("totalSupply opcode", () => {
+		before(async () => {
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([
+						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+						op(Opcode.CONSTANT, 0),
+					]),
+				],
+				constants: [nftPrice],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 10,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+
+			const child = await getChild(rain721AFactory, deployTx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("should eval the correct totalSupply", async () => {
+			const [maxUnits, price] = await rain721a.calculateBuy(buyer1.address, BN(20))
+			expect(maxUnits).to.equals(
+				rain721aConstructorConfig.supplyLimit
+			);
+		});
+
+		it("should still eval the correct totalSupply after a purchase", async () => {
+			await currency.connect(buyer1).mintTokens(5)
+			await currency.connect(buyer1).approve(rain721a.address, nftPrice.mul(ethers.BigNumber.from(5)))
+			await rain721a.connect(buyer1).mintNFT({ maximumPrice: nftPrice, minimumUnits: 1, desiredUnits: 1 })
+
+			const [maxUnits, price] = await rain721a.calculateBuy(buyer1.address, 1)
+
+			expect((await rain721a.balanceOf(buyer1.address))).to.equals(1)
+
+			expect(maxUnits).to.equals(
+				rain721aConstructorConfig.supplyLimit
+			);
+		});
+	});
+
 	describe("totalSupply opcode", () => {
 		before(async () => {
 			const vmStateConfig: StateConfig = {
@@ -57,20 +108,21 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721aFactory, deployTrx);
+
+			const child = await getChild(rain721AFactory, deployTx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
 		it("Should be able to buy under SupplyLimit (totalSupply)", async () => {
-			await rTKN
+			await currency
 				.connect(buyer1)
 				.mintTokens(rain721aConstructorConfig.supplyLimit);
-			await rTKN
+			await currency
 				.connect(buyer1)
 				.approve(
 					rain721a.address,
@@ -98,8 +150,8 @@ describe("Rain721A localOpcodes test", () => {
 		});
 
 		it("Should fail to able to buy above SupplyLimit (totalSupply)", async () => {
-			await rTKN.connect(buyer2).mintTokens(1);
-			await rTKN.connect(buyer2).approve(rain721a.address, 1);
+			await currency.connect(buyer2).mintTokens(1);
+			await currency.connect(buyer2).approve(rain721a.address, 1);
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -120,8 +172,8 @@ describe("Rain721A localOpcodes test", () => {
 		});
 
 		// it("Should be able to buy after burning some nfts", async () => {
-		// 	await rTKN.connect(buyer2).mintTokens(10);
-		// 	await rTKN.connect(buyer2).approve(rain721a.address , ethers.BigNumber.from(10 + eighteenZeros));
+		// 	await currency.connect(buyer2).mintTokens(10);
+		// 	await currency.connect(buyer2).approve(rain721a.address , ethers.BigNumber.from(10 + eighteenZeros));
 
 		// 	const buyConfig:BuyConfigStruct = {
 		// 		minimumUnits: 1,
@@ -160,20 +212,20 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTrx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721aFactory, deployTrx);
+			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
 		it("Should be able to buy under SupplyLimit (totalMinted)", async () => {
-			await rTKN
+			await currency
 				.connect(buyer1)
 				.mintTokens(rain721aConstructorConfig.supplyLimit);
-			await rTKN
+			await currency
 				.connect(buyer1)
 				.approve(
 					rain721a.address,
@@ -208,8 +260,8 @@ describe("Rain721A localOpcodes test", () => {
 		});
 
 		it("Should fail to able to buy above SupplyLimit even nfts are burned (totalMinted)", async () => {
-			await rTKN.connect(buyer2).mintTokens(1);
-			await rTKN
+			await currency.connect(buyer2).mintTokens(1);
+			await currency
 				.connect(buyer2)
 				.approve(rain721a.address, ethers.BigNumber.from(1));
 
@@ -260,18 +312,18 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTrx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721aFactory, deployTrx);
+			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
 		it("Should be able to buy 5 nfts with no discount", async () => {
-			await rTKN.connect(buyer1).mintTokens(5);
-			await rTKN.connect(buyer1).approve(rain721a.address, BN(5));
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -288,8 +340,8 @@ describe("Rain721A localOpcodes test", () => {
 		});
 
 		it("Should be able to buy 5 nfts with 10% discount", async () => {
-			await rTKN.connect(buyer1).mintTokens(5);
-			await rTKN.connect(buyer1).approve(rain721a.address, BN(5));
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
 
 			const expectedAmountPayable = nftPrice.mul(5).mul(90).div(100);
 
@@ -345,18 +397,18 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721aFactory.createChildTyped(
+			const deployTrx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
-				rTKN.address,
+				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721aFactory, deployTrx);
+			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
 		it("Should be able to buy 5 nfts with no discount", async () => {
-			await rTKN.connect(buyer1).mintTokens(5);
-			await rTKN.connect(buyer1).approve(rain721a.address, BN(5));
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -373,8 +425,8 @@ describe("Rain721A localOpcodes test", () => {
 		});
 
 		it("Should be able to buy 5 nfts with 10% discount", async () => {
-			await rTKN.connect(buyer1).mintTokens(5);
-			await rTKN.connect(buyer1).approve(rain721a.address, BN(5));
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
 
 			const expectedAmountPayable = nftPrice.mul(5).mul(90).div(100);
 

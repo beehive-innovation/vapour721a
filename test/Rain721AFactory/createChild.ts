@@ -1,11 +1,11 @@
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
-import {ConstructorConfigStruct} from "../../typechain/Rain721A";
-import {getEventArgs} from "../utils";
-import {checkChildIntegrity} from "./childIntegrity";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers } from "hardhat";
+import { ConstructorConfigStruct } from "../../typechain/Rain721A";
+import { getEventArgs } from "../utils";
+import { checkChildIntegrity } from "./childIntegrity";
 
-import {expect} from "chai";
-import {rain721aFactory} from "../1_setup";
+import { expect } from "chai";
+import { rain721AFactory } from "../1_setup";
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -43,16 +43,17 @@ before(async () => {
 });
 
 it("Anyone should be able to create child (createChild)", async () => {
-	const createChildTx = await rain721aFactory
+	const createChildTx = await rain721AFactory
 		.connect(signer1)
 		.createChild(encodedConfig);
 
-	const {sender, child} = await getEventArgs(
+	const { sender, child } = await getEventArgs(
 		createChildTx,
 		"NewChild",
-		rain721aFactory
+		rain721AFactory
 	);
+
 	expect(sender).to.equals(signer1.address);
 
-	await checkChildIntegrity(rain721aFactory, child, constructorConfig);
+	await checkChildIntegrity(rain721AFactory, child, constructorConfig);
 });

@@ -1,18 +1,15 @@
-import {Rain721AFactory} from "../../typechain/Rain721AFactory";
-import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
-import {ethers} from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { ethers } from "hardhat";
 import {
 	ConstructorConfigStruct,
-	InitializeConfigStruct,
 } from "../../typechain/Rain721A";
-import {concat, getEventArgs, op} from "../utils";
-import {checkChildIntegrity} from "./childIntegrity";
-
-import {expect} from "chai";
-import {ReserveToken} from "../../typechain/ReserveToken";
-import {Token} from "../../typechain/Token";
-import {StateConfig, VM} from "rain-sdk";
-import {rain721aFactory} from "../1_setup";
+import { concat, getEventArgs, op } from "../utils";
+import { checkChildIntegrity } from "./childIntegrity";
+import { expect } from "chai";
+import { ReserveToken } from "../../typechain/ReserveToken";
+import { Token } from "../../typechain/Token";
+import { StateConfig, VM } from "rain-sdk";
+import { rain721AFactory } from "../1_setup";
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -22,7 +19,7 @@ export let factoryDeployer: SignerWithAddress,
 
 let constructorConfig: ConstructorConfigStruct;
 
-let USDT: Token;
+let currency: Token;
 
 before(async () => {
 	const signers = await ethers.getSigners();
@@ -32,10 +29,10 @@ before(async () => {
 	recipient_ = signers[3];
 	owner_ = signers[4];
 
-	const stableCoins = await ethers.getContractFactory("ReserveToken");
+	const tokenFactory = await ethers.getContractFactory("ReserveToken");
 
-	USDT = (await stableCoins.deploy()) as ReserveToken;
-	await USDT.deployed();
+	currency = (await tokenFactory.deploy()) as ReserveToken;
+	await currency.deployed();
 
 	constructorConfig = {
 		name: "rain721a",
@@ -47,22 +44,23 @@ before(async () => {
 	};
 });
 
-it("Anyone should be able to create child (createChildTyped)", async () => {
+it("should allow anyone to create a child (createChildTyped)", async () => {
 	const vmStateConfig: StateConfig = {
 		sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
 		constants: [1],
 	};
 
-	const createChildTx = await rain721aFactory
+	const createChildTx = await rain721AFactory
 		.connect(signer2)
-		.createChildTyped(constructorConfig, USDT.address, vmStateConfig);
+		.createChildTyped(constructorConfig, currency.address, vmStateConfig);
 
-	const {sender, child} = await getEventArgs(
+	const { sender, child } = await getEventArgs(
 		createChildTx,
 		"NewChild",
-		rain721aFactory
+		rain721AFactory
 	);
-	expect(sender).to.equals(rain721aFactory.address);
 
-	await checkChildIntegrity(rain721aFactory, child, constructorConfig);
+	expect(sender).to.equals(rain721AFactory.address);
+
+	await checkChildIntegrity(rain721AFactory, child, constructorConfig);
 });
