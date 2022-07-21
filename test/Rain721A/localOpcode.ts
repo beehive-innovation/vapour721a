@@ -398,6 +398,15 @@ describe("Rain721A localOpcodes test", () => {
 
 			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).revertedWith("INSUFFICIENT_STOCK")
 		});
+
+		it("should eval to 0 maxUnits when buyer has already minted up to the wallet cap, even after burning", async () => {
+			await rain721a.connect(buyer1).burn(1)
+
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(4);
+
+			const { maxUnits_, price_ } = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0))
+		})
 	});
 
 	describe("IERC721A_NUMBER_MINTED complex script", () => {
@@ -485,7 +494,74 @@ describe("Rain721A localOpcodes test", () => {
 		});
 	});
 
-	describe("numberBurned opcode", () => {
+	describe("IERC721A_NUMBER_BURNED opcode", () => {
+		cap = ethers.BigNumber.from(5)
+		before(async () => {
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([
+						// quantity
+						op(Opcode.CONTEXT, 1),
+						// price
+						op(Opcode.CONTEXT, 0),
+						op(Opcode.IERC721A_NUMBER_BURNED),
+						op(Opcode.CONSTANT, 0),
+						op(Opcode.MUL, 2)
+					]),
+				],
+				constants: [nftPrice],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 10,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("should eval price to the number of NFTs burned * 10 ** 18", async () => {
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 1,
+				maximumPrice: nftPrice,
+			};
+
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+
+			let buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(ethers.BigNumber.from(0))
+
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(1);
+			expect(await rain721a.totalSupply()).to.equals(1);
+
+			await rain721a.connect(buyer1).burn(1);
+
+			buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(ethers.BigNumber.from(1).mul(nftPrice))
+
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+
+			expect(await rain721a.totalSupply()).to.equals(1);
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(1);
+
+		});
+	});
+
+	describe("IERC721A_NUMBER_BURNED opcode complex script", () => {
 		before(async () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
