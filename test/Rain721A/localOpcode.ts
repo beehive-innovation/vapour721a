@@ -204,7 +204,7 @@ describe("Rain721A localOpcodes test", () => {
 		});
 	});
 
-	describe("IERC721A_TOTAL_MINTED", () => {
+	describe("IERC721A_TOTAL_MINTED opcode", () => {
 		before(async () => {
 			// creating a supply cap lower than the supplyLimit in the script
 			cap = ethers.BigNumber.from(5)
@@ -323,7 +323,84 @@ describe("Rain721A localOpcodes test", () => {
 		});
 	});
 
-	describe("numberMinted opcode", () => {
+	describe("IERC721A_NUMBER_MINTED opcode", () => {
+		before(async () => {
+			// creating a wallet cap
+			cap = ethers.BigNumber.from(5)
+
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([
+						op(Opcode.CONSTANT, 1), // cap
+						op(Opcode.CONTEXT, 0),
+						op(Opcode.IERC721A_NUMBER_MINTED), // how many they've minted
+						op(Opcode.SUB, 2), // the remaining units they can mint
+						op(Opcode.CONTEXT, 1), // target units
+						op(Opcode.MIN, 2), // the smaller of target units and the remaining units they can mint
+						op(Opcode.CONSTANT, 0),
+					]),
+				],
+				constants: [nftPrice, cap],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 10,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("should allow buyer to mint up to the wallet cap", async () => {
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 5,
+				maximumPrice: BN(5),
+			};
+
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(5);
+			expect(await rain721a.totalSupply()).to.equals(5);
+		});
+
+		it("should eval to 0 maxUnits when buyer has already minted up to the wallet cap", async () => {
+			const { maxUnits_, price_ } = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0))
+		})
+
+		it("should not allow buyer to mint above the wallet cap", async () => {
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
+
+			const expectedAmountPayable = nftPrice.mul(5).mul(90).div(100);
+
+			await rain721a.connect(recipient).withdraw();
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 5,
+				maximumPrice: BN(5),
+			};
+
+			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).revertedWith("INSUFFICIENT_STOCK")
+		});
+	});
+
+	describe("IERC721A_NUMBER_MINTED complex script", () => {
 		before(async () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
