@@ -123,7 +123,7 @@ describe("Rain721A localOpcodes test", () => {
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
-		it("should cap maxUnits at the remaining supply when calculating a buy", async () => {
+		it("should cap maxUnits when calculating a buy", async () => {
 			const targetUnits = cap.add(1)
 			const { maxUnits_, price_ } = await rain721a.connect(buyer1).calculateBuy(buyer1.address, targetUnits)
 
@@ -131,7 +131,7 @@ describe("Rain721A localOpcodes test", () => {
 
 		});
 
-		it("should cap maxUnits at the remaining supply when minting", async () => {
+		it("should cap maxUnits when minting", async () => {
 			await currency
 				.connect(buyer1)
 				.mintTokens(cap);
@@ -204,20 +204,23 @@ describe("Rain721A localOpcodes test", () => {
 		});
 	});
 
-	describe("totalMinted opcode", () => {
+	describe("IERC721A_TOTAL_MINTED", () => {
 		before(async () => {
+			// creating a supply cap lower than the supplyLimit in the script
+			cap = ethers.BigNumber.from(5)
+
 			const vmStateConfig: StateConfig = {
 				sources: [
 					concat([
 						op(Opcode.CONTEXT, 0),
-						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+						op(Opcode.CONSTANT, 1),
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
 						op(Opcode.MIN, 2),
 						op(Opcode.CONSTANT, 0),
 					]),
 				],
-				constants: [nftPrice],
+				constants: [nftPrice, cap],
 			};
 
 			rain721aConstructorConfig = {
@@ -229,66 +232,93 @@ describe("Rain721A localOpcodes test", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721AFactory.createChildTyped(
+			const deployTx = await rain721AFactory.createChildTyped(
 				rain721aConstructorConfig,
 				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721AFactory, deployTrx);
+
+			const child = await getChild(rain721AFactory, deployTx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
 
-		it("Should be able to buy under SupplyLimit (totalMinted)", async () => {
+		it("should cap maxUnits calculating a buy", async () => {
+			const targetUnits = cap.add(1)
+			const { maxUnits_, price_ } = await rain721a.connect(buyer1).calculateBuy(buyer1.address, targetUnits)
+
+			expect(maxUnits_).to.equals(cap)
+
+		});
+
+		it("should cap maxUnits when minting", async () => {
 			await currency
 				.connect(buyer1)
-				.mintTokens(rain721aConstructorConfig.supplyLimit);
+				.mintTokens(cap);
 			await currency
 				.connect(buyer1)
 				.approve(
 					rain721a.address,
-					ethers.BigNumber.from(
-						rain721aConstructorConfig.supplyLimit + eighteenZeros
-					)
+					cap.mul(nftPrice)
 				);
 
 			const buyConfig: BuyConfigStruct = {
-				minimumUnits: 1,
-				desiredUnits: rain721aConstructorConfig.supplyLimit,
+				minimumUnits: ethers.BigNumber.from(cap),
+				desiredUnits: ethers.BigNumber.from(cap).add(1),
 				maximumPrice: ethers.BigNumber.from(
-					rain721aConstructorConfig.supplyLimit + eighteenZeros
+					cap.mul(nftPrice)
 				),
 			};
 
 			await rain721a.connect(buyer1).mintNFT(buyConfig);
 
 			expect(await rain721a.balanceOf(buyer1.address)).to.equals(
-				rain721aConstructorConfig.supplyLimit
+				cap
 			);
 			expect(await rain721a.totalSupply()).to.equals(
-				rain721aConstructorConfig.supplyLimit
+				cap
 			);
 
-			expect(await rain721a.totalSupply()).to.equals(10);
-		});
+			// second buy should now get 0 maxUnits
 
-		it("Should burn some nft", async () => {
-			await rain721a.connect(buyer1).burn(1);
-			expect(await rain721a.totalSupply()).to.equals(9);
-		});
-
-		it("Should fail to able to buy above SupplyLimit even nfts are burned (totalMinted)", async () => {
 			await currency.connect(buyer2).mintTokens(1);
-			await currency
-				.connect(buyer2)
-				.approve(rain721a.address, ethers.BigNumber.from(1));
+			await currency.connect(buyer2).approve(rain721a.address, 1);
 
-			const buyConfig: BuyConfigStruct = {
+			const buyer2BuyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
 				desiredUnits: 1,
 				maximumPrice: ethers.BigNumber.from(1 + eighteenZeros),
 			};
+
+			const { maxUnits_, price_ } = await rain721a.connect(buyer2).calculateBuy(buyer2.address, 1)
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0))
+
+			await expect(rain721a.connect(buyer2).mintNFT(buyer2BuyConfig)).revertedWith(
+				"INSUFFICIENT_STOCK"
+			);
+		});
+
+		it("should not allow minting after burning some supply", async () => {
+			await rain721a.connect(buyer1).burn(1);
+
+			expect(await rain721a.totalSupply()).to.equals(
+				cap.sub(ethers.BigNumber.from(1))
+			);
+
+			await currency.connect(buyer2).mintTokens(10);
+			await currency.connect(buyer2).approve(rain721a.address, nftPrice);
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				desiredUnits: 1,
+				maximumPrice: nftPrice
+			}
+
 			await expect(rain721a.connect(buyer2).mintNFT(buyConfig)).revertedWith(
-				"MintZeroQuantity()"
+				"INSUFFICIENT_STOCK"
+			);
+
+			expect(await rain721a.totalSupply()).to.equals(
+				cap.sub(ethers.BigNumber.from(1))
 			);
 		});
 	});
