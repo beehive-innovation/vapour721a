@@ -647,4 +647,88 @@ describe("Rain721A localOpcodes test", () => {
 			expect(await rain721a._amountPayable()).to.equals(expectedAmountPayable);
 		});
 	});
+
+	describe("AMOUNT_PAYABLE opcode", () => {
+		cap = ethers.BigNumber.from(5)
+		before(async () => {
+			// price will be the current amount payable after 2 NFTs have been minted
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([
+						// quantity
+						op(Opcode.CONTEXT, 1),
+						// price
+						op(Opcode.STORAGE, StorageOpcodes.AMOUNT_PAYABLE),
+						op(Opcode.CONSTANT, 0),
+						op(Opcode.MAX, 2)
+					]),
+				],
+				constants: [nftPrice],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 10,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("should eval price to the current amount payable", async () => {
+			await currency.connect(buyer1).mintTokens(5);
+			await currency.connect(buyer1).approve(rain721a.address, BN(5));
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 2,
+				desiredUnits: 2,
+				maximumPrice: nftPrice,
+			};
+
+			let buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(nftPrice)
+
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(2);
+			expect(await rain721a.totalSupply()).to.equals(2);
+
+			let amountPayable = await rain721a.connect(buyer1)._amountPayable()
+			buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(amountPayable)
+		});
+
+		it("should eval price to the correct amount payable after a withdraw", async () => {
+			await rain721a.connect(recipient).withdraw();
+
+			expect(await rain721a.connect(buyer1)._amountPayable()).to.equals(0);
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 2,
+				desiredUnits: 2,
+				maximumPrice: nftPrice,
+			};
+
+			let buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(nftPrice)
+
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(4);
+			expect(await rain721a.totalSupply()).to.equals(4);
+
+			let amountPayable = await rain721a.connect(buyer1)._amountPayable()
+			buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(amountPayable)
+		});
+	});
 });
