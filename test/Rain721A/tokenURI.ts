@@ -46,12 +46,6 @@ describe("Rain721a tokenURI test", () => {
 			owner: owner.address,
 		};
 
-		rain721aInitializeConfig = {
-			vmStateBuilder: config.allStandardOpsStateBuilder,
-			vmStateConfig: vmStateConfig,
-			currency: currency.address,
-		};
-
 		const deployTrx = await rain721AFactory.createChildTyped(
 			rain721aConstructorConfig,
 			currency.address,
@@ -114,10 +108,65 @@ describe("Rain721a tokenURI test", () => {
 		);
 	});
 
-	it("Should return correct tokenURI", async () => {
+	it("Should return correct tokenURI for many tokens", async () => {
 		for (let i = 1; i <= 5; i++)
 			expect(await rain721a.tokenURI(i)).to.equals(
 				`${rain721aConstructorConfig.baseURI}/${i}.json`
 			);
 	});
+
+	it("Should revert when calling tokenURI() for a non-existent id", async () => {
+		await expect(
+			rain721a.connect(buyer0).tokenURI(rain721aConstructorConfig.supplyLimit as number + 1)
+		).revertedWith("URIQueryForNonexistentToken()");
+	})
+
+	it("Shouldn't enforce any format when setting baseURI", async () => {
+		const baseURIs = ["http://google.com", "ipfs://QmPvjoUdAJVZMVACLqj77wsrQyaJVu9VpKdDRHvFK5cLzR", "Some other string"]
+
+		baseURIs.forEach(async (baseURI) => {
+			expect(await deployWithBaseURI(baseURI)).to.equal(`${baseURI}/1.json`);
+		})
+	})
 });
+
+const deployWithBaseURI = async (baseURI: string) => {
+	const vmStateConfig: StateConfig = {
+		sources: [
+			concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+		],
+		constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
+	};
+
+	rain721aConstructorConfig = {
+		name: "nft",
+		symbol: "NFT",
+		baseURI: baseURI,
+		supplyLimit: 800,
+		recipient: recipient.address,
+		owner: owner.address,
+	};
+
+	const deployTrx = await rain721AFactory.createChildTyped(
+		rain721aConstructorConfig,
+		currency.address,
+		vmStateConfig
+	);
+	const child = await getChild(rain721AFactory, deployTrx);
+	rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+
+	await currency.connect(buyer0).mintTokens(100);
+	await currency
+		.connect(buyer0)
+		.approve(rain721a.address, ethers.BigNumber.from("100" + eighteenZeros));
+
+	const buyConfig: BuyConfigStruct = {
+		minimumUnits: 1,
+		desiredUnits: 100,
+		maximumPrice: ethers.BigNumber.from(100 + eighteenZeros),
+	};
+
+	await rain721a.connect(buyer0).mintNFT(buyConfig);
+
+	return await rain721a.tokenURI(1)
+}
