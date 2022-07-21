@@ -731,4 +731,89 @@ describe("Rain721A localOpcodes test", () => {
 			expect(buyCalc.price_).to.equals(amountPayable)
 		});
 	});
+
+	describe("AMOUNT_WITHDRAWN opcode", () => {
+		cap = ethers.BigNumber.from(5)
+		before(async () => {
+			// price will be the current amount payable after 2 NFTs have been minted
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([
+						// quantity
+						op(Opcode.CONTEXT, 1),
+						// price
+						op(Opcode.STORAGE, StorageOpcodes.AMOUNT_WITHDRAWN),
+						op(Opcode.CONSTANT, 0),
+						op(Opcode.MAX, 2)
+					]),
+				],
+				constants: [nftPrice],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 10,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("should eval price to the current amount withdrawn", async () => {
+			await currency.connect(buyer1).mintTokens(10);
+			await currency.connect(buyer1).approve(rain721a.address, BN(10));
+
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 2,
+				desiredUnits: 2,
+				maximumPrice: nftPrice.mul(ethers.BigNumber.from(4)),
+			};
+
+			let buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(nftPrice)
+
+			// mint
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(2);
+			expect(await rain721a.totalSupply()).to.equals(2);
+
+			// do a withdraw and check the balance
+			let recipientBalance = await currency.balanceOf(recipient.address);
+			await rain721a.connect(recipient).withdraw()
+			let totalWithdrawn = nftPrice.mul(ethers.BigNumber.from(buyConfig.desiredUnits))
+			recipientBalance = recipientBalance.add(totalWithdrawn)
+			expect(await currency.balanceOf(recipient.address)).to.equals(recipientBalance);
+
+			// price should now be the total withdrawn
+			buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(totalWithdrawn)
+
+			// mint again
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(4);
+			expect(await rain721a.totalSupply()).to.equals(4);
+
+			// do a another withdraw and check the balance
+			await rain721a.connect(recipient).withdraw()
+			totalWithdrawn = totalWithdrawn.add(buyCalc.price_.mul(ethers.BigNumber.from(buyConfig.desiredUnits)))
+
+			recipientBalance = recipientBalance.add(buyCalc.price_.mul(ethers.BigNumber.from(buyConfig.desiredUnits)))
+			expect(await currency.balanceOf(recipient.address)).to.equals(recipientBalance);
+
+			// price should be the new total withdrawn
+			buyCalc = await rain721a.connect(buyer1).calculateBuy(buyer1.address, 1)
+			expect(buyCalc.price_).to.equals(totalWithdrawn)
+
+		});
+	});
 });
