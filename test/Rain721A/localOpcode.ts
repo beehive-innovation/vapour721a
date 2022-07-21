@@ -93,7 +93,7 @@ describe("Rain721A localOpcodes test", () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
 					concat([
-						op(Opcode.CONTEXT, 0),
+						op(Opcode.CONTEXT, 1),
 						op(Opcode.CONSTANT, 1),
 						op(Opcode.IERC721A_TOTAL_SUPPLY),
 						op(Opcode.SUB, 2),
@@ -212,7 +212,7 @@ describe("Rain721A localOpcodes test", () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
 					concat([
-						op(Opcode.CONTEXT, 0),
+						op(Opcode.CONTEXT, 1),
 						op(Opcode.CONSTANT, 1),
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
