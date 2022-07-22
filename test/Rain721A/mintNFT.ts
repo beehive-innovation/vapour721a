@@ -19,11 +19,8 @@ import {
 } from "../1_setup";
 import {
 	concat,
-	eighteenZeros,
 	getChild,
 	op,
-	Opcode,
-	StorageOpcodes,
 } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
@@ -31,7 +28,7 @@ let rain721a: Rain721A;
 let nftPrice: BigNumber
 
 describe("mintNFT tests", () => {
-	describe("ERC20 token test", () => {
+	describe("total cost tests", () => {
 		before(async () => {
 
 			nftPrice = parseEther('1')
@@ -208,52 +205,147 @@ describe("mintNFT tests", () => {
 		});
 	});
 
+	describe("zero price tests", () => {
+		before(async () => {
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+				],
+				constants: [20, 0],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("Should buy 1 NFT at zero price", async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				maximumPrice: 0,
+				desiredUnits: 1
+			}
+			await rain721a.connect(buyer0).mintNFT(buyConfig);
+			expect(await rain721a.balanceOf(buyer0.address)).to.equals(1);
+		});
+
+		it("Should buy multiple NFTs at zero price", async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 10,
+				maximumPrice: 0,
+				desiredUnits: 10
+			}
+			await rain721a.connect(buyer1).mintNFT(buyConfig);
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(10);
+		});
+	});
+
+	describe("revert tests", () => {
+		before(async () => {
+			nftPrice = parseEther('1')
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([
+						op(VM.Opcodes.CONTEXT, 1), // always allow the target units
+						op(VM.Opcodes.CONSTANT, 0)
+					]),
+				],
+				constants: [nftPrice],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+
+			await currency.connect(buyer1).mintTokens(rain721aConstructorConfig.supplyLimit)
+			await currency.connect(buyer1).approve(rain721a.address, nftPrice.mul(ethers.BigNumber.from(rain721aConstructorConfig.supplyLimit)))
+		});
+
+		it("should revert if minimumUnits is 0", async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 0,
+				maximumPrice: 0,
+				desiredUnits: 1
+			}
+			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).to.revertedWith(
+				"0_MINIMUM"
+			);
+		});
+
+		it("should revert if minimumUnits > desiredUnits", async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 2,
+				maximumPrice: 0,
+				desiredUnits: 1
+			}
+
+			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).to.revertedWith(
+				"MINIMUM_OVER_DESIRED"
+			);
+		});
+
+		it("should revert if price is over maximumPrice", async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 1,
+				maximumPrice: nftPrice.div(ethers.BigNumber.from(2)),
+				desiredUnits: 1
+			}
+			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).to.revertedWith(
+				"MAXIMUM_PRICE"
+			);
+		});
+
+		it("should revert if minimum units exceeds current stock", async () => {
+			// buy half the stock
+			const buyer1Units = rain721aConstructorConfig.supplyLimit as number / 2
+			const buyer1Config: BuyConfigStruct = {
+				minimumUnits: buyer1Units,
+				maximumPrice: nftPrice,
+				desiredUnits: buyer1Units
+			}
+
+			await rain721a.connect(buyer1).mintNFT(buyer1Config)
+			expect(await rain721a.totalSupply()).to.equals(buyer1Units)
+			expect(await rain721a.balanceOf(buyer1.address)).to.equals(buyer1Units)
+
+			// attempt to buy more than the stock remaining
+			const buyer2Units = rain721aConstructorConfig.supplyLimit as number - buyer1Units + 1
+			const buyer2Config: BuyConfigStruct = {
+				minimumUnits: buyer2Units,
+				maximumPrice: nftPrice,
+				desiredUnits: buyer2Units
+			}
+
+			await expect(rain721a.connect(buyer2).mintNFT(buyer2Config)).to.revertedWith(
+				"INSUFFICIENT_STOCK"
+			);
+		});
+	});
 });
 
-describe("zero price tests", () => {
-	before(async () => {
-		const vmStateConfig: StateConfig = {
-			sources: [
-				concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
-			],
-			constants: [20, 0],
-		};
-
-		rain721aConstructorConfig = {
-			name: "nft",
-			symbol: "NFT",
-			baseURI: "BASE_URI",
-			supplyLimit: 100,
-			recipient: recipient.address,
-			owner: owner.address,
-		};
-
-		const deployTrx = await rain721AFactory.createChildTyped(
-			rain721aConstructorConfig,
-			currency.address,
-			vmStateConfig
-		);
-		const child = await getChild(rain721AFactory, deployTrx);
-		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
-	});
-
-	it("Should buy 1 NFT at zero price", async () => {
-		const buyConfig: BuyConfigStruct = {
-			minimumUnits: 1,
-			maximumPrice: 0,
-			desiredUnits: 1
-		}
-		await rain721a.connect(buyer0).mintNFT(buyConfig);
-		expect(await rain721a.balanceOf(buyer0.address)).to.equals(1);
-	});
-
-	it("Should buy multiple NFTs at zero price", async () => {
-		const buyConfig: BuyConfigStruct = {
-			minimumUnits: 10,
-			maximumPrice: 0,
-			desiredUnits: 10
-		}
-		await rain721a.connect(buyer1).mintNFT(buyConfig);
-		expect(await rain721a.balanceOf(buyer1.address)).to.equals(10);
-	});
-});

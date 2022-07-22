@@ -2,25 +2,25 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { StateConfig } from "rain-sdk";
 import {
-	BuyConfigStruct,
-	ConstructorConfigStruct,
-	Rain721A,
+    BuyConfigStruct,
+    ConstructorConfigStruct,
+    Rain721A,
 } from "../../typechain/Rain721A";
 import {
-	buyer0,
-	owner,
-	rain721AFactory,
-	recipient,
-	currency,
+    buyer0,
+    owner,
+    rain721AFactory,
+    recipient,
+    currency,
 } from "../1_setup";
 import {
     BN,
-	concat,
-	eighteenZeros,
-	getChild,
-	op,
-	Opcode,
-	StorageOpcodes,
+    concat,
+    eighteenZeros,
+    getChild,
+    op,
+    Opcode,
+    StorageOpcodes,
 } from "../utils";
 
 let rain721aConstructorConfig: ConstructorConfigStruct;
@@ -45,7 +45,7 @@ describe("Script Tests", () => {
                 ],
                 constants: [MAX_CAP, ethers.BigNumber.from("1" + eighteenZeros)],
             };
-    
+
             rain721aConstructorConfig = {
                 name: "nft",
                 symbol: "NFT",
@@ -54,7 +54,7 @@ describe("Script Tests", () => {
                 recipient: recipient.address,
                 owner: owner.address,
             };
-    
+
             const deployTrx = await rain721AFactory.createChildTyped(
                 rain721aConstructorConfig,
                 currency.address,
@@ -63,34 +63,34 @@ describe("Script Tests", () => {
             const child = await getChild(rain721AFactory, deployTrx);
             rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
         });
-    
+
         it("Should Buy 5 nft with erc20 token", async () => {
             await currency.connect(buyer0).mintTokens(5);
-    
+
             await currency
                 .connect(buyer0)
                 .approve(rain721a.address, ethers.BigNumber.from(5 + eighteenZeros));
-    
+
             const buyConfig: BuyConfigStruct = {
                 minimumUnits: 1,
                 desiredUnits: MAX_CAP,
                 maximumPrice: ethers.BigNumber.from(MAX_CAP + eighteenZeros),
             };
-    
+
             const trx = await rain721a.connect(buyer0).mintNFT(buyConfig);
-    
+
             expect(await rain721a.balanceOf(buyer0.address)).to.equals(MAX_CAP);
         });
-    
+
         it("Should fail to Buy nft above max cap", async () => {
             const units = 20;
-    
+
             await currency.connect(buyer0).mintTokens(1 * units);
-    
+
             await currency
                 .connect(buyer0)
                 .approve(rain721a.address, ethers.BigNumber.from(units + eighteenZeros));
-    
+
             const buyConfig: BuyConfigStruct = {
                 minimumUnits: 1,
                 desiredUnits: 5,
@@ -99,12 +99,12 @@ describe("Script Tests", () => {
             await expect(rain721a.connect(buyer0).mintNFT(buyConfig)).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
-    
+
             expect(await rain721a.balanceOf(buyer0.address)).to.equals(MAX_CAP);
         });
     });
 
-    describe.only("Buy after timestamp test", () => {
+    describe("Buy after timestamp test", () => {
         before(async () => {
             const block_before = await ethers.provider.getBlock('latest');
             const vmStateConfig: StateConfig = {
@@ -119,9 +119,9 @@ describe("Script Tests", () => {
                         op(Opcode.CONSTANT, 3) // price 1 ETH
                     ]),
                 ],
-                constants: [0, 100, block_before.timestamp + 100 , BN(1)],
+                constants: [0, 100, block_before.timestamp + 100, BN(1)],
             };
-    
+
             rain721aConstructorConfig = {
                 name: "nft",
                 symbol: "NFT",
@@ -130,7 +130,7 @@ describe("Script Tests", () => {
                 recipient: recipient.address,
                 owner: owner.address,
             };
-    
+
             const deployTrx = await rain721AFactory.createChildTyped(
                 rain721aConstructorConfig,
                 currency.address,
@@ -140,22 +140,22 @@ describe("Script Tests", () => {
             rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
         });
 
-        it("it Should return 0 Units",async () => {
+        it("it Should return 0 Units", async () => {
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
             expect(price_).to.equals(BN(1));
         });
 
-        it("it Should return 100 Units",async () => {
+        it("it Should return 100 Units", async () => {
             await ethers.provider.send("evm_increaseTime", [36000]);
-            await ethers.provider.send("evm_mine",[]);
+            await ethers.provider.send("evm_mine", []);
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
             expect(price_).to.equals(BN(1));
         });
     });
 
-    describe.only("Buy before timestamp test", () => {
+    describe("Buy before timestamp test", () => {
         before(async () => {
             const block_before = await ethers.provider.getBlock('latest');
             const time = block_before.timestamp + 3600;
@@ -173,7 +173,7 @@ describe("Script Tests", () => {
                 ],
                 constants: [0, 100, time, BN(1)],
             };
-    
+
             rain721aConstructorConfig = {
                 name: "nft",
                 symbol: "NFT",
@@ -182,7 +182,7 @@ describe("Script Tests", () => {
                 recipient: recipient.address,
                 owner: owner.address,
             };
-    
+
             const deployTrx = await rain721AFactory.createChildTyped(
                 rain721aConstructorConfig,
                 currency.address,
@@ -192,15 +192,15 @@ describe("Script Tests", () => {
             rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
         });
 
-        it("it Should return 100 Units",async () => {
+        it("it Should return 100 Units", async () => {
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
             expect(price_).to.equals(BN(1));
         });
-        
-        it("it Should return 0 Units",async () => {
+
+        it("it Should return 0 Units", async () => {
             await ethers.provider.send("evm_increaseTime", [3600]);
-            await ethers.provider.send("evm_mine",[]);
+            await ethers.provider.send("evm_mine", []);
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
             expect(price_).to.equals(BN(1));
@@ -208,7 +208,7 @@ describe("Script Tests", () => {
 
     });
 
-    describe.only("Buy between timestamp test", () => {
+    describe("Buy between timestamp test", () => {
         before(async () => {
             const block_before = await ethers.provider.getBlock('latest');
             const start_time = block_before.timestamp + 3600;
@@ -231,7 +231,7 @@ describe("Script Tests", () => {
                 ],
                 constants: [0, 100, start_time, end_time, BN(1)],
             };
-    
+
             rain721aConstructorConfig = {
                 name: "nft",
                 symbol: "NFT",
@@ -240,7 +240,7 @@ describe("Script Tests", () => {
                 recipient: recipient.address,
                 owner: owner.address,
             };
-    
+
             const deployTrx = await rain721AFactory.createChildTyped(
                 rain721aConstructorConfig,
                 currency.address,
@@ -249,23 +249,23 @@ describe("Script Tests", () => {
             const child = await getChild(rain721AFactory, deployTrx);
             rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
         });
-        it("it Should return 0 Units",async () => {
+        it("it Should return 0 Units", async () => {
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
             expect(price_).to.equals(BN(1));
         });
 
-        it("it Should return 100 Units",async () => {
+        it("it Should return 100 Units", async () => {
             await ethers.provider.send("evm_increaseTime", [3600]);
-            await ethers.provider.send("evm_mine",[]);
+            await ethers.provider.send("evm_mine", []);
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
             expect(price_).to.equals(BN(1));
         });
-        
-        it("it Should return 0 Units",async () => {
+
+        it("it Should return 0 Units", async () => {
             await ethers.provider.send("evm_increaseTime", [3600]);
-            await ethers.provider.send("evm_mine",[]);
+            await ethers.provider.send("evm_mine", []);
             const [maxUnits_, price_] = await rain721a.calculateBuy(buyer0.address, 10);
             expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
             expect(price_).to.equals(BN(1));
