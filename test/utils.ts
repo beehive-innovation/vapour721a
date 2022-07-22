@@ -1,18 +1,13 @@
 import {Logger} from "@ethersproject/logger";
 import {version} from "./_version";
-import {
-	ContractTransaction,
-	Contract,
-	BigNumber,
-	Overrides,
-	ethers,
-} from "ethers";
+import {ContractTransaction, Contract, BigNumber, Overrides} from "ethers";
 import {Result} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import {execSync} from "child_process";
 import {AllStandardOps, StateConfig} from "rain-sdk";
 import {Rain721AFactory, NewChildEvent} from "../typechain/Rain721AFactory";
+import {ethers} from "hardhat";
 const logger = new Logger(version);
 export const eighteenZeros = "000000000000000000";
 export const BN = (num: number): BigNumber => {
@@ -354,4 +349,20 @@ export const getTokenID = (tokenURI: string): number => {
 
 export function debug(): Uint8Array {
 	return op(Opcode.DEBUG);
+}
+
+export async function getPrice(
+	start_price: BigNumber,
+	end_price: BigNumber,
+	priceChange: BigNumber,
+	start_time: BigNumber,
+	isInc: boolean
+): Promise<BigNumber> {
+	const time = (await ethers.provider.getBlock("latest")).timestamp;
+	let price_ = isInc
+		? BigNumber.from(time).sub(start_time).mul(priceChange).add(start_price)
+		: BigNumber.from(time).sub(start_time).mul(priceChange).add(start_price);
+
+	if (price_.lt(end_price)) return price_;
+	return end_price;
 }

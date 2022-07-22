@@ -1,10 +1,10 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
-import {StateConfig} from "rain-sdk";
+import {StateConfig, RainJS} from "rain-sdk";
 import {
-    BuyConfigStruct,
-    ConstructorConfigStruct,
-    Rain721A,
+	BuyConfigStruct,
+	ConstructorConfigStruct,
+	Rain721A,
 } from "../../typechain/Rain721A";
 import {buyer0, owner, rain721AFactory, recipient, currency} from "../1_setup";
 import {
@@ -12,6 +12,7 @@ import {
 	concat,
 	eighteenZeros,
 	getChild,
+	getPrice,
 	op,
 	Opcode,
 	StorageOpcodes,
@@ -289,22 +290,23 @@ describe("Script Tests", () => {
 		});
 	});
 
-	describe("Buy with declining price", () => {
+	describe("Buy with increasing price", () => {
+		let vmStateConfig: StateConfig;
+		let start_time, end_time, start_price, end_price, priceChange, isInc;
 		before(async () => {
 			const block_before = await ethers.provider.getBlock("latest");
-			const start_time = block_before.timestamp;
-			const end_time = start_time + 3600 * 4; // 4 hours sale
-			const start_price = BN(1);
-			const end_price = BN(4);
+			start_time = block_before.timestamp;
+			end_time = start_time + 3600 * 4; // 4 hours sale
+			start_price = BN(1);
+			end_price = BN(4);
 
-			const isInc = end_price.gte(start_time) ? true : false;
+			isInc = end_price.gte(start_time) ? true : false;
 			let raiseDuration = end_time - start_time;
-			let priceChange = isInc
+			priceChange = isInc
 				? end_price.sub(start_price).div(raiseDuration)
 				: start_price.sub(end_price).div(raiseDuration);
-			console.log({priceChange});
 
-			const vmStateConfig: StateConfig = {
+			vmStateConfig = {
 				sources: [
 					concat([
 						op(Opcode.CONSTANT, 0),
@@ -339,17 +341,81 @@ describe("Script Tests", () => {
 			const child = await getChild(rain721AFactory, deployTrx);
 			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
 		});
+
 		it("it Should return correct price for first hour", async () => {
+			const expected_price_ = await getPrice(
+				start_price,
+				end_price,
+				priceChange,
+				start_time,
+				isInc
+			);
+
 			const [maxUnits_, price_] = await rain721a.calculateBuy(
 				buyer0.address,
 				10
 			);
-			console.log(maxUnits_, price_);
 			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-			expect(price_).to.equals(BN(1));
+			expect(price_).to.equals(expected_price_);
 		});
 
-		it("it Should return 100 Units", async () => {
+		it("it Should return correct price for second hour", async () => {
+			await ethers.provider.send("evm_increaseTime", [3600]);
+			await ethers.provider.send("evm_mine", []);
+			const expected_price_ = await getPrice(
+				start_price,
+				end_price,
+				priceChange,
+				start_time,
+				isInc
+			);
+
+			const [maxUnits_, price_] = await rain721a.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(expected_price_);
+		});
+
+		it("it Should return correct price for third hour", async () => {
+			await ethers.provider.send("evm_increaseTime", [3600]);
+			await ethers.provider.send("evm_mine", []);
+			const expected_price_ = await getPrice(
+				start_price,
+				end_price,
+				priceChange,
+				start_time,
+				isInc
+			);
+
+			const [maxUnits_, price_] = await rain721a.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(expected_price_);
+		});
+
+		it("it Should return correct price for fourth hour", async () => {
+			await ethers.provider.send("evm_increaseTime", [3600]);
+			await ethers.provider.send("evm_mine", []);
+			const expected_price_ = await getPrice(
+				start_price,
+				end_price,
+				priceChange,
+				start_time,
+				isInc
+			);
+			const [maxUnits_, price_] = await rain721a.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(expected_price_);
+		});
+
+		it("it Should return correct price for fifth hour", async () => {
 			await ethers.provider.send("evm_increaseTime", [3600]);
 			await ethers.provider.send("evm_mine", []);
 			const [maxUnits_, price_] = await rain721a.calculateBuy(
@@ -357,18 +423,7 @@ describe("Script Tests", () => {
 				10
 			);
 			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-			expect(price_).to.equals(BN(1));
-		});
-
-		it("it Should return 0 Units", async () => {
-			await ethers.provider.send("evm_increaseTime", [3600]);
-			await ethers.provider.send("evm_mine", []);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
-				buyer0.address,
-				10
-			);
-			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-			expect(price_).to.equals(BN(1));
+			expect(price_).to.equals(end_price);
 		});
 	});
 });
