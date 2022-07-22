@@ -23,7 +23,7 @@ let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
 describe("Vapour721A Initialize test", () => {
-	it("Should deploy Vapour721A Contract and Initialize", async () => {
+	it("Should deploy Vapour721A contract and initialize", async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [
 				concat([
@@ -45,7 +45,7 @@ describe("Vapour721A Initialize test", () => {
 		};
 
 		vapour721AInitializeConfig = {
-			vmStateBuilder: config.allStandardOpsStateBuilder,
+			vmStateBuilder: config.vapour721AStateBuilder,
 			vmStateConfig: vmStateConfig,
 			currency: currency.address,
 		};
@@ -59,7 +59,7 @@ describe("Vapour721A Initialize test", () => {
 
 		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-		assert(child != ZERO_ADDRESS, "Vapour721A Address not find");
+		assert(child != ZERO_ADDRESS, "Vapour721A Address not found");
 		const [config_] = (await getEventArgs(
 			trx,
 			"Initialize",
@@ -72,13 +72,13 @@ describe("Vapour721A Initialize test", () => {
 		expect(config_.currency).to.equals(currency.address);
 	});
 
-	it("SHould fail to initialize again.", async () => {
+	it("Should fail to initialize again.", async () => {
 		await expect(vapour721A.initialize(vapour721AInitializeConfig)).to.revertedWith(
 			"INITIALIZED"
 		);
 	});
 
-	it("Should be able to Initialize after creating with createChild method", async () => {
+	it("Should be able to initialize after creating with createChild method", async () => {
 		let encodedConfig = ethers.utils.defaultAbiCoder.encode(
 			[
 				"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner)",
@@ -107,7 +107,7 @@ describe("Vapour721A Initialize test", () => {
 		expect(config_.currency).to.deep.equals(vapour721AInitializeConfig.currency);
 	});
 
-	it("Should fain to initialed vapour721A contract deployed by createChild method", async () => {
+	it("Should fail to intialize Vapour721A contract deployed by createChild method", async () => {
 		await expect(vapour721A.initialize(vapour721AInitializeConfig)).to.revertedWith(
 			"INITIALIZED"
 		);
