@@ -27,7 +27,7 @@ before(async () => {
 
 	constructorConfig = {
 		name: "vapour721A",
-		symbol: "RAIN721A",
+		symbol: "VAPOUR721A",
 		baseURI: "BASE_URI",
 		supplyLimit: 1000,
 		recipient: recipient_.address,

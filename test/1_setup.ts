@@ -59,7 +59,7 @@ before(async () => {
 	await vapour721AFactory.deployed();
 
 	const erc20Factory = await ethers.getContractFactory("Token");
-	currency = (await erc20Factory.deploy("Rain Token", "TKN")) as Token;
+	currency = (await erc20Factory.deploy("Vapour Token", "TKN")) as Token;
 	await currency.deployed();
 
 	const pathExampleConfig = path.resolve(
