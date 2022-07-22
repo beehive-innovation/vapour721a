@@ -6,38 +6,37 @@ const sleep = (delay) =>
 	new Promise((resolve) => setTimeout(resolve, delay * 1000));
 
 async function main() {
+	const blockNumber = (await ethers.provider.getBlock("latest")).number;
 
-    const blockNumber = await ethers.provider.getBlockNumber();
+	console.log("Deploying stateBuilder");
+	const Vapour721AStateBuilder = await ethers.getContractFactory("Vapour721AStateBuilder");
+	const vapour721AStateBuilder = await Vapour721AStateBuilder.deploy();
+	await vapour721AStateBuilder.deployed();
+	console.log("contract deployed : ", vapour721AStateBuilder.address);
+
 	const pathExampleConfig = path.resolve(
 		__dirname,
 		`../config/${hre.network.name}.json`
 	);
 	const config = JSON.parse(fetchFile(pathExampleConfig));
 
-	console.log("Deploying rain721a factory");
-	const Rain721aFactory = await ethers.getContractFactory("Rain721AFactory");
-	const rain721AFactory = await Rain721aFactory.deploy(config.rain721aStateBuilder);
-	await rain721AFactory.deployed();
-	console.log("contract deployed : ", rain721AFactory.address);
+	config.network = hre.network.name;
 
-
-	config.rain721aFactory = rain721AFactory.address;
-	config.rain721aFactoryBlock = blockNumber;
+	config.vapour721AStateBuilder = vapour721AStateBuilder.address;
 
 	const pathConfigLocal = path.resolve(
 		__dirname,
 		`../config/${hre.network.name}.json`
 	);
-
 	writeFile(pathConfigLocal, JSON.stringify(config, null, 2));
 
 	await sleep(30);
 
 	console.log("Verifying smartContract");
 	await hre.run("verify:verify", {
-		address: rain721AFactory.address,
-		contract: "contracts/Rain721AFactory.sol:Rain721AFactory",
-		constructorArguments: [config.rain721aStateBuilder],
+		address: vapour721AStateBuilder.address,
+		contract: "contracts/Vapour721AStateBuilder.sol:Vapour721AStateBuilder",
+		constructorArguments: [],
 	});
 }
 
