@@ -160,8 +160,46 @@ describe("Rain721a Buy test", () => {
 				.approve(rain721a.address, ethers.BigNumber.from(1 + eighteenZeros));
 
 			await expect(rain721a.connect(buyer1).mintNFT(buyConfig)).to.revertedWith(
-				"MintZeroQuantity()"
+				"INSUFFICIENT_STOCK"
 			);
+		});
+	});
+
+	describe("Should be able to buy if price is Zero", () => {
+		before(async () => {
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+				],
+				constants: [20, 0],
+			};
+
+			rain721aConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+			};
+
+			const deployTrx = await rain721AFactory.createChildTyped(
+				rain721aConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			const child = await getChild(rain721AFactory, deployTrx);
+			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		});
+
+		it("Should buy at zero price", async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 10,
+				maximumPrice: 0,
+				desiredUnits: 10
+			}
+			await rain721a.connect(buyer0).mintNFT(buyConfig);
+			expect(await rain721a.balanceOf(buyer0.address)).to.equals(10);
 		});
 	});
 });

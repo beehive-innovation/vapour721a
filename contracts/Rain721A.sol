@@ -68,7 +68,7 @@ contract Rain721A is ERC721A, RainVM, Ownable {
 
 	address private _vmStatePointer;
 	address public _currency;
-	address payable public _recipient;
+	address public _recipient;
 
 	string public baseURI;
 
