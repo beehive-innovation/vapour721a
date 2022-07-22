@@ -24,7 +24,7 @@ let rain721a: Rain721A;
 const nftPrice = ethers.BigNumber.from("1" + eighteenZeros);
 let totalWithdrawn = ethers.BigNumber.from(0)
 
-describe("Fee withdraws", () => {
+describe("withdraw tests", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [

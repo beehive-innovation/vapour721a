@@ -2,9 +2,9 @@ import {expect} from "chai";
 import {ethers} from "hardhat";
 import {StateConfig} from "rain-sdk";
 import {
-	BuyConfigStruct,
-	ConstructorConfigStruct,
-	Rain721A,
+    BuyConfigStruct,
+    ConstructorConfigStruct,
+    Rain721A,
 } from "../../typechain/Rain721A";
 import {buyer0, owner, rain721AFactory, recipient, currency} from "../1_setup";
 import {
