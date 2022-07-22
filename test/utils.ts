@@ -11,7 +11,7 @@ import {Result} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import {execSync} from "child_process";
-import {AllStandardOps} from "rain-sdk";
+import {AllStandardOps, StateConfig} from "rain-sdk";
 import {Rain721AFactory, NewChildEvent} from "../typechain/Rain721AFactory";
 const logger = new Logger(version);
 export const eighteenZeros = "000000000000000000";

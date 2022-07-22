@@ -71,11 +71,11 @@ describe("Fee withdraws", () => {
 
 		const withdrawTx = await rain721a.connect(recipient).withdraw();
 
-		const [withdrawer, amountWithdrawn, _totalWithdrawn] = (await getEventArgs(
+		const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
 			withdrawTx,
 			"Withdraw",
 			rain721a
-		)) as WithdrawEvent["args"];
+		) as WithdrawEvent["args"];
 
 		const recipientBalanceAfter = await currency.balanceOf(recipient.address);
 
