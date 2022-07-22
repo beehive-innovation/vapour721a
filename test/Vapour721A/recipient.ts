@@ -36,6 +36,7 @@ describe("Vapour721A recipient test", () => {
 			supplyLimit: 36,
 			recipient: recipient.address,
 			owner: owner.address,
+			royaltyBPS: 1000
 		};
 	});
 

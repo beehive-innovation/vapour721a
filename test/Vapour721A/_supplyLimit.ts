@@ -42,6 +42,7 @@ describe('_supplyLimit test', () => {
             supplyLimit: _supplyLimit,
             recipient: recipient.address,
             owner: owner.address,
+            royaltyBPS: 1000
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(

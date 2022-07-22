@@ -1,12 +1,12 @@
-import {expect} from "chai";
-import {ethers} from "hardhat";
-import {StateConfig, RainJS} from "rain-sdk";
+import { expect } from "chai";
+import { ethers } from "hardhat";
+import { StateConfig, RainJS } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
 	Vapour721A,
 } from "../../typechain/Vapour721A";
-import {buyer0, owner, vapour721AFactory, recipient, currency} from "../1_setup";
+import { buyer0, owner, vapour721AFactory, recipient, currency } from "../1_setup";
 import {
 	BN,
 	concat,
@@ -48,6 +48,7 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -127,6 +128,7 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -185,6 +187,7 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -248,6 +251,7 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -331,6 +335,7 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(

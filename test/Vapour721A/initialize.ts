@@ -42,6 +42,7 @@ describe("Vapour721A Initialize test", () => {
 			supplyLimit: 36,
 			recipient: recipient.address,
 			owner: owner.address,
+			royaltyBPS: 1000
 		};
 
 		vapour721AInitializeConfig = {

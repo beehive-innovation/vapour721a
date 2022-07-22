@@ -32,6 +32,7 @@ before(async () => {
 		supplyLimit: 1000,
 		recipient: recipient_.address,
 		owner: owner_.address,
+		royaltyBPS: 1000
 	};
 
 	encodedConfig = ethers.utils.defaultAbiCoder.encode(

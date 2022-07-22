@@ -40,6 +40,7 @@ describe("withdraw tests", () => {
 			supplyLimit: 100,
 			recipient: recipient.address,
 			owner: owner.address,
+			royaltyBPS: 1000
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
