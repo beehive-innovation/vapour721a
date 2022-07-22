@@ -14,7 +14,7 @@ import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
 import "hardhat/console.sol";
 
 /**
- * config for deploying Rain721A contract
+ * config for deploying Vapour721A contract
  */
 struct ConstructorConfig {
 	string name;
@@ -54,7 +54,7 @@ uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
 
 uint256 constant LOCAL_OPS_LENGTH = 4;
 
-contract Rain721A is ERC721A, RainVM, Ownable {
+contract Vapour721A is ERC721A, RainVM, Ownable {
 	using Strings for uint256;
 	using Math for uint256;
 	using LibFnPtrs for bytes;

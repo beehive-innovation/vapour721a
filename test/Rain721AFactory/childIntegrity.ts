@@ -1,20 +1,20 @@
 import {artifacts, ethers} from "hardhat";
 import {expect} from "chai";
-import {Rain721A} from "../../typechain/Rain721A";
+import {Vapour721A} from "../../typechain/Vapour721A";
 
 export const checkChildIntegrity = async (
-	rain721AFactory,
+	vapour721AFactory,
 	child,
 	constructorConfig
 ) => {
 	let rain721a = (await ethers.getContractAt(
 		(
-			await artifacts.readArtifact("Rain721A")
+			await artifacts.readArtifact("Vapour721A")
 		).abi,
 		child
-	)) as Rain721A;
+	)) as Vapour721A;
 
-	expect(await rain721AFactory.isChild(child)).to.be.true;
+	expect(await vapour721AFactory.isChild(child)).to.be.true;
 	expect(rain721a.address).to.equals(child);
 	expect(await rain721a.owner()).to.equals(
 		constructorConfig.owner,

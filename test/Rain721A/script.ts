@@ -4,9 +4,9 @@ import {StateConfig, RainJS} from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
-	Rain721A,
-} from "../../typechain/Rain721A";
-import {buyer0, owner, rain721AFactory, recipient, currency} from "../1_setup";
+	Vapour721A,
+} from "../../typechain/Vapour721A";
+import {buyer0, owner, vapour721AFactory, recipient, currency} from "../1_setup";
 import {
 	BN,
 	concat,
@@ -18,8 +18,8 @@ import {
 	StorageOpcodes,
 } from "../utils";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721A: Vapour721A;
 const MAX_CAP = 5;
 describe("Script Tests", () => {
 	describe("MAX_CAP per user test", () => {
@@ -41,7 +41,7 @@ describe("Script Tests", () => {
 				constants: [MAX_CAP, ethers.BigNumber.from("1" + eighteenZeros)],
 			};
 
-			rain721aConstructorConfig = {
+			vapour721AConstructorConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -50,13 +50,13 @@ describe("Script Tests", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721AFactory.createChildTyped(
-				rain721aConstructorConfig,
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AConstructorConfig,
 				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721AFactory, deployTrx);
-			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 		});
 
 		it("Should Buy 5 nft with erc20 token", async () => {
@@ -64,7 +64,7 @@ describe("Script Tests", () => {
 
 			await currency
 				.connect(buyer0)
-				.approve(rain721a.address, ethers.BigNumber.from(5 + eighteenZeros));
+				.approve(vapour721A.address, ethers.BigNumber.from(5 + eighteenZeros));
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -72,9 +72,9 @@ describe("Script Tests", () => {
 				maximumPrice: ethers.BigNumber.from(MAX_CAP + eighteenZeros),
 			};
 
-			const trx = await rain721a.connect(buyer0).mintNFT(buyConfig);
+			const trx = await vapour721A.connect(buyer0).mintNFT(buyConfig);
 
-			expect(await rain721a.balanceOf(buyer0.address)).to.equals(MAX_CAP);
+			expect(await vapour721A.balanceOf(buyer0.address)).to.equals(MAX_CAP);
 		});
 
 		it("Should fail to Buy nft above max cap", async () => {
@@ -85,7 +85,7 @@ describe("Script Tests", () => {
 			await currency
 				.connect(buyer0)
 				.approve(
-					rain721a.address,
+					vapour721A.address,
 					ethers.BigNumber.from(units + eighteenZeros)
 				);
 
@@ -94,11 +94,11 @@ describe("Script Tests", () => {
 				desiredUnits: 5,
 				maximumPrice: ethers.BigNumber.from(1 + eighteenZeros),
 			};
-			await expect(rain721a.connect(buyer0).mintNFT(buyConfig)).to.revertedWith(
+			await expect(vapour721A.connect(buyer0).mintNFT(buyConfig)).to.revertedWith(
 				"INSUFFICIENT_STOCK"
 			);
 
-			expect(await rain721a.balanceOf(buyer0.address)).to.equals(MAX_CAP);
+			expect(await vapour721A.balanceOf(buyer0.address)).to.equals(MAX_CAP);
 		});
 	});
 
@@ -120,7 +120,7 @@ describe("Script Tests", () => {
 				constants: [0, 100, block_before.timestamp + 100, BN(1)],
 			};
 
-			rain721aConstructorConfig = {
+			vapour721AConstructorConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -129,17 +129,17 @@ describe("Script Tests", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721AFactory.createChildTyped(
-				rain721aConstructorConfig,
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AConstructorConfig,
 				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721AFactory, deployTrx);
-			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 		});
 
 		it("it Should return 0 Units", async () => {
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -150,7 +150,7 @@ describe("Script Tests", () => {
 		it("it Should return 100 Units", async () => {
 			await ethers.provider.send("evm_increaseTime", [36000]);
 			await ethers.provider.send("evm_mine", []);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -178,7 +178,7 @@ describe("Script Tests", () => {
 				constants: [0, 100, time, BN(1)],
 			};
 
-			rain721aConstructorConfig = {
+			vapour721AConstructorConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -187,17 +187,17 @@ describe("Script Tests", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721AFactory.createChildTyped(
-				rain721aConstructorConfig,
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AConstructorConfig,
 				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721AFactory, deployTrx);
-			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 		});
 
 		it("it Should return 100 Units", async () => {
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -208,7 +208,7 @@ describe("Script Tests", () => {
 		it("it Should return 0 Units", async () => {
 			await ethers.provider.send("evm_increaseTime", [3600]);
 			await ethers.provider.send("evm_mine", []);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -241,7 +241,7 @@ describe("Script Tests", () => {
 				constants: [0, 100, start_time, end_time, BN(1)],
 			};
 
-			rain721aConstructorConfig = {
+			vapour721AConstructorConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -250,16 +250,16 @@ describe("Script Tests", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721AFactory.createChildTyped(
-				rain721aConstructorConfig,
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AConstructorConfig,
 				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721AFactory, deployTrx);
-			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 		});
 		it("it Should return 0 Units", async () => {
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -270,7 +270,7 @@ describe("Script Tests", () => {
 		it("it Should return 100 Units", async () => {
 			await ethers.provider.send("evm_increaseTime", [3600]);
 			await ethers.provider.send("evm_mine", []);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -281,7 +281,7 @@ describe("Script Tests", () => {
 		it("it Should return 0 Units", async () => {
 			await ethers.provider.send("evm_increaseTime", [3600]);
 			await ethers.provider.send("evm_mine", []);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -324,7 +324,7 @@ describe("Script Tests", () => {
 				constants: [100, start_price, end_price, priceChange, start_time],
 			};
 
-			rain721aConstructorConfig = {
+			vapour721AConstructorConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -333,13 +333,13 @@ describe("Script Tests", () => {
 				owner: owner.address,
 			};
 
-			const deployTrx = await rain721AFactory.createChildTyped(
-				rain721aConstructorConfig,
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AConstructorConfig,
 				currency.address,
 				vmStateConfig
 			);
-			const child = await getChild(rain721AFactory, deployTrx);
-			rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 		});
 
 		it("it Should return correct price for first hour", async () => {
@@ -351,7 +351,7 @@ describe("Script Tests", () => {
 				isInc
 			);
 
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -370,7 +370,7 @@ describe("Script Tests", () => {
 				isInc
 			);
 
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -389,7 +389,7 @@ describe("Script Tests", () => {
 				isInc
 			);
 
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -407,7 +407,7 @@ describe("Script Tests", () => {
 				start_time,
 				isInc
 			);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);
@@ -418,7 +418,7 @@ describe("Script Tests", () => {
 		it("it Should return correct price for fifth hour", async () => {
 			await ethers.provider.send("evm_increaseTime", [3600]);
 			await ethers.provider.send("evm_mine", []);
-			const [maxUnits_, price_] = await rain721a.calculateBuy(
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
 				buyer0.address,
 				10
 			);

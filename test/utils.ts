@@ -6,7 +6,7 @@ import fs from "fs";
 import path from "path";
 import {execSync} from "child_process";
 import {AllStandardOps, StateConfig} from "rain-sdk";
-import {Rain721AFactory, NewChildEvent} from "../typechain/Rain721AFactory";
+import {Vapour721AFactory, NewChildEvent} from "../typechain/Vapour721AFactory";
 import {ethers} from "hardhat";
 const logger = new Logger(version);
 export const eighteenZeros = "000000000000000000";
@@ -301,7 +301,7 @@ export function BNtoInt(x: BigNumber): number {
 }
 
 export const getChild = async (
-	factory: Rain721AFactory,
+	factory: Vapour721AFactory,
 	transaction: ContractTransaction
 ): Promise<string> => {
 	const {child} = (await getEventArgs(

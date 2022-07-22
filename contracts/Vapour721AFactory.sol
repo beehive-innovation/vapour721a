@@ -3,9 +3,9 @@ pragma solidity 0.8.10;
 
 import "@beehiveinnovation/rain-protocol/contracts/factory/IFactory.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "./Rain721A.sol";
+import "./Vapour721A.sol";
 
-contract Rain721AFactory is IFactory, ReentrancyGuard {
+contract Vapour721AFactory is IFactory, ReentrancyGuard {
     mapping(address => bool) private contracts;
     address vmStateBuilder;
 
@@ -21,7 +21,7 @@ contract Rain721AFactory is IFactory, ReentrancyGuard {
             data_,
             (ConstructorConfig)
         );
-        child_ = address(new Rain721A(config_));
+        child_ = address(new Vapour721A(config_));
     }
 
     /// @inheritdoc IFactory
@@ -59,9 +59,9 @@ contract Rain721AFactory is IFactory, ReentrancyGuard {
         ConstructorConfig calldata constructorConfig_,
         address currency_,
         StateConfig memory vmStateConfig_
-    ) external returns (Rain721A child_) {
-        child_ = Rain721A(this.createChild(abi.encode(constructorConfig_)));
-        Rain721A(child_).initialize(InitializeConfig({
+    ) external returns (Vapour721A child_) {
+        child_ = Vapour721A(this.createChild(abi.encode(constructorConfig_)));
+        Vapour721A(child_).initialize(InitializeConfig({
             currency: currency_,
             vmStateConfig: vmStateConfig_,
             vmStateBuilder: vmStateBuilder

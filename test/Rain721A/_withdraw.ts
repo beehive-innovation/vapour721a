@@ -4,22 +4,22 @@ import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
-	Rain721A,
+	Vapour721A,
 	WithdrawEvent,
-} from "../../typechain/Rain721A";
+} from "../../typechain/Vapour721A";
 import {
 	buyer0,
 	buyer1,
 	buyer2,
 	owner,
-	rain721AFactory,
+	vapour721AFactory,
 	recipient,
 	currency,
 } from "../1_setup";
 import { BN, concat, eighteenZeros, getChild, getEventArgs, op } from "../utils";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721A: Vapour721A;
 
 const nftPrice = ethers.BigNumber.from("1" + eighteenZeros);
 let totalWithdrawn = ethers.BigNumber.from(0)
@@ -33,7 +33,7 @@ describe("withdraw tests", () => {
 			constants: [20, nftPrice],
 		};
 
-		rain721aConstructorConfig = {
+		vapour721AConstructorConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -42,20 +42,20 @@ describe("withdraw tests", () => {
 			owner: owner.address,
 		};
 
-		const deployTrx = await rain721AFactory.createChildTyped(
-			rain721aConstructorConfig,
+		const deployTrx = await vapour721AFactory.createChildTyped(
+			vapour721AConstructorConfig,
 			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721AFactory, deployTrx);
-		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		const child = await getChild(vapour721AFactory, deployTrx);
+		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 	});
 
 	it("should withdraw the correct amount for one purchase", async () => {
 		await currency.connect(buyer0).mintTokens(10);
 		await currency
 			.connect(buyer0)
-			.approve(rain721a.address, ethers.BigNumber.from(nftPrice));
+			.approve(vapour721A.address, ethers.BigNumber.from(nftPrice));
 
 		const buyConfig: BuyConfigStruct = {
 			minimumUnits: 1,
@@ -63,18 +63,18 @@ describe("withdraw tests", () => {
 			maximumPrice: BN(10),
 		};
 
-		await rain721a.connect(buyer0).mintNFT(buyConfig);
+		await vapour721A.connect(buyer0).mintNFT(buyConfig);
 
-		expect(await rain721a.balanceOf(buyer0.address)).to.equals(1);
+		expect(await vapour721A.balanceOf(buyer0.address)).to.equals(1);
 
 		const recipientBalanceBefore = await currency.balanceOf(recipient.address);
 
-		const withdrawTx = await rain721a.connect(recipient).withdraw();
+		const withdrawTx = await vapour721A.connect(recipient).withdraw();
 
 		const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
 			withdrawTx,
 			"Withdraw",
-			rain721a
+			vapour721A
 		) as WithdrawEvent["args"];
 
 		const recipientBalanceAfter = await currency.balanceOf(recipient.address);
@@ -99,28 +99,28 @@ describe("withdraw tests", () => {
 
 		// first buyer
 		await currency.connect(buyer1).mintTokens(units);
-		await currency.connect(buyer1).approve(rain721a.address, units.mul(nftPrice));
+		await currency.connect(buyer1).approve(vapour721A.address, units.mul(nftPrice));
 
-		await rain721a.connect(buyer1).mintNFT(buyConfig);
-		expect(await rain721a.balanceOf(buyer1.address)).to.equals(units);
+		await vapour721A.connect(buyer1).mintNFT(buyConfig);
+		expect(await vapour721A.balanceOf(buyer1.address)).to.equals(units);
 
 		const buyer1Cost = nftPrice.mul(units);
 
 		// second buyer
 		await currency.connect(buyer2).mintTokens(units);
-		await currency.connect(buyer2).approve(rain721a.address, units.mul(nftPrice));
+		await currency.connect(buyer2).approve(vapour721A.address, units.mul(nftPrice));
 
-		await rain721a.connect(buyer2).mintNFT(buyConfig);
-		expect(await rain721a.balanceOf(buyer2.address)).to.equals(units);
+		await vapour721A.connect(buyer2).mintNFT(buyConfig);
+		expect(await vapour721A.balanceOf(buyer2.address)).to.equals(units);
 
 		const buyer2Cost = nftPrice.mul(units);
 
-		const withdrawTx = await rain721a.connect(recipient).withdraw();
+		const withdrawTx = await vapour721A.connect(recipient).withdraw();
 
 		const [withdrawer, amountWithdrawn, _totalWithdrawn] = (await getEventArgs(
 			withdrawTx,
 			"Withdraw",
-			rain721a
+			vapour721A
 		)) as WithdrawEvent["args"];
 
 		const recipientBalanceAfter = await currency.balanceOf(recipient.address);
@@ -139,7 +139,7 @@ describe("withdraw tests", () => {
 		const units = ethers.BigNumber.from(5);
 
 		await currency.connect(buyer1).mintTokens(units);
-		await currency.connect(buyer1).approve(rain721a.address, nftPrice.mul(units));
+		await currency.connect(buyer1).approve(vapour721A.address, nftPrice.mul(units));
 
 		const buyConfig: BuyConfigStruct = {
 			minimumUnits: 1,
@@ -147,19 +147,19 @@ describe("withdraw tests", () => {
 			maximumPrice: nftPrice,
 		};
 
-		await rain721a.connect(buyer1).mintNFT(buyConfig);
+		await vapour721A.connect(buyer1).mintNFT(buyConfig);
 
-		await expect(rain721a.connect(buyer0).withdraw()).revertedWith("RECIPIENT_ONLY")
+		await expect(vapour721A.connect(buyer0).withdraw()).revertedWith("RECIPIENT_ONLY")
 
-		const withdrawTx = await rain721a.connect(recipient).withdraw()
+		const withdrawTx = await vapour721A.connect(recipient).withdraw()
 
 		const [withdrawer, amountWithdrawn, _totalWithdrawn] = (await getEventArgs(
 			withdrawTx,
 			"Withdraw",
-			rain721a
+			vapour721A
 		)) as WithdrawEvent["args"];
 
-		expect(await rain721a._amountPayable()).to.equals(ethers.BigNumber.from(0));
+		expect(await vapour721A._amountPayable()).to.equals(ethers.BigNumber.from(0));
 
 		totalWithdrawn = _totalWithdrawn
 	});
@@ -170,7 +170,7 @@ describe("withdraw tests", () => {
 		const units = ethers.BigNumber.from(5);
 
 		await currency.connect(buyer2).mintTokens(units);
-		await currency.connect(buyer2).approve(rain721a.address, nftPrice.mul(units));
+		await currency.connect(buyer2).approve(vapour721A.address, nftPrice.mul(units));
 
 		const buyConfig: BuyConfigStruct = {
 			minimumUnits: 1,
@@ -178,19 +178,19 @@ describe("withdraw tests", () => {
 			maximumPrice: nftPrice,
 		};
 
-		await rain721a.connect(buyer2).mintNFT(buyConfig);
+		await vapour721A.connect(buyer2).mintNFT(buyConfig);
 
 		// set a new recipient
-		await rain721a.connect(recipient).setRecipient(buyer1.address)
+		await vapour721A.connect(recipient).setRecipient(buyer1.address)
 
 		const recipientBalanceBefore = await currency.balanceOf(buyer1.address);
 
-		const withdrawTx = await rain721a.connect(buyer1).withdraw();
+		const withdrawTx = await vapour721A.connect(buyer1).withdraw();
 
 		const [withdrawer, amountWithdrawn, _totalWithdrawn] = (await getEventArgs(
 			withdrawTx,
 			"Withdraw",
-			rain721a
+			vapour721A
 		)) as WithdrawEvent["args"];
 
 		const recipientBalanceAfter = await currency.balanceOf(buyer1.address);

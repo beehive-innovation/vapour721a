@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 import {
-	Rain721A,
+	Vapour721A,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	OwnershipTransferredEvent,
-} from "../../typechain/Rain721A";
+} from "../../typechain/Vapour721A";
 import { concat, getChild, op } from "../utils";
 import { VM } from "rain-sdk";
 import { expect } from "chai";
@@ -12,24 +12,24 @@ import {
 	buyer0,
 	config,
 	owner,
-	rain721AFactory,
+	vapour721AFactory,
 	recipient,
 	currency,
 } from "../1_setup";
 import { StateConfig } from "rain-sdk";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721aInitializeConfig: InitializeConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721AInitializeConfig: InitializeConfigStruct;
+let vapour721A: Vapour721A;
 
-describe("Rain721A Ownable test", () => {
+describe("Vapour721A Ownable test", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
 			constants: [1],
 		};
 
-		rain721aConstructorConfig = {
+		vapour721AConstructorConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -38,39 +38,39 @@ describe("Rain721A Ownable test", () => {
 			owner: owner.address,
 		};
 
-		rain721aInitializeConfig = {
+		vapour721AInitializeConfig = {
 			vmStateBuilder: config.allStandardOpsStateBuilder,
 			vmStateConfig: vmStateConfig,
 			currency: currency.address,
 		};
 
-		const deployTrx = await rain721AFactory.createChildTyped(
-			rain721aConstructorConfig,
+		const deployTrx = await vapour721AFactory.createChildTyped(
+			vapour721AConstructorConfig,
 			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721AFactory, deployTrx);
+		const child = await getChild(vapour721AFactory, deployTrx);
 
-		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 	});
 
 	it("Should be the correct owner", async () => {
-		expect(await await rain721a.owner()).to.equals(
-			rain721aConstructorConfig.owner
+		expect(await await vapour721A.owner()).to.equals(
+			vapour721AConstructorConfig.owner
 		);
 	});
 
 	it("Should fail to change owner with non-Owner address", async () => {
 		await expect(
-			rain721a.connect(buyer0).transferOwnership(recipient.address)
+			vapour721A.connect(buyer0).transferOwnership(recipient.address)
 		).to.revertedWith("Ownable: caller is not the owner");
 	});
 
 	it("Should able to change the owner", async () => {
-		const trx = await rain721a
+		const trx = await vapour721A
 			.connect(owner)
 			.transferOwnership(recipient.address);
 
-		expect(await rain721a.owner()).to.equals(recipient.address);
+		expect(await vapour721A.owner()).to.equals(recipient.address);
 	});
 });

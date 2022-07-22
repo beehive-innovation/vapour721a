@@ -1,10 +1,10 @@
 import { ethers } from "hardhat";
 import {
-	Rain721A,
+	Vapour721A,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	InitializeEvent,
-} from "../../typechain/Rain721A";
+} from "../../typechain/Vapour721A";
 import {
 	concat,
 	eighteenZeros,
@@ -15,15 +15,15 @@ import {
 } from "../utils";
 import { assert } from "console";
 import { expect } from "chai";
-import { config, owner, rain721AFactory, recipient, currency } from "../1_setup";
+import { config, owner, vapour721AFactory, recipient, currency } from "../1_setup";
 import { StateConfig, VM } from "rain-sdk";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721aInitializeConfig: InitializeConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721AInitializeConfig: InitializeConfigStruct;
+let vapour721A: Vapour721A;
 
-describe("Rain721A Initialize test", () => {
-	it("Should deploy Rain721A Contract and Initialize", async () => {
+describe("Vapour721A Initialize test", () => {
+	it("Should deploy Vapour721A Contract and Initialize", async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [
 				concat([
@@ -35,7 +35,7 @@ describe("Rain721A Initialize test", () => {
 			constants: [1, 0, ethers.BigNumber.from("1" + eighteenZeros)],
 		};
 
-		rain721aConstructorConfig = {
+		vapour721AConstructorConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -44,26 +44,26 @@ describe("Rain721A Initialize test", () => {
 			owner: owner.address,
 		};
 
-		rain721aInitializeConfig = {
+		vapour721AInitializeConfig = {
 			vmStateBuilder: config.allStandardOpsStateBuilder,
 			vmStateConfig: vmStateConfig,
 			currency: currency.address,
 		};
 
-		const trx = await rain721AFactory.createChildTyped(
-			rain721aConstructorConfig,
+		const trx = await vapour721AFactory.createChildTyped(
+			vapour721AConstructorConfig,
 			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721AFactory, trx);
+		const child = await getChild(vapour721AFactory, trx);
 
-		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-		assert(child != ZERO_ADDRESS, "Rain721A Address not find");
+		assert(child != ZERO_ADDRESS, "Vapour721A Address not find");
 		const [config_] = (await getEventArgs(
 			trx,
 			"Initialize",
-			rain721a
+			vapour721A
 		)) as InitializeEvent["args"];
 		assert(
 			config_.vmStateBuilder == config.allStandardOpsStateBuilder,
@@ -73,7 +73,7 @@ describe("Rain721A Initialize test", () => {
 	});
 
 	it("SHould fail to initialize again.", async () => {
-		await expect(rain721a.initialize(rain721aInitializeConfig)).to.revertedWith(
+		await expect(vapour721A.initialize(vapour721AInitializeConfig)).to.revertedWith(
 			"INITIALIZED"
 		);
 	});
@@ -83,32 +83,32 @@ describe("Rain721A Initialize test", () => {
 			[
 				"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner)",
 			],
-			[rain721aConstructorConfig]
+			[vapour721AConstructorConfig]
 		);
-		let createTrx = await rain721AFactory.createChild(encodedConfig);
+		let createTrx = await vapour721AFactory.createChild(encodedConfig);
 
-		let child = await getChild(rain721AFactory, createTrx);
+		let child = await getChild(vapour721AFactory, createTrx);
 
-		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-		let initializeTrx = await rain721a.initialize(rain721aInitializeConfig);
+		let initializeTrx = await vapour721A.initialize(vapour721AInitializeConfig);
 
 		const [config_] = (await getEventArgs(
 			initializeTrx,
 			"Initialize",
-			rain721a
+			vapour721A
 		)) as InitializeEvent["args"];
 
-		assert(child != ZERO_ADDRESS, "Rain721A Address not find");
+		assert(child != ZERO_ADDRESS, "Vapour721A Address not find");
 		assert(
 			config_.vmStateBuilder == config.allStandardOpsStateBuilder,
 			"Wrong stateBuilder address"
 		);
-		expect(config_.currency).to.deep.equals(rain721aInitializeConfig.currency);
+		expect(config_.currency).to.deep.equals(vapour721AInitializeConfig.currency);
 	});
 
-	it("Should fain to initialed rain721a contract deployed by createChild method", async () => {
-		await expect(rain721a.initialize(rain721aInitializeConfig)).to.revertedWith(
+	it("Should fain to initialed vapour721A contract deployed by createChild method", async () => {
+		await expect(vapour721A.initialize(vapour721AInitializeConfig)).to.revertedWith(
 			"INITIALIZED"
 		);
 	});

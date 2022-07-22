@@ -3,9 +3,9 @@ pragma solidity =0.8.10;
 
 import "@beehiveinnovation/rain-protocol/contracts/vm/StandardStateBuilder.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
-import "./Rain721A.sol";
+import "./Vapour721A.sol";
 
-contract Rain721AStateBuilder is StandardStateBuilder {
+contract Vapour721AStateBuilder is StandardStateBuilder {
 	using LibFnPtrs for bytes;
 
 	function localStackPopsFnPtrs()

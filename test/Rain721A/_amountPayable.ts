@@ -5,13 +5,13 @@ import { StateConfig, VM } from "rain-sdk";
 import {
     BuyConfigStruct,
     ConstructorConfigStruct,
-    Rain721A,
-} from "../../typechain/Rain721A";
+    Vapour721A,
+} from "../../typechain/Vapour721A";
 import {
     buyer0,
     buyer1,
     owner,
-    rain721AFactory,
+    vapour721AFactory,
     recipient,
     currency,
 } from "../1_setup";
@@ -24,8 +24,8 @@ import {
     StorageOpcodes,
 } from "../utils";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721A: Vapour721A;
 let _supplyLimit: BigNumber
 let nftPrice: BigNumber
 
@@ -44,7 +44,7 @@ describe('_amountPayable test', () => {
             constants: [nftPrice, _supplyLimit],
         };
 
-        rain721aConstructorConfig = {
+        vapour721AConstructorConfig = {
             name: "nft",
             symbol: "NFT",
             baseURI: "baseURI",
@@ -53,19 +53,19 @@ describe('_amountPayable test', () => {
             owner: owner.address,
         };
 
-        const deployTrx = await rain721AFactory.createChildTyped(
-            rain721aConstructorConfig,
+        const deployTrx = await vapour721AFactory.createChildTyped(
+            vapour721AConstructorConfig,
             currency.address,
             vmStateConfig
         );
 
-        const child = await getChild(rain721AFactory, deployTrx);
-        rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+        const child = await getChild(vapour721AFactory, deployTrx);
+        vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
     })
 
     it('should give the correct _amountPayable after a buyer mints.', async () => {
         await currency.connect(buyer0).mintTokens(10)
-        await currency.connect(buyer0).approve(rain721a.address, nftPrice.mul(_supplyLimit))
+        await currency.connect(buyer0).approve(vapour721A.address, nftPrice.mul(_supplyLimit))
 
         const units = ethers.BigNumber.from(10)
 
@@ -75,17 +75,17 @@ describe('_amountPayable test', () => {
             maximumPrice: nftPrice,
         };
 
-        await rain721a.connect(buyer0).mintNFT(buyConfig)
+        await vapour721A.connect(buyer0).mintNFT(buyConfig)
 
-        expect(await rain721a.totalSupply()).to.equals(units)
+        expect(await vapour721A.totalSupply()).to.equals(units)
 
-        expect(await rain721a._amountPayable()).to.equals(nftPrice.mul(units))
+        expect(await vapour721A._amountPayable()).to.equals(nftPrice.mul(units))
     })
 
     it('should give the correct _amountPayable after a second buyer mints.', async () => {
 
         await currency.connect(buyer1).mintTokens(10)
-        await currency.connect(buyer1).approve(rain721a.address, nftPrice.mul(_supplyLimit))
+        await currency.connect(buyer1).approve(vapour721A.address, nftPrice.mul(_supplyLimit))
 
         const units = ethers.BigNumber.from(10)
 
@@ -95,17 +95,17 @@ describe('_amountPayable test', () => {
             maximumPrice: nftPrice,
         };
 
-        await rain721a.connect(buyer1).mintNFT(buyConfig)
+        await vapour721A.connect(buyer1).mintNFT(buyConfig)
 
-        expect(await rain721a.totalSupply()).to.equals(units.add(units))
+        expect(await vapour721A.totalSupply()).to.equals(units.add(units))
 
-        expect(await rain721a._amountPayable()).to.equals(nftPrice.mul(units.add(units)))
+        expect(await vapour721A._amountPayable()).to.equals(nftPrice.mul(units.add(units)))
     })
 
     it('should give the correct _amountPayable after the recipient withdraws.', async () => {
 
-        await rain721a.connect(recipient).withdraw()
+        await vapour721A.connect(recipient).withdraw()
 
-        expect(await rain721a._amountPayable()).to.equals(ethers.BigNumber.from(0))
+        expect(await vapour721A._amountPayable()).to.equals(ethers.BigNumber.from(0))
     })
 })

@@ -4,12 +4,12 @@ import { StateConfig, VM } from "rain-sdk";
 import {
     BuyConfigStruct,
     ConstructorConfigStruct,
-    Rain721A,
-} from "../../typechain/Rain721A";
+    Vapour721A,
+} from "../../typechain/Vapour721A";
 import {
     buyer0,
     owner,
-    rain721AFactory,
+    vapour721AFactory,
     recipient,
     currency,
 } from "../1_setup";
@@ -22,8 +22,8 @@ import {
     StorageOpcodes,
 } from "../utils";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721A: Vapour721A;
 
 describe('_currency test', () => {
     it('should give the correct _currency after construction.', async () => {
@@ -35,7 +35,7 @@ describe('_currency test', () => {
             constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
         };
 
-        rain721aConstructorConfig = {
+        vapour721AConstructorConfig = {
             name: "nft",
             symbol: "NFT",
             baseURI: "baseURI",
@@ -44,14 +44,14 @@ describe('_currency test', () => {
             owner: owner.address,
         };
 
-        const deployTrx = await rain721AFactory.createChildTyped(
-            rain721aConstructorConfig,
+        const deployTrx = await vapour721AFactory.createChildTyped(
+            vapour721AConstructorConfig,
             currency.address,
             vmStateConfig
         );
-        const child = await getChild(rain721AFactory, deployTrx);
-        rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+        const child = await getChild(vapour721AFactory, deployTrx);
+        vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-        expect(await rain721a._currency()).to.equals(currency.address)
+        expect(await vapour721A._currency()).to.equals(currency.address)
     })
 })

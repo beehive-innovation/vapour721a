@@ -5,31 +5,31 @@ import {
 	ConstructEvent,
 	ConstructorConfigStruct,
 	InitializeConfigStruct,
-	Rain721A,
-} from "../../typechain/Rain721A";
+	Vapour721A,
+} from "../../typechain/Vapour721A";
 import {
 	buyer1,
 	buyer7,
 	config,
 	owner,
-	rain721AFactory,
+	vapour721AFactory,
 	recipient,
 	currency,
 } from "../1_setup";
 import { concat, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
 
-let rain721aConstructorConfig: ConstructorConfigStruct;
-let rain721aInitializeConfig: InitializeConfigStruct;
-let rain721a: Rain721A;
+let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721AInitializeConfig: InitializeConfigStruct;
+let vapour721A: Vapour721A;
 
-describe("Rain721A recipient test", () => {
+describe("Vapour721A recipient test", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
 			constants: [1],
 		};
 
-		rain721aConstructorConfig = {
+		vapour721AConstructorConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -45,39 +45,39 @@ describe("Rain721A recipient test", () => {
 			constants: [1],
 		};
 
-		const deployTrx = await rain721AFactory.createChildTyped(
-			rain721aConstructorConfig,
+		const deployTrx = await vapour721AFactory.createChildTyped(
+			vapour721AConstructorConfig,
 			currency.address,
 			vmStateConfig
 		);
-		const child = await getChild(rain721AFactory, deployTrx);
+		const child = await getChild(vapour721AFactory, deployTrx);
 
-		rain721a = (await ethers.getContractAt("Rain721A", child)) as Rain721A;
+		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
 		const [config_] = (await getEventArgs(
 			deployTrx,
 			"Construct",
-			rain721a
+			vapour721A
 		)) as ConstructEvent["args"];
 
-		expect(config_.recipient).to.equals(rain721aConstructorConfig.recipient);
+		expect(config_.recipient).to.equals(vapour721AConstructorConfig.recipient);
 	});
 
 	it("Should fail to change recipient by non-recipient user", async () => {
 		await expect(
-			rain721a.connect(buyer7).setRecipient(buyer1.address)
+			vapour721A.connect(buyer7).setRecipient(buyer1.address)
 		).to.revertedWith("RECIPIENT_ONLY");
 	});
 
 	it("Should fail to change recipient to ZEROADDRESS", async () => {
 		await expect(
-			rain721a.connect(recipient).setRecipient(ZERO_ADDRESS)
+			vapour721A.connect(recipient).setRecipient(ZERO_ADDRESS)
 		).to.revertedWith("INVALID_ADDRESS");
 	});
 
 	it("Should fail to change recipient to contract address", async () => {
 		await expect(
-			rain721a.connect(recipient).setRecipient(currency.address)
+			vapour721A.connect(recipient).setRecipient(currency.address)
 		).to.revertedWith("INVALID_ADDRESS");
 	});
 });

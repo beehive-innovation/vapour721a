@@ -2,14 +2,14 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "hardhat";
 import {
 	ConstructorConfigStruct,
-} from "../../typechain/Rain721A";
+} from "../../typechain/Vapour721A";
 import { concat, getEventArgs, op } from "../utils";
 import { checkChildIntegrity } from "./childIntegrity";
 import { expect } from "chai";
 import { ReserveToken } from "../../typechain/ReserveToken";
 import { Token } from "../../typechain/Token";
 import { StateConfig, VM } from "rain-sdk";
-import { rain721AFactory } from "../1_setup";
+import { vapour721AFactory } from "../1_setup";
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -35,7 +35,7 @@ before(async () => {
 	await currency.deployed();
 
 	constructorConfig = {
-		name: "rain721a",
+		name: "vapour721A",
 		symbol: "RAIN721A",
 		baseURI: "BASE_URI",
 		supplyLimit: 1000,
@@ -50,17 +50,17 @@ it("should allow anyone to create a child (createChildTyped)", async () => {
 		constants: [1],
 	};
 
-	const createChildTx = await rain721AFactory
+	const createChildTx = await vapour721AFactory
 		.connect(signer2)
 		.createChildTyped(constructorConfig, currency.address, vmStateConfig);
 
 	const { sender, child } = await getEventArgs(
 		createChildTx,
 		"NewChild",
-		rain721AFactory
+		vapour721AFactory
 	);
 
-	expect(sender).to.equals(rain721AFactory.address);
+	expect(sender).to.equals(vapour721AFactory.address);
 
-	await checkChildIntegrity(rain721AFactory, child, constructorConfig);
+	await checkChildIntegrity(vapour721AFactory, child, constructorConfig);
 });
