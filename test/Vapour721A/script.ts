@@ -409,7 +409,7 @@ describe("Script Tests", () => {
 		});
 	});
 
-	describe("Buy before timestamp test", () => {
+	describe("multi round sale", () => {
 		before(async () => {
 
 			// deplying factories
