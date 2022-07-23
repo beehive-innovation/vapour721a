@@ -5,9 +5,10 @@ import {Result} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import {execSync} from "child_process";
-import {AllStandardOps, StateConfig} from "rain-sdk";
+import {AllStandardOps, ERC20, StateConfig} from "rain-sdk";
 import {Vapour721AFactory, NewChildEvent} from "../typechain/Vapour721AFactory";
 import {ethers} from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 const logger = new Logger(version);
 export const eighteenZeros = "000000000000000000";
 export const BN = (num: number): BigNumber => {
@@ -365,4 +366,13 @@ export async function getPrice(
 
 	if (price_.lt(end_price)) return price_;
 	return end_price;
+}
+
+
+export async function getBalance(contract: string, signer: SignerWithAddress): Promise<BigNumber> {
+	if (contract == ZERO_ADDRESS){
+		return await ethers.provider.getBalance(signer.address);
+	}
+	let token = new ERC20(contract, signer);
+	return await token.balanceOf(signer.address);
 }

@@ -172,3 +172,4 @@ const deployWithBaseURI = async (baseURI: string) => {
 
 	return await vapour721A.tokenURI(1)
 }
+VM
