@@ -23,6 +23,7 @@ struct ConstructorConfig {
 	uint256 supplyLimit;
 	address recipient;
 	address owner;
+	uint256 royaltyBPS;
 }
 
 /**
@@ -36,9 +37,9 @@ struct InitializeConfig {
 }
 
 struct BuyConfig {
-    uint256 maximumPrice;
-    uint256 minimumUnits;
-    uint256 desiredUnits;
+	uint256 maximumPrice;
+	uint256 minimumUnits;
+	uint256 desiredUnits;
 }
 
 uint256 constant STORAGE_OPCODES_LENGTH = 3;
@@ -60,7 +61,6 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	using LibFnPtrs for bytes;
 	using FixedPointMath for uint256;
 
-
 	// storage variables
 	uint256 public _supplyLimit;
 	uint256 private _amountWithdrawn;
@@ -69,6 +69,9 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	address private _vmStatePointer;
 	address public _currency;
 	address public _recipient;
+
+	// Royalty amount in bps
+	uint256 private _royaltyBPS;
 
 	string public baseURI;
 
@@ -86,6 +89,9 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	{
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
+
+		_royaltyBPS = config_.royaltyBPS;
+		require(_royaltyBPS < 10_000, "MAX_ROYALTY");
 
 		setRecipient(config_.recipient);
 		transferOwnership(config_.owner);
@@ -141,7 +147,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	function _loadState() internal view returns (State memory) {
 		return LibState.fromBytesPacked(SSTORE2.read(_vmStatePointer));
 	}
-	
+
 	function calculateBuy(address account_, uint256 targetUnits_)
 		public
 		view
@@ -153,9 +159,8 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 		bytes memory context_ = new bytes(0x40);
 		assembly {
 			mstore(add(context_, 0x20), account_)
-            mstore(add(add(context_, 0x20), 0x20), targetUnits_)
+			mstore(add(add(context_, 0x20), 0x20), targetUnits_)
 		}
-
 
 		eval(context_, state_, 0);
 
@@ -167,21 +172,24 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 
 	function mintNFT(BuyConfig calldata config_) external {
 		require(0 < config_.minimumUnits, "0_MINIMUM");
-        require(
-            config_.minimumUnits <= config_.desiredUnits,
-            "MINIMUM_OVER_DESIRED"
-        );
+		require(
+			config_.minimumUnits <= config_.desiredUnits,
+			"MINIMUM_OVER_DESIRED"
+		);
 
 		uint256 remainingUnits_ = _supplyLimit - _totalMinted();
 		uint256 targetUnits_ = config_.desiredUnits.min(remainingUnits_);
 
-		(uint256 maxUnits_, uint256 price_) = calculateBuy(msg.sender, targetUnits_);
+		(uint256 maxUnits_, uint256 price_) = calculateBuy(
+			msg.sender,
+			targetUnits_
+		);
 
 		uint256 units_ = maxUnits_.min(targetUnits_);
 		require(units_ >= config_.minimumUnits, "INSUFFICIENT_STOCK");
 
 		require(price_ <= config_.maximumPrice, "MAXIMUM_PRICE");
-        uint256 cost_ = price_ * units_;
+		uint256 cost_ = price_ * units_;
 		IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
 
 		_amountPayable = _amountPayable + cost_;
@@ -212,7 +220,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 			stackTopLocation_ := add(stackTopLocation_, 0x20)
 		}
 		return stackTopLocation_;
-	} 
+	}
 
 	function opTotalMinted(uint256, uint256 stackTopLocation_)
 		internal
@@ -300,5 +308,18 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
 		IERC20(_currency).transfer(_recipient, _amountPayable);
 		_amountPayable = 0;
+	}
+
+	//// @dev Get royalty information for token
+	//// @param _salePrice Sale price for the token
+	function royaltyInfo(uint256, uint256 _salePrice)
+		external
+		view
+		returns (address receiver, uint256 royaltyAmount)
+	{
+		if (_recipient == address(0x0)) {
+			return (_recipient, 0);
+		}
+		return (_recipient, (_salePrice * _royaltyBPS) / 10_000);
 	}
 }

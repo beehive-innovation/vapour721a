@@ -49,6 +49,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
@@ -111,6 +112,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
@@ -230,6 +232,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
@@ -350,6 +353,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -443,6 +447,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -519,6 +524,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -595,6 +601,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -673,6 +680,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -757,6 +765,7 @@ describe("Vapour721A localOpcodes test", () => {
 				supplyLimit: 10,
 				recipient: recipient.address,
 				owner: owner.address,
+				royaltyBPS: 1000
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
