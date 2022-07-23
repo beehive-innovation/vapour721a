@@ -23,6 +23,7 @@ struct ConstructorConfig {
 	uint256 supplyLimit;
 	address recipient;
 	address owner;
+	uint256 royaltyBPS;
 }
 
 /**
@@ -70,6 +71,9 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	address public _currency;
 	address payable public _recipient;
 
+	// Royalty amount in bps
+	uint256 private _royaltyBPS;
+
 	string public baseURI;
 
 	event Construct(ConstructorConfig config_);
@@ -86,6 +90,9 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	{
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
+
+		_royaltyBPS = config_.royaltyBPS;
+		require(_royaltyBPS < 10_000, "MAX_ROYALTY");
 
 		setRecipient(config_.recipient);
 		transferOwnership(config_.owner);
@@ -298,7 +305,6 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	}
 
 	function withdraw() external {
-		require(_recipient == msg.sender, "RECIPIENT_ONLY");
 		require(_amountPayable > 0, "ZERO_FUND");
 		_amountWithdrawn = _amountWithdrawn + _amountPayable;
 		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
@@ -307,5 +313,18 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 		else IERC20(_currency).transfer(_recipient, _amountPayable);
 
 		_amountPayable = 0;
+	}
+
+	//// @dev Get royalty information for token
+	//// @param _salePrice Sale price for the token
+	function royaltyInfo(uint256, uint256 _salePrice)
+		external
+		view
+		returns (address receiver, uint256 royaltyAmount)
+	{
+		if (_recipient == address(0x0)) {
+			return (_recipient, 0);
+		}
+		return (_recipient, (_salePrice * _royaltyBPS) / 10_000);
 	}
 }

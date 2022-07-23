@@ -1,6 +1,6 @@
 import {Logger} from "@ethersproject/logger";
 import {version} from "./_version";
-import {ContractTransaction, Contract, BigNumber, Overrides} from "ethers";
+import {ContractTransaction, Contract, BigNumber, Overrides, ContractReceipt} from "ethers";
 import {Result} from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
@@ -375,4 +375,9 @@ export async function getBalance(contract: string, signer: SignerWithAddress): P
 	}
 	let token = new ERC20(contract, signer);
 	return await token.balanceOf(signer.address);
+}
+
+export async function getGasUsed(trx: ContractTransaction): Promise<BigNumber> {
+	const receipt = await trx.wait();
+	return BigNumber.from(receipt.cumulativeGasUsed).mul(BigNumber.from(receipt.effectiveGasPrice));
 }
