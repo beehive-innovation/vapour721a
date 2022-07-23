@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { StateConfig, RainJS } from "rain-sdk";
+import { BetweenTimestamps, IncDecPrice, StateConfig, utils, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
@@ -106,20 +106,29 @@ describe("Script Tests", () => {
 	describe("Buy after timestamp test", () => {
 		before(async () => {
 			const block_before = await ethers.provider.getBlock("latest");
-			const vmStateConfig: StateConfig = {
-				sources: [
-					concat([
-						op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-						op(Opcode.CONSTANT, 2), // given timestamp
-						op(Opcode.GREATER_THAN), // current_timestamp > given_timestamp
-						op(Opcode.CONSTANT, 1), // 100 units
-						op(Opcode.CONSTANT, 0), // 0 units
-						op(Opcode.EAGER_IF), // (current_timestamp > given_timestamp)? 100 : 0;
-						op(Opcode.CONSTANT, 3), // price 1 ETH
-					]),
-				],
-				constants: [0, 100, block_before.timestamp + 100, BN(1)],
-			};
+
+			const vmStateConfig: StateConfig = VM.pair(
+				VM.ifelse(
+					VM.beforeAfterTime(block_before.timestamp +  100, "gte"),
+					VM.constant(100),
+					VM.constant(0)
+				),
+				VM.constant(BN(1))
+			)
+			// {
+			// 	sources: [
+			// 		concat([
+			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
+			// 			op(Opcode.CONSTANT, 2), // given timestamp
+			// 			op(Opcode.GREATER_THAN), // current_timestamp > given_timestamp
+			// 			op(Opcode.CONSTANT, 1), // 100 units
+			// 			op(Opcode.CONSTANT, 0), // 0 units
+			// 			op(Opcode.EAGER_IF), // (current_timestamp > given_timestamp)? 100 : 0;
+			// 			op(Opcode.CONSTANT, 3), // price 1 ETH
+			// 		]),
+			// 	],
+			// 	constants: [0, 100, block_before.timestamp + 100, BN(1)],
+			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -165,20 +174,30 @@ describe("Script Tests", () => {
 		before(async () => {
 			const block_before = await ethers.provider.getBlock("latest");
 			const time = block_before.timestamp + 3600;
-			const vmStateConfig: StateConfig = {
-				sources: [
-					concat([
-						op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-						op(Opcode.CONSTANT, 2), // given timestamp
-						op(Opcode.LESS_THAN), // current_timestamp < given_timestamp
-						op(Opcode.CONSTANT, 1), // 100 units
-						op(Opcode.CONSTANT, 0), // 0 units
-						op(Opcode.EAGER_IF), // (current_timestamp < given_timestamp)? 100 : 0;
-						op(Opcode.CONSTANT, 3), // price 1 ETH
-					]),
-				],
-				constants: [0, 100, time, BN(1)],
-			};
+
+			const vmStateConfig: StateConfig = VM.pair(
+				VM.ifelse(
+					VM.beforeAfterTime(time, "lte"),
+					VM.constant(100),
+					VM.constant(0)
+				),
+				VM.constant(BN(1))
+			)
+			
+			// {
+			// 	sources: [
+			// 		concat([
+			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
+			// 			op(Opcode.CONSTANT, 2), // given timestamp
+			// 			op(Opcode.LESS_THAN), // current_timestamp < given_timestamp
+			// 			op(Opcode.CONSTANT, 1), // 100 units
+			// 			op(Opcode.CONSTANT, 0), // 0 units
+			// 			op(Opcode.EAGER_IF), // (current_timestamp < given_timestamp)? 100 : 0;
+			// 			op(Opcode.CONSTANT, 3), // price 1 ETH
+			// 		]),
+			// 	],
+			// 	constants: [0, 100, time, BN(1)],
+			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -225,24 +244,34 @@ describe("Script Tests", () => {
 			const block_before = await ethers.provider.getBlock("latest");
 			const start_time = block_before.timestamp + 3600;
 			const end_time = start_time + 3600;
-			const vmStateConfig: StateConfig = {
-				sources: [
-					concat([
-						op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-						op(Opcode.CONSTANT, 3), // endTime_timestamp
-						op(Opcode.LESS_THAN), // current_timestamp < endTime_timestamp
-						op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-						op(Opcode.CONSTANT, 2), // startTime_timestamp
-						op(Opcode.GREATER_THAN), // current_timestamp > startTime_timestamp
-						op(Opcode.EVERY, 2),
-						op(Opcode.CONSTANT, 1), // 100 units
-						op(Opcode.CONSTANT, 0), // 0 units
-						op(Opcode.EAGER_IF), // (current_timestamp < given_timestamp)? 100 : 0;
-						op(Opcode.CONSTANT, 4), // price 1 ETH
-					]),
-				],
-				constants: [0, 100, start_time, end_time, BN(1)],
-			};
+
+			const vmStateConfig: StateConfig = VM.pair(
+				VM.ifelse(
+					new BetweenTimestamps(start_time, end_time),
+					VM.constant(100),
+					VM.constant(0)
+				),
+				VM.constant(BN(1))
+			) 
+			
+			// {
+			// 	sources: [
+			// 		concat([
+			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
+			// 			op(Opcode.CONSTANT, 3), // endTime_timestamp
+			// 			op(Opcode.LESS_THAN), // current_timestamp < endTime_timestamp
+			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
+			// 			op(Opcode.CONSTANT, 2), // startTime_timestamp
+			// 			op(Opcode.GREATER_THAN), // current_timestamp > startTime_timestamp
+			// 			op(Opcode.EVERY, 2),
+			// 			op(Opcode.CONSTANT, 1), // 100 units
+			// 			op(Opcode.CONSTANT, 0), // 0 units
+			// 			op(Opcode.EAGER_IF), // (current_timestamp < given_timestamp)? 100 : 0;
+			// 			op(Opcode.CONSTANT, 4), // price 1 ETH
+			// 		]),
+			// 	],
+			// 	constants: [0, 100, start_time, end_time, BN(1)],
+			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -299,34 +328,45 @@ describe("Script Tests", () => {
 		let start_time, end_time, start_price, end_price, priceChange, isInc;
 		before(async () => {
 			const block_before = await ethers.provider.getBlock("latest");
+			
 			start_time = block_before.timestamp;
 			end_time = start_time + 3600 * 4; // 4 hours sale
-			start_price = BN(1);
-			end_price = BN(4);
+			start_price = 1;
+			end_price = 4;
 
-			isInc = end_price.gte(start_time) ? true : false;
+			isInc = end_price >= (start_time) ? true : false;
 			let raiseDuration = end_time - start_time;
 			priceChange = isInc
-				? end_price.sub(start_price).div(raiseDuration)
-				: start_price.sub(end_price).div(raiseDuration);
+				? (end_price - start_price) / (raiseDuration)
+				: (start_price - end_price) / (raiseDuration);
 
-			vmStateConfig = {
-				sources: [
-					concat([
-						op(Opcode.CONSTANT, 0),
-						op(Opcode.BLOCK_TIMESTAMP),
-						op(Opcode.CONSTANT, 4),
-						op(Opcode.SUB, 2),
-						op(Opcode.CONSTANT, 3),
-						op(Opcode.MUL, 2),
-						op(Opcode.CONSTANT, 1),
-						isInc ? op(Opcode.ADD, 2) : op(Opcode.SATURATING_SUB, 2),
-						op(Opcode.CONSTANT, 2),
-						op(Opcode.MIN, 2),
-					]),
-				],
-				constants: [100, start_price, end_price, priceChange, start_time],
-			};
+			vmStateConfig = VM.pair(
+				VM.constant(100),
+				new IncDecPrice(
+					start_price,
+					end_price,
+					start_time,
+					end_time,
+				)
+			)
+			
+			// {
+			// 	sources: [
+			// 		concat([
+			// 			op(Opcode.CONSTANT, 0),
+			// 			op(Opcode.BLOCK_TIMESTAMP),
+			// 			op(Opcode.CONSTANT, 4),
+			// 			op(Opcode.SUB, 2),
+			// 			op(Opcode.CONSTANT, 3),
+			// 			op(Opcode.MUL, 2),
+			// 			op(Opcode.CONSTANT, 1),
+			// 			isInc ? op(Opcode.ADD, 2) : op(Opcode.SATURATING_SUB, 2),
+			// 			op(Opcode.CONSTANT, 2),
+			// 			op(Opcode.MIN, 2),
+			// 		]),
+			// 	],
+			// 	constants: [100, start_price, end_price, priceChange, start_time],
+			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -428,7 +468,7 @@ describe("Script Tests", () => {
 				10
 			);
 			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-			expect(price_).to.equals(end_price);
+			expect(price_).to.equals(utils.parseUnits(end_price.toString()));
 		});
 	});
 });

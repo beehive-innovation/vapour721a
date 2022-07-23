@@ -1,5 +1,5 @@
 {
   "network": "localhost",
-  "vapour721AFactory": "0xcB0f2a13098f8e841e6Adfa5B17Ec00508b27665",
-  "vapour721AStateBuilder": "0xd9abC93F81394Bd161a1b24B03518e0a570bDEAd"
+  "vapour721AFactory": "0x01E21d7B8c39dc4C764c19b308Bd8b14B1ba139E",
+  "vapour721AStateBuilder": "0x9Fcca440F19c62CDF7f973eB6DDF218B15d4C71D"
 }

@@ -9,14 +9,14 @@
 	},
 	"repository": {
 		"type": "git",
-		"url": "git+https://github.com/beehive-innovation/rain721a.git"
+		"url": "git+https://github.com/beehive-innovation/vapour721a.git"
 	},
 	"author": "beehive-innovation",
 	"license": "ISC",
 	"bugs": {
-		"url": "https://github.com/beehive-innovation/rain721a/issues"
+		"url": "https://github.com/beehive-innovation/vapour721a/issues"
 	},
-	"homepage": "https://github.com/beehive-innovation/rain721a#readme",
+	"homepage": "https://github.com/beehive-innovation/vapour721a#readme",
 	"devDependencies": {
 		"@nomiclabs/hardhat-ethers": "^2.0.3",
 		"@nomiclabs/hardhat-etherscan": "^3.0.3",
@@ -30,6 +30,7 @@
 		"chai": "^4.3.6",
 		"erc721a": "^3.3.0",
 		"eslint": "^8.2.0",
+		"ethereum-waffle": "^3.4.4",
 		"ethers": "^5.5.2",
 		"hardhat": "^2.9.2",
 		"hardhat-contract-sizer": "^2.5.1",

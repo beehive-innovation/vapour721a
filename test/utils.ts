@@ -5,11 +5,13 @@ import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { AllStandardOps, StateConfig } from "rain-sdk";
+import { AllStandardOps, StateConfig, utils } from "rain-sdk";
 import { Vapour721AFactory, NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers } from "hardhat";
 import { Factory } from "../typechain";
+
 const logger = new Logger(version);
+
 export const eighteenZeros = "000000000000000000";
 export const BN = (num: number): BigNumber => {
 	return ethers.BigNumber.from(num + eighteenZeros);
@@ -353,17 +355,22 @@ export function debug(): Uint8Array {
 }
 
 export async function getPrice(
-	start_price: BigNumber,
-	end_price: BigNumber,
-	priceChange: BigNumber,
-	start_time: BigNumber,
+	start_price: number,
+	end_price: number,
+	priceChange: number,
+	start_time: number,
 	isInc: boolean
 ): Promise<BigNumber> {
-	const time = (await ethers.provider.getBlock("latest")).timestamp;
-	let price_ = isInc
-		? BigNumber.from(time).sub(start_time).mul(priceChange).add(start_price)
-		: BigNumber.from(time).sub(start_time).mul(priceChange).add(start_price);
+	const time = BigNumber.from((await ethers.provider.getBlock("latest")).timestamp);
+	const startTime = BigNumber.from(start_time);
+	const startPrice = utils.parseUnits(start_price.toFixed(17).toString())
+	const endPrice = utils.parseUnits(end_price.toFixed(17).toString())
+	const PriceChange = utils.parseUnits(priceChange.toFixed(17).toString())
 
-	if (price_.lt(end_price)) return price_;
-	return end_price;
+	let price_ = isInc
+		? time.sub(startTime).mul(PriceChange).add(startPrice)
+		: startPrice.sub(time.sub(startTime).mul(PriceChange))
+
+	if (price_.lt(endPrice)) return price_;
+	return endPrice;
 }
