@@ -37,7 +37,7 @@
     "hardhat-storage-layout": "^0.1.6",
     "prettier": "^2.3.2",
     "pretty-quick": "^3.1.1",
-    "rain-sdk": "2.0.0",
+    "rain-sdk": "git+https://github.com/beehive-innovation/rain-sdk.git#0ee4114b93a4afb84abac54330069d52aa730c71",
     "solc-0.8": "npm:solc@^0.8.10",
     "solhint": "^3.3.4",
     "solidity-docgen": "^0.5.13",
