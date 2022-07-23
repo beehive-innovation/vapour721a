@@ -1,6 +1,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { BetweenTimestamps, IncDecPrice, StateConfig, utils, VM } from "rain-sdk";
+import { BetweenTimestamps, CombineTierGenerator, IncDecPrice, StateConfig, utils, VM } from "rain-sdk";
+import { Verify, VerifyFactory, VerifyTier, VerifyTierFactory } from "../../typechain";
 import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
@@ -18,9 +19,11 @@ import {
 	StorageOpcodes,
 } from "../utils";
 
+
 let vapour721AConstructorConfig: ConstructorConfigStruct;
 let vapour721A: Vapour721A;
 const MAX_CAP = 5;
+
 describe("Script Tests", () => {
 	describe("MAX_CAP per user test", () => {
 		before(async () => {
@@ -115,20 +118,6 @@ describe("Script Tests", () => {
 				),
 				VM.constant(BN(1))
 			)
-			// {
-			// 	sources: [
-			// 		concat([
-			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-			// 			op(Opcode.CONSTANT, 2), // given timestamp
-			// 			op(Opcode.GREATER_THAN), // current_timestamp > given_timestamp
-			// 			op(Opcode.CONSTANT, 1), // 100 units
-			// 			op(Opcode.CONSTANT, 0), // 0 units
-			// 			op(Opcode.EAGER_IF), // (current_timestamp > given_timestamp)? 100 : 0;
-			// 			op(Opcode.CONSTANT, 3), // price 1 ETH
-			// 		]),
-			// 	],
-			// 	constants: [0, 100, block_before.timestamp + 100, BN(1)],
-			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -183,21 +172,6 @@ describe("Script Tests", () => {
 				),
 				VM.constant(BN(1))
 			)
-			
-			// {
-			// 	sources: [
-			// 		concat([
-			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-			// 			op(Opcode.CONSTANT, 2), // given timestamp
-			// 			op(Opcode.LESS_THAN), // current_timestamp < given_timestamp
-			// 			op(Opcode.CONSTANT, 1), // 100 units
-			// 			op(Opcode.CONSTANT, 0), // 0 units
-			// 			op(Opcode.EAGER_IF), // (current_timestamp < given_timestamp)? 100 : 0;
-			// 			op(Opcode.CONSTANT, 3), // price 1 ETH
-			// 		]),
-			// 	],
-			// 	constants: [0, 100, time, BN(1)],
-			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -253,25 +227,6 @@ describe("Script Tests", () => {
 				),
 				VM.constant(BN(1))
 			) 
-			
-			// {
-			// 	sources: [
-			// 		concat([
-			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-			// 			op(Opcode.CONSTANT, 3), // endTime_timestamp
-			// 			op(Opcode.LESS_THAN), // current_timestamp < endTime_timestamp
-			// 			op(Opcode.BLOCK_TIMESTAMP), // current timestamp
-			// 			op(Opcode.CONSTANT, 2), // startTime_timestamp
-			// 			op(Opcode.GREATER_THAN), // current_timestamp > startTime_timestamp
-			// 			op(Opcode.EVERY, 2),
-			// 			op(Opcode.CONSTANT, 1), // 100 units
-			// 			op(Opcode.CONSTANT, 0), // 0 units
-			// 			op(Opcode.EAGER_IF), // (current_timestamp < given_timestamp)? 100 : 0;
-			// 			op(Opcode.CONSTANT, 4), // price 1 ETH
-			// 		]),
-			// 	],
-			// 	constants: [0, 100, start_time, end_time, BN(1)],
-			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -328,7 +283,7 @@ describe("Script Tests", () => {
 		let start_time, end_time, start_price, end_price, priceChange, isInc;
 		before(async () => {
 			const block_before = await ethers.provider.getBlock("latest");
-			
+
 			start_time = block_before.timestamp;
 			end_time = start_time + 3600 * 4; // 4 hours sale
 			start_price = 1;
@@ -349,24 +304,6 @@ describe("Script Tests", () => {
 					end_time,
 				)
 			)
-			
-			// {
-			// 	sources: [
-			// 		concat([
-			// 			op(Opcode.CONSTANT, 0),
-			// 			op(Opcode.BLOCK_TIMESTAMP),
-			// 			op(Opcode.CONSTANT, 4),
-			// 			op(Opcode.SUB, 2),
-			// 			op(Opcode.CONSTANT, 3),
-			// 			op(Opcode.MUL, 2),
-			// 			op(Opcode.CONSTANT, 1),
-			// 			isInc ? op(Opcode.ADD, 2) : op(Opcode.SATURATING_SUB, 2),
-			// 			op(Opcode.CONSTANT, 2),
-			// 			op(Opcode.MIN, 2),
-			// 		]),
-			// 	],
-			// 	constants: [100, start_price, end_price, priceChange, start_time],
-			// };
 
 			vapour721AConstructorConfig = {
 				name: "nft",
@@ -471,4 +408,154 @@ describe("Script Tests", () => {
 			expect(price_).to.equals(utils.parseUnits(end_price.toString()));
 		});
 	});
+
+	describe("Buy before timestamp test", () => {
+		before(async () => {
+
+			// deplying factories
+			const verifyFactory = await (await ethers.getContractFactory("VerifyFactory")).deploy() as VerifyFactory;   
+			const verifyTierFactory = await (await ethers.getContractFactory("VerifyTierFactory")).deploy() as VerifyTierFactory;
+
+			// deploying verify1
+			const verifyTx1 = await verifyFactory.createChildTyped({admin: buyer0.address, callback:ethers.constants.AddressZero })
+			const verifyAddress1 = await getChild(verifyFactory, verifyTx1)
+			const verify1  = (await ethers.getContractAt("Verify", verifyAddress1)) as Verify;
+
+			// deploying verify2
+			const verifyTx2 = await verifyFactory.createChildTyped({admin: buyer0.address, callback:ethers.constants.AddressZero })
+			const verifyAddress2 = await getChild(verifyFactory, verifyTx2)
+			const verify2  = (await ethers.getContractAt("Verify", verifyAddress2)) as Verify;
+			
+			// deploying verifyTier1
+			const verifyTierTx1 = await verifyTierFactory.createChildTyped(verify1.address)
+			const verifyTierAddress1 = await getChild(verifyTierFactory, verifyTierTx1)
+
+			// deploying verifyTier2
+			const verifyTierTx2 = await verifyTierFactory.createChildTyped(verify2.address)
+			const verifyTierAddress2 = await getChild(verifyTierFactory, verifyTierTx2)
+			
+			// Grant approver role to buyer0
+			await verify1.connect(buyer0).grantRole(await verify1.APPROVER(), buyer0.address);
+			
+			// Approving buyer0
+			await verify1.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
+			
+			// Grant approver role to buyer0
+			await verify2.connect(buyer0).grantRole(await verify2.APPROVER(), buyer0.address);
+
+			// Approving buyer0
+			await verify2.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
+
+
+			const block_before = await ethers.provider.getBlock("latest");
+
+			let time1 = block_before.timestamp + 3600; // 1 hour exclusive round
+			let time2 = time1 + 3600 * 4; // 4 hours pre-sale
+
+			const q1 = 100; // exclusive round mint quantity
+			const q2 = 50; // pre-sale round quantity
+			const q3 = 5; // sale quantity
+
+			const p1 = 1; // exclusive round price
+			const p2 = 5; // pre-sale quantity
+			const p3 = 10; // sale quantity
+
+			const vmStateConfig: StateConfig = VM.pair(
+				// quantity script
+				VM.ifelse(
+					// rule 1
+					VM.and([
+						VM.beforeAfterTime(time1, "lt"),
+						VM.hasAnyTier(
+							new CombineTierGenerator(verifyTierAddress1)
+						)
+					]),
+					VM.constant(q1),
+					VM.ifelse(
+						//rule 2
+						VM.and([
+							new BetweenTimestamps(time1, time2),
+							VM.hasAnyTier(
+								new CombineTierGenerator(verifyTierAddress2)
+							)
+						]),
+						VM.constant(q2),
+						VM.constant(q3)
+					)
+				),
+				// price script
+				VM.ifelse(
+					// rule 1
+					VM.and([
+						VM.beforeAfterTime(time1, "lt"),
+						VM.hasAnyTier(
+							new CombineTierGenerator(verifyTierAddress1)
+						)
+					]),
+					VM.constant(p1),
+					VM.ifelse(
+						// rule 2
+						VM.and([
+							new BetweenTimestamps(time1, time2),
+							VM.hasAnyTier(
+								new CombineTierGenerator(verifyTierAddress2)
+							)
+						]),
+						VM.constant(p2),
+						VM.constant(p3)
+					)
+				)
+			)
+			
+			vapour721AConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+				royaltyBPS: 1000
+			};
+
+			const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
+				vapour721AConstructorConfig,
+				currency.address,
+				vmStateConfig
+			);
+			
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		});
+
+		it("it Should return 100 Units for exclusive round", async () => {
+			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(1);
+		});
+
+		it("it Should return 50 Units for pre-sale round", async () => {
+			await ethers.provider.send("evm_increaseTime", [3700]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(50));
+			expect(price_).to.equals(5);
+	 	});
+
+		 it("it Should return 5 Units for sale", async () => {
+			await ethers.provider.send("evm_increaseTime", [3700 * 4]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(5));
+			expect(price_).to.equals(10);
+	 	});
+	 });
 });
