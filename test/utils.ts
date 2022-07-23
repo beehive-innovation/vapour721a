@@ -1,13 +1,14 @@
-import {Logger} from "@ethersproject/logger";
-import {version} from "./_version";
-import {ContractTransaction, Contract, BigNumber, Overrides} from "ethers";
-import {Result} from "ethers/lib/utils";
+import { Logger } from "@ethersproject/logger";
+import { version } from "./_version";
+import { ContractTransaction, Contract, BigNumber, Overrides } from "ethers";
+import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
-import {execSync} from "child_process";
-import {AllStandardOps, StateConfig} from "rain-sdk";
-import {Vapour721AFactory, NewChildEvent} from "../typechain/Vapour721AFactory";
-import {ethers} from "hardhat";
+import { execSync } from "child_process";
+import { AllStandardOps, StateConfig } from "rain-sdk";
+import { Vapour721AFactory, NewChildEvent } from "../typechain/Vapour721AFactory";
+import { ethers } from "hardhat";
+import { Factory } from "../typechain";
 const logger = new Logger(version);
 export const eighteenZeros = "000000000000000000";
 export const BN = (num: number): BigNumber => {
@@ -301,10 +302,10 @@ export function BNtoInt(x: BigNumber): number {
 }
 
 export const getChild = async (
-	factory: Vapour721AFactory,
+	factory: Factory,
 	transaction: ContractTransaction
 ): Promise<string> => {
-	const {child} = (await getEventArgs(
+	const { child } = (await getEventArgs(
 		transaction,
 		"NewChild",
 		factory
@@ -337,7 +338,7 @@ export const writeFile = (_path: string, file: any): void => {
 export const exec = (cmd: string): string | Buffer => {
 	const srcDir = path.join(__dirname, "..");
 	try {
-		return execSync(cmd, {cwd: srcDir, stdio: "inherit"});
+		return execSync(cmd, { cwd: srcDir, stdio: "inherit" });
 	} catch (e) {
 		throw new Error(`Failed to run command \`${cmd}\``);
 	}

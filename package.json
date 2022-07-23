@@ -1,54 +1,54 @@
 {
-  "name": "rain721a",
-  "version": "0.0.1",
-  "description": "rain version of ERC721A contract for decentralised games",
-  "scripts": {
-    "build": "hardhat compile",
-    "test": "hardhat test",
-    "hardhat-node": "hardhat node"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/beehive-innovation/rain721a.git"
-  },
-  "author": "beehive-innovation",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/beehive-innovation/rain721a/issues"
-  },
-  "homepage": "https://github.com/beehive-innovation/rain721a#readme",
-  "devDependencies": {
-    "@nomiclabs/hardhat-ethers": "^2.0.3",
-    "@nomiclabs/hardhat-etherscan": "^3.0.3",
-    "@openzeppelin/test-helpers": "^0.5.15",
-    "@typechain/ethers-v5": "^8.0.5",
-    "@typechain/hardhat": "^3.0.0",
-    "@types/mocha": "^8.2.0",
-    "@types/node": "^14.14.22",
-    "@typescript-eslint/eslint-plugin": "^5.4.0",
-    "@typescript-eslint/parser": "^5.4.0",
-    "chai": "^4.3.6",
-    "erc721a": "^3.3.0",
-    "eslint": "^8.2.0",
-    "ethers": "^5.5.2",
-    "hardhat": "^2.9.2",
-    "hardhat-contract-sizer": "^2.5.1",
-    "hardhat-gas-reporter": "^1.0.4",
-    "hardhat-storage-layout": "^0.1.6",
-    "prettier": "^2.3.2",
-    "pretty-quick": "^3.1.1",
-    "rain-sdk": "git+https://github.com/beehive-innovation/rain-sdk.git#0ee4114b93a4afb84abac54330069d52aa730c71",
-    "solc-0.8": "npm:solc@^0.8.10",
-    "solhint": "^3.3.4",
-    "solidity-docgen": "^0.5.13",
-    "ts-node": "^10.7.0",
-    "typechain": "^6.0.2",
-    "typescript": "^4.6.4"
-  },
-  "dependencies": {
-    "@beehiveinnovation/rain-protocol": "git+https://github.com/beehive-innovation/rain-protocol.git#b4af313dbe0dd2b2c4f630e7f7fe37a9ac6e073f",
-    "@nomiclabs/hardhat-waffle": "^2.0.3",
-    "@openzeppelin/contracts": "^4.6.0",
-    "dotenv": "^16.0.0"
-  }
+	"name": "rain721a",
+	"version": "0.0.1",
+	"description": "rain version of ERC721A contract for decentralised games",
+	"scripts": {
+		"build": "hardhat compile",
+		"test": "hardhat test",
+		"hardhat-node": "hardhat node"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/beehive-innovation/rain721a.git"
+	},
+	"author": "beehive-innovation",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/beehive-innovation/rain721a/issues"
+	},
+	"homepage": "https://github.com/beehive-innovation/rain721a#readme",
+	"devDependencies": {
+		"@nomiclabs/hardhat-ethers": "^2.0.3",
+		"@nomiclabs/hardhat-etherscan": "^3.0.3",
+		"@openzeppelin/test-helpers": "^0.5.15",
+		"@typechain/ethers-v5": "^8.0.5",
+		"@typechain/hardhat": "^3.0.0",
+		"@types/mocha": "^8.2.0",
+		"@types/node": "^14.14.22",
+		"@typescript-eslint/eslint-plugin": "^5.4.0",
+		"@typescript-eslint/parser": "^5.4.0",
+		"chai": "^4.3.6",
+		"erc721a": "^3.3.0",
+		"eslint": "^8.2.0",
+		"ethers": "^5.5.2",
+		"hardhat": "^2.9.2",
+		"hardhat-contract-sizer": "^2.5.1",
+		"hardhat-gas-reporter": "^1.0.4",
+		"hardhat-storage-layout": "^0.1.6",
+		"prettier": "^2.3.2",
+		"pretty-quick": "^3.1.1",
+		"rain-sdk": "git+https://github.com/beehive-innovation/rain-sdk.git#28e3ac39b742f4965e6e995915568aafd3b506c6",
+		"solc-0.8": "npm:solc@^0.8.10",
+		"solhint": "^3.3.4",
+		"solidity-docgen": "^0.5.13",
+		"ts-node": "^10.7.0",
+		"typechain": "^6.0.2",
+		"typescript": "^4.6.4"
+	},
+	"dependencies": {
+		"@beehiveinnovation/rain-protocol": "git+https://github.com/beehive-innovation/rain-protocol.git#b4af313dbe0dd2b2c4f630e7f7fe37a9ac6e073f",
+		"@nomiclabs/hardhat-waffle": "^2.0.3",
+		"@openzeppelin/contracts": "^4.6.0",
+		"dotenv": "^16.0.0"
+	}
 }
