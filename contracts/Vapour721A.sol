@@ -11,7 +11,6 @@ import "@beehiveinnovation/rain-protocol/contracts/math/FixedPointMath.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
-import "hardhat/console.sol";
 
 /**
  * config for deploying Vapour721A contract
@@ -191,7 +190,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
         uint256 cost_ = price_ * units_;
 		if(_currency == address(0)){
 			require(msg.value >= cost_, "INSUFFICIENT_FUND");
-			Address.sendValue(payable(msg.sender), msg.value - cost_);	
+			Address.sendValue(payable(msg.sender), msg.value - cost_);
 		} 
 		else IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
 

@@ -16,6 +16,7 @@ import {
 	vapour721AFactory,
 	recipient,
 	currency,
+	buyer3,
 } from "../1_setup";
 import {
 	BN,
@@ -654,6 +655,66 @@ describe("mintNFT tests (Native Tokens)", () => {
 				"INSUFFICIENT_STOCK"
 			);
 		});
+
+		it("Should fail to mint if not enough native tokens are sent",async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 2,
+				desiredUnits: 2,
+				maximumPrice: BN(2)
+			}
+
+			await expect(vapour721A.connect(buyer3).mintNFT(buyConfig, {value: BN(1)})).to.revertedWith("INSUFFICIENT_FUND")
+		});
 	});
+
+	describe("Native token extra value test", () => {
+        before(async () => {
+            const _supplyLimit = ethers.BigNumber.from(100);
+        const vmStateConfig: StateConfig = {
+            sources: [
+                concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+            ],
+            constants: [200, BN(1)],
+        };
+
+        vapour721AConstructorConfig = {
+            name: "nft",
+            symbol: "NFT",
+            baseURI: "baseURI",
+            supplyLimit: _supplyLimit,
+            recipient: recipient.address,
+            owner: owner.address,
+            royaltyBPS: 1000
+        };
+
+        const deployTrx = await vapour721AFactory.createChildTyped(
+            vapour721AConstructorConfig,
+            ZERO_ADDRESS,
+            vmStateConfig
+        );
+        const child = await getChild(vapour721AFactory, deployTrx);
+        vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+
+        });
+
+		it("Should returns remaining native tokens after buying",async () => {
+			const buyConfig: BuyConfigStruct = {
+				minimumUnits: 2,
+				desiredUnits: 2,
+				maximumPrice: BN(3)
+			}
+
+			const buyerBeforeBalance = await getBalance(ZERO_ADDRESS, buyer2);
+
+			const buyTrx = await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice});
+			const gasUsed = await getGasUsed(buyTrx);
+
+			const buyerAfterBalance = await getBalance(ZERO_ADDRESS, buyer2);
+
+			expect(buyerBeforeBalance.sub(gasUsed)).to.equals(buyerAfterBalance.add(BN(2)));
+			expect(await vapour721A._amountPayable()).to.equals(BN(2));
+
+		});
+    });
 });
 
