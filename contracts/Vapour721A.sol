@@ -232,18 +232,11 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		uint256 minimumUnits,
 		uint256 desiredUnits
 	) external payable onlyRole(DELEGATED_MINTER) {
-		// BuyConfig memory _config = BuyConfig(
-		// 	maximumPrice,
-		// 	minimumUnits,
-		// 	desiredUnits
-		// );
-
-		BuyConfig memory _config;
-
-		_config.maximumPrice = maximumPrice;
-		_config.minimumUnits = minimumUnits;
-		_config.desiredUnits = desiredUnits;
-
+		BuyConfig memory _config = BuyConfig(
+			maximumPrice,
+			minimumUnits,
+			desiredUnits
+		);
 		_mintNFT(receiver, _config);
 	}
 
