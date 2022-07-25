@@ -36,7 +36,8 @@ describe("Vapour721A Ownable test", () => {
 			supplyLimit: 36,
 			recipient: recipient.address,
 			owner: owner.address,
-			royaltyBPS: 1000
+			royaltyBPS: 1000,
+			admin: buyer0.address
 		};
 
 		vapour721AInitializeConfig = {

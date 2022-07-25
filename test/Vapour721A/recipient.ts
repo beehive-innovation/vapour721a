@@ -8,6 +8,7 @@ import {
 	Vapour721A,
 } from "../../typechain/Vapour721A";
 import {
+	buyer0,
 	buyer1,
 	buyer7,
 	config,
@@ -36,7 +37,8 @@ describe("Vapour721A recipient test", () => {
 			supplyLimit: 36,
 			recipient: recipient.address,
 			owner: owner.address,
-			royaltyBPS: 1000
+			royaltyBPS: 1000,
+			admin: buyer0.address
 		};
 	});
 

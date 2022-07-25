@@ -52,7 +52,8 @@ describe("mintNFT tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -133,7 +134,8 @@ describe("mintNFT tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -228,7 +230,8 @@ describe("mintNFT tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -281,7 +284,8 @@ describe("mintNFT tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -378,7 +382,8 @@ describe("mintNFT tests (Native Tokens)", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -401,7 +406,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 
 			const buyerBalanceBefore = await getBalance(ZERO_ADDRESS, buyer0);
 
-			const trx = await vapour721A.connect(buyer0).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+			const trx = await vapour721A.connect(buyer0).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 
 			const gasUsed = await getGasUsed(trx);
 
@@ -421,7 +426,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 
 			const buyerBalanceBefore = await getBalance(ZERO_ADDRESS, buyer1);
 
-			const trx = await vapour721A.connect(buyer1).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+			const trx = await vapour721A.connect(buyer1).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 			const gasUsed = await getGasUsed(trx);
 			const buyerBalanceAfter = await getBalance(ZERO_ADDRESS, buyer1);
 
@@ -448,7 +453,8 @@ describe("mintNFT tests (Native Tokens)", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -471,7 +477,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 			};
 
 			expect(await vapour721A.totalSupply()).to.equals(0)
-			await vapour721A.connect(buyer1).mintNFT(buyConfig, {value: buyConfig.maximumPrice})
+			await vapour721A.connect(buyer1).mintNFT(buyConfig, { value: buyConfig.maximumPrice })
 
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(units)
 			expect(await vapour721A.totalSupply()).to.equals(vapour721AConstructorConfig.supplyLimit)
@@ -528,7 +534,8 @@ describe("mintNFT tests (Native Tokens)", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -556,7 +563,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				maximumPrice: 0,
 				desiredUnits: 10
 			}
-			await vapour721A.connect(buyer1).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+			await vapour721A.connect(buyer1).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(10);
 		});
 	});
@@ -581,7 +588,8 @@ describe("mintNFT tests (Native Tokens)", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -602,7 +610,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				maximumPrice: 0,
 				desiredUnits: 1
 			}
-			await expect(vapour721A.connect(buyer1).mintNFT(buyConfig, {value: buyConfig.maximumPrice})).to.revertedWith(
+			await expect(vapour721A.connect(buyer1).mintNFT(buyConfig, { value: buyConfig.maximumPrice })).to.revertedWith(
 				"0_MINIMUM"
 			);
 		});
@@ -639,7 +647,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				desiredUnits: buyer1Units
 			}
 
-			await vapour721A.connect(buyer1).mintNFT(buyer1Config, {value: buyer1Config.maximumPrice})
+			await vapour721A.connect(buyer1).mintNFT(buyer1Config, { value: buyer1Config.maximumPrice })
 			expect(await vapour721A.totalSupply()).to.equals(buyer1Units)
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(buyer1Units)
 
@@ -651,53 +659,54 @@ describe("mintNFT tests (Native Tokens)", () => {
 				desiredUnits: buyer2Units
 			}
 
-			await expect(vapour721A.connect(buyer2).mintNFT(buyer2Config, {value: buyer2Config.maximumPrice})).to.revertedWith(
+			await expect(vapour721A.connect(buyer2).mintNFT(buyer2Config, { value: buyer2Config.maximumPrice })).to.revertedWith(
 				"INSUFFICIENT_STOCK"
 			);
 		});
 
-		it("Should fail to mint if not enough native tokens are sent",async () => {
+		it("Should fail to mint if not enough native tokens are sent", async () => {
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 2,
 				desiredUnits: 2,
 				maximumPrice: BN(2)
 			}
 
-			await expect(vapour721A.connect(buyer3).mintNFT(buyConfig, {value: BN(1)})).to.revertedWith("INSUFFICIENT_FUND")
+			await expect(vapour721A.connect(buyer3).mintNFT(buyConfig, { value: BN(1) })).to.revertedWith("INSUFFICIENT_FUND")
 		});
 	});
 
 	describe("Native token extra value test", () => {
-        before(async () => {
-            const _supplyLimit = ethers.BigNumber.from(100);
-        const vmStateConfig: StateConfig = {
-            sources: [
-                concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
-            ],
-            constants: [200, BN(1)],
-        };
+		before(async () => {
+			const _supplyLimit = ethers.BigNumber.from(100);
+			const vmStateConfig: StateConfig = {
+				sources: [
+					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+				],
+				constants: [200, BN(1)],
+			};
 
-        vapour721AConstructorConfig = {
-            name: "nft",
-            symbol: "NFT",
-            baseURI: "baseURI",
-            supplyLimit: _supplyLimit,
-            recipient: recipient.address,
-            owner: owner.address,
-            royaltyBPS: 1000
-        };
+			vapour721AConstructorConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "baseURI",
+				supplyLimit: _supplyLimit,
+				recipient: recipient.address,
+				owner: owner.address,
+				royaltyBPS: 1000,
+				admin: buyer0.address
+			};
 
-        const deployTrx = await vapour721AFactory.createChildTyped(
-            vapour721AConstructorConfig,
-            ZERO_ADDRESS,
-            vmStateConfig
-        );
-        const child = await getChild(vapour721AFactory, deployTrx);
-        vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AConstructorConfig,
+				ZERO_ADDRESS,
+				vmStateConfig
+			);
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-        });
+		});
 
-		it("Should returns remaining native tokens after buying",async () => {
+		it("Should returns remaining native tokens after buying", async () => {
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 2,
 				desiredUnits: 2,
@@ -706,7 +715,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 
 			const buyerBeforeBalance = await getBalance(ZERO_ADDRESS, buyer2);
 
-			const buyTrx = await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice});
+			const buyTrx = await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 			const gasUsed = await getGasUsed(buyTrx);
 
 			const buyerAfterBalance = await getBalance(ZERO_ADDRESS, buyer2);
@@ -715,6 +724,6 @@ describe("mintNFT tests (Native Tokens)", () => {
 			expect(await vapour721A._amountPayable()).to.equals(BN(2));
 
 		});
-    });
+	});
 });
 

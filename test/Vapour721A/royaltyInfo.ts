@@ -7,6 +7,7 @@ import {
     Vapour721A,
 } from "../../typechain/Vapour721A";
 import {
+    buyer0,
     buyer1,
     owner,
     vapour721AFactory,
@@ -41,7 +42,8 @@ describe('royaltyInfo test', () => {
             supplyLimit: 10,
             recipient: recipient.address,
             owner: owner.address,
-            royaltyBPS: 10001
+            royaltyBPS: 10001,
+            admin: buyer0.address
         };
 
         await expect(vapour721AFactory.createChildTyped(
@@ -66,7 +68,8 @@ describe('royaltyInfo test', () => {
             supplyLimit: 10,
             recipient: recipient.address,
             owner: owner.address,
-            royaltyBPS: 1000
+            royaltyBPS: 1000,
+            admin: buyer0.address
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(
@@ -97,7 +100,8 @@ describe('royaltyInfo test', () => {
             supplyLimit: 10,
             recipient: recipient.address,
             owner: owner.address,
-            royaltyBPS: 1000
+            royaltyBPS: 1000,
+            admin: buyer0.address
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(
@@ -133,7 +137,8 @@ describe('royaltyInfo test', () => {
             supplyLimit: 10,
             recipient: recipient.address,
             owner: owner.address,
-            royaltyBPS: 1000
+            royaltyBPS: 1000,
+            admin: buyer0.address
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(
@@ -171,7 +176,8 @@ describe('royaltyInfo test', () => {
             supplyLimit: 10,
             recipient: recipient.address,
             owner: owner.address,
-            royaltyBPS: 1000
+            royaltyBPS: 1000,
+            admin: buyer0.address
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(

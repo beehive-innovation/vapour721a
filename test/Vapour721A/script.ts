@@ -48,7 +48,8 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -128,7 +129,8 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -187,7 +189,8 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -251,7 +254,8 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -335,7 +339,8 @@ describe("Script Tests", () => {
 				supplyLimit: 100,
 				recipient: recipient.address,
 				owner: owner.address,
-				royaltyBPS: 1000
+				royaltyBPS: 1000,
+				admin: buyer0.address
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(

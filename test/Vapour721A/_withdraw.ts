@@ -42,7 +42,8 @@ describe("Token withdraw tests", () => {
 			supplyLimit: 100,
 			recipient: recipient.address,
 			owner: owner.address,
-			royaltyBPS: 1000
+			royaltyBPS: 1000,
+			admin: buyer0.address
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -224,7 +225,8 @@ describe("Native Token withdraw tests", () => {
 			supplyLimit: 100,
 			recipient: recipient.address,
 			owner: owner.address,
-			royaltyBPS: 1000
+			royaltyBPS: 1000,
+			admin: buyer0.address
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -243,7 +245,7 @@ describe("Native Token withdraw tests", () => {
 			maximumPrice: BN(10),
 		};
 
-		await vapour721A.connect(buyer0).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+		await vapour721A.connect(buyer0).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 
 		expect(await vapour721A.balanceOf(buyer0.address)).to.equals(1);
 
@@ -278,14 +280,14 @@ describe("Native Token withdraw tests", () => {
 		};
 
 		// first buyer
-		await vapour721A.connect(buyer1).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+		await vapour721A.connect(buyer1).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 		expect(await vapour721A.balanceOf(buyer1.address)).to.equals(units);
 
 		const buyer1Cost = nftPrice.mul(units);
 
 		// second buyer
 
-		await vapour721A.connect(buyer2).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+		await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 		expect(await vapour721A.balanceOf(buyer2.address)).to.equals(units);
 
 		const buyer2Cost = nftPrice.mul(units);
@@ -347,7 +349,7 @@ describe("Native Token withdraw tests", () => {
 			maximumPrice: BN(5),
 		};
 
-		await vapour721A.connect(buyer2).mintNFT(buyConfig, {value: buyConfig.maximumPrice});
+		await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
 
 		// set a new recipient
 		await vapour721A.connect(recipient).setRecipient(buyer1.address)

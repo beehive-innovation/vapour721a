@@ -41,7 +41,8 @@ before(async () => {
 		supplyLimit: 1000,
 		recipient: recipient_.address,
 		owner: owner_.address,
-		royaltyBPS: 1000
+		royaltyBPS: 1000,
+		admin: signer1.address
 	};
 });
 
