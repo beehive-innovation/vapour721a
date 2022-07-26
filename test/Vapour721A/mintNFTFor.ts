@@ -89,7 +89,7 @@ describe("mintNFT tests", () => {
 
             const { maxUnits_, price_ } = await vapour721A.calculateBuy(buyer0.address, units)
 
-            const trx = await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig);
+            const trx = await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits);
 
             const buyerBalanceAfter = await currency.balanceOf(buyer0.address)
 
@@ -116,7 +116,7 @@ describe("mintNFT tests", () => {
 
             const buyerBalanceBefore = await currency.balanceOf(buyer1.address)
 
-            const trx = await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig);
+            const trx = await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits);
 
             const buyerBalanceAfter = await currency.balanceOf(buyer1.address)
 
@@ -175,7 +175,7 @@ describe("mintNFT tests", () => {
                 .approve(vapour721A.address, nftPrice.mul(units));
 
             expect(await vapour721A.totalSupply()).to.equals(0)
-            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig);
+            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits);
 
             expect(await vapour721A.balanceOf(buyer0.address)).to.equals(units)
             expect(await vapour721A.totalSupply()).to.equals(vapour721AConstructorConfig.supplyLimit)
@@ -196,7 +196,7 @@ describe("mintNFT tests", () => {
                 .connect(buyer1)
                 .approve(vapour721A.address, nftPrice.mul(units));
 
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig)).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits)).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
         });
@@ -220,7 +220,7 @@ describe("mintNFT tests", () => {
                 .connect(buyer1)
                 .approve(vapour721A.address, nftPrice.mul(units));
 
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig)).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits)).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
         });
@@ -265,7 +265,7 @@ describe("mintNFT tests", () => {
                 maximumPrice: 0,
                 desiredUnits: 1
             }
-            await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig);
+            await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits);
             expect(await vapour721A.balanceOf(buyer1.address)).to.equals(1);
         });
 
@@ -275,7 +275,7 @@ describe("mintNFT tests", () => {
                 maximumPrice: 0,
                 desiredUnits: 10
             }
-            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig);
+            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits);
             expect(await vapour721A.balanceOf(buyer0.address)).to.equals(10);
         });
     });
@@ -327,7 +327,7 @@ describe("mintNFT tests", () => {
                 maximumPrice: 0,
                 desiredUnits: 1
             }
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig)).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits)).to.revertedWith(
                 "0_MINIMUM"
             );
         });
@@ -339,7 +339,7 @@ describe("mintNFT tests", () => {
                 desiredUnits: 1
             }
 
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig)).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits)).to.revertedWith(
                 "MINIMUM_OVER_DESIRED"
             );
         });
@@ -350,7 +350,7 @@ describe("mintNFT tests", () => {
                 maximumPrice: nftPrice.div(ethers.BigNumber.from(2)),
                 desiredUnits: 1
             }
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig)).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits)).to.revertedWith(
                 "MAXIMUM_PRICE"
             );
         });
@@ -364,7 +364,7 @@ describe("mintNFT tests", () => {
                 desiredUnits: buyer1Units
             }
 
-            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyer1Config)
+            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyer1Config.maximumPrice, buyer1Config.minimumUnits, buyer1Config.desiredUnits)
             expect(await vapour721A.totalSupply()).to.equals(buyer1Units)
             expect(await vapour721A.balanceOf(buyer0.address)).to.equals(buyer1Units)
 
@@ -376,7 +376,7 @@ describe("mintNFT tests", () => {
                 desiredUnits: buyer2Units
             }
 
-            await expect(vapour721A.connect(buyer2).mintNFTFor(buyer1.address, buyer2Config)).to.revertedWith(
+            await expect(vapour721A.connect(buyer2).mintNFTFor(buyer1.address, buyer2Config.maximumPrice, buyer2Config.minimumUnits, buyer2Config.desiredUnits)).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
         });
@@ -430,7 +430,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 
             const buyerBalanceBefore = await getBalance(ZERO_ADDRESS, buyer0);
 
-            const trx = await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig, { value: buyConfig.maximumPrice });
+            const trx = await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice });
 
             const gasUsed = await getGasUsed(trx);
 
@@ -450,7 +450,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 
             const buyerBalanceBefore = await getBalance(ZERO_ADDRESS, buyer1);
 
-            const trx = await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice });
+            const trx = await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice });
             const gasUsed = await getGasUsed(trx);
             const buyerBalanceAfter = await getBalance(ZERO_ADDRESS, buyer1);
 
@@ -504,7 +504,7 @@ describe("mintNFT tests (Native Tokens)", () => {
             };
 
             expect(await vapour721A.totalSupply()).to.equals(0)
-            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice })
+            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice })
 
             expect(await vapour721A.balanceOf(buyer0.address)).to.equals(units)
             expect(await vapour721A.totalSupply()).to.equals(vapour721AConstructorConfig.supplyLimit)
@@ -520,7 +520,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: nftPrice,
             };
 
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice })).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice })).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
         });
@@ -539,7 +539,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: nftPrice,
             };
 
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice })).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice })).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
         });
@@ -583,7 +583,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: 0,
                 desiredUnits: 1
             }
-            await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig, { value: buyConfig.maximumPrice });
+            await vapour721A.connect(buyer0).mintNFTFor(buyer1.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice });
             expect(await vapour721A.balanceOf(buyer1.address)).to.equals(1);
         });
 
@@ -593,7 +593,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: 0,
                 desiredUnits: 10
             }
-            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice });
+            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice });
             expect(await vapour721A.balanceOf(buyer0.address)).to.equals(10);
         });
     });
@@ -645,7 +645,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: 0,
                 desiredUnits: 1
             }
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice })).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice })).to.revertedWith(
                 "0_MINIMUM"
             );
         });
@@ -657,7 +657,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 desiredUnits: 1
             }
 
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice })).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice })).to.revertedWith(
                 "MINIMUM_OVER_DESIRED"
             );
         });
@@ -668,7 +668,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: nftPrice.div(ethers.BigNumber.from(2)),
                 desiredUnits: 1
             }
-            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice })).to.revertedWith(
+            await expect(vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice })).to.revertedWith(
                 "MAXIMUM_PRICE"
             );
         });
@@ -682,7 +682,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 desiredUnits: buyer1Units
             }
 
-            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyer1Config, { value: buyer1Config.maximumPrice })
+            await vapour721A.connect(buyer1).mintNFTFor(buyer0.address, buyer1Config.maximumPrice, buyer1Config.minimumUnits, buyer1Config.desiredUnits, { value: buyer1Config.maximumPrice })
             expect(await vapour721A.totalSupply()).to.equals(buyer1Units)
             expect(await vapour721A.balanceOf(buyer0.address)).to.equals(buyer1Units)
 
@@ -694,7 +694,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 desiredUnits: buyer2Units
             }
 
-            await expect(vapour721A.connect(buyer2).mintNFTFor(buyer0.address, buyer2Config, { value: buyer2Config.maximumPrice })).to.revertedWith(
+            await expect(vapour721A.connect(buyer2).mintNFTFor(buyer0.address, buyer2Config.maximumPrice, buyer2Config.minimumUnits, buyer2Config.desiredUnits, { value: buyer2Config.maximumPrice })).to.revertedWith(
                 "INSUFFICIENT_STOCK"
             );
         });
@@ -706,7 +706,7 @@ describe("mintNFT tests (Native Tokens)", () => {
                 maximumPrice: BN(2)
             }
 
-            await expect(vapour721A.connect(buyer3).mintNFTFor(buyer0.address, buyConfig, { value: BN(1) })).to.revertedWith("INSUFFICIENT_FUND")
+            await expect(vapour721A.connect(buyer3).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: BN(1) })).to.revertedWith("INSUFFICIENT_FUND")
         });
     });
 
@@ -753,7 +753,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 
             const buyerBeforeBalance = await getBalance(ZERO_ADDRESS, buyer2);
 
-            const buyTrx = await vapour721A.connect(buyer2).mintNFTFor(buyer0.address, buyConfig, { value: buyConfig.maximumPrice });
+            const buyTrx = await vapour721A.connect(buyer2).mintNFTFor(buyer0.address, buyConfig.maximumPrice, buyConfig.minimumUnits, buyConfig.desiredUnits, { value: buyConfig.maximumPrice });
             const gasUsed = await getGasUsed(buyTrx);
 
             const buyerAfterBalance = await getBalance(ZERO_ADDRESS, buyer2);
