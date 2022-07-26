@@ -86,10 +86,10 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	);
 
 	/// Admin role for `DELEGATED_MINTER`.
-	bytes32 public constant DELEGATED_MINTER_ADMIN =
+	bytes32 private constant DELEGATED_MINTER_ADMIN =
 		keccak256("DELEGATED_MINTER_ADMIN");
 	/// Role for `DELEGATED_MINTER`.
-	bytes32 public constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
+	bytes32 private constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
 
 	constructor(ConstructorConfig memory config_)
 		ERC721A(config_.name, config_.symbol)
@@ -223,21 +223,13 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	/// minting to someone else. To mitigate against this we restrict access to
 	/// this function to only those accounts with the 'DELEGATED_MINTER' role.
 	/// @param receiver the receiver of the NFTs
-	/// @param maximumPrice maximum price, as per BuyConfig
-	/// @param minimumUnits minimum units, as per BuyConfig
-	/// @param desiredUnits desired units, as per BuyConfig
-	function mintNFTFor(
-		address receiver,
-		uint256 maximumPrice,
-		uint256 minimumUnits,
-		uint256 desiredUnits
-	) external payable onlyRole(DELEGATED_MINTER) {
-		BuyConfig memory _config = BuyConfig(
-			maximumPrice,
-			minimumUnits,
-			desiredUnits
-		);
-		_mintNFT(receiver, _config);
+	/// @param config_ the buy config
+	function mintNFTFor(address receiver, BuyConfig calldata config_)
+		external
+		payable
+		onlyRole(DELEGATED_MINTER)
+	{
+		_mintNFT(receiver, config_);
 	}
 
 	function setRecipient(address newRecipient) public {
@@ -247,7 +239,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		);
 		require(
 			newRecipient.code.length == 0 && newRecipient != address(0),
-			"INVALID_ADDRESS."
+			"INVALID_ADDRESS"
 		);
 		_recipient = payable(newRecipient);
 		emit RecipientChanged(newRecipient);
