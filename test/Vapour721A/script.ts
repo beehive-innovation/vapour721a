@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { BetweenTimestamps, CombineTierGenerator, IncDecPrice, StateConfig, utils, VM } from "rain-sdk";
 import { Verify, VerifyFactory, VerifyTier, VerifyTierFactory } from "../../typechain";
@@ -112,7 +113,7 @@ describe("Script Tests", () => {
 
       const vmStateConfig: StateConfig = VM.pair(
         VM.ifelse(
-          VM.beforeAfterTime(block_before.timestamp +  100, "gte"),
+          VM.beforeAfterTime(block_before.timestamp + 100, "gte"),
           VM.constant(100),
           VM.constant(0)
         ),
@@ -226,7 +227,7 @@ describe("Script Tests", () => {
           VM.constant(0)
         ),
         VM.constant(BN(1))
-      ) 
+      )
 
       vapour721AConstructorConfig = {
         name: "nft",
@@ -413,19 +414,19 @@ describe("Script Tests", () => {
     before(async () => {
 
       // deplying factories
-      const verifyFactory = await (await ethers.getContractFactory("VerifyFactory")).deploy() as VerifyFactory;   
+      const verifyFactory = await (await ethers.getContractFactory("VerifyFactory")).deploy() as VerifyFactory;
       const verifyTierFactory = await (await ethers.getContractFactory("VerifyTierFactory")).deploy() as VerifyTierFactory;
 
       // deploying verify1
-      const verifyTx1 = await verifyFactory.createChildTyped({admin: buyer0.address, callback:ethers.constants.AddressZero })
+      const verifyTx1 = await verifyFactory.createChildTyped({ admin: buyer0.address, callback: ethers.constants.AddressZero })
       const verifyAddress1 = await getChild(verifyFactory, verifyTx1)
-      const verify1  = (await ethers.getContractAt("Verify", verifyAddress1)) as Verify;
+      const verify1 = (await ethers.getContractAt("Verify", verifyAddress1)) as Verify;
 
       // deploying verify2
-      const verifyTx2 = await verifyFactory.createChildTyped({admin: buyer0.address, callback:ethers.constants.AddressZero })
+      const verifyTx2 = await verifyFactory.createChildTyped({ admin: buyer0.address, callback: ethers.constants.AddressZero })
       const verifyAddress2 = await getChild(verifyFactory, verifyTx2)
-      const verify2  = (await ethers.getContractAt("Verify", verifyAddress2)) as Verify;
-      
+      const verify2 = (await ethers.getContractAt("Verify", verifyAddress2)) as Verify;
+
       // deploying verifyTier1
       const verifyTierTx1 = await verifyTierFactory.createChildTyped(verify1.address)
       const verifyTierAddress1 = await getChild(verifyTierFactory, verifyTierTx1)
@@ -433,13 +434,13 @@ describe("Script Tests", () => {
       // deploying verifyTier2
       const verifyTierTx2 = await verifyTierFactory.createChildTyped(verify2.address)
       const verifyTierAddress2 = await getChild(verifyTierFactory, verifyTierTx2)
-      
+
       // Grant approver role to buyer0
       await verify1.connect(buyer0).grantRole(await verify1.APPROVER(), buyer0.address);
-      
+
       // Approving buyer0
       await verify1.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
-      
+
       // Grant approver role to buyer0
       await verify2.connect(buyer0).grantRole(await verify2.APPROVER(), buyer0.address);
 
@@ -506,7 +507,7 @@ describe("Script Tests", () => {
           )
         )
       )
-      
+
       vapour721AConstructorConfig = {
         name: "nft",
         symbol: "NFT",
@@ -522,7 +523,7 @@ describe("Script Tests", () => {
         currency.address,
         vmStateConfig
       );
-      
+
       const child = await getChild(vapour721AFactory, deployTrx);
       vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
     });
@@ -557,6 +558,103 @@ describe("Script Tests", () => {
       expect(maxUnits_).to.equals(ethers.BigNumber.from(5));
       expect(price_).to.equals(10);
     });
-   });
-});
+  });
 
+  describe("increasing price per token sale", () => {
+    before(async () => {
+      const priceIncreasePerToken = parseEther('1'); // sale price
+
+      const vmStateConfig: StateConfig = VM.pair(
+        // quantity script
+        {
+          sources: [
+            concat([
+              op(Opcode.CONTEXT, 1)
+            ])
+          ],
+          constants: []
+        },
+        // price script
+        {
+          sources: [
+            concat([
+              // (u(2t + u + 1) / 2 * i) / u
+              op(Opcode.CONTEXT, 1), // u
+              op(Opcode.CONSTANT, 0), // 1
+              op(Opcode.IERC721A_TOTAL_MINTED), // t
+              op(Opcode.IERC721A_TOTAL_MINTED), // t
+              op(Opcode.ADD, 4),
+              op(Opcode.CONTEXT, 1), //u
+              op(Opcode.MUL, 2),
+              op(Opcode.CONSTANT, 1),
+              op(Opcode.DIV, 2),
+              op(Opcode.CONSTANT, 2),
+              op(Opcode.MUL, 2),
+              op(Opcode.CONTEXT, 1), // u
+              op(Opcode.DIV, 2),
+            ])
+          ],
+          constants: [1, 2, priceIncreasePerToken]
+        }
+      )
+
+      vapour721AConstructorConfig = {
+        name: "nft",
+        symbol: "NFT",
+        baseURI: "BASE_URI",
+        supplyLimit: 100,
+        recipient: recipient.address,
+        owner: owner.address,
+        royaltyBPS: 1000
+      };
+
+      const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
+        vapour721AConstructorConfig,
+        currency.address,
+        vmStateConfig
+      );
+
+      const child = await getChild(vapour721AFactory, deployTrx);
+      vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+
+      await currency.connect(buyer0).mintTokens(1000)
+      await currency.connect(buyer0).approve(vapour721A.address, parseEther('1000'))
+    });
+
+    it("it should eval the correct price", async () => {
+      const units = 10
+      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+        buyer0.address,
+        units
+      );
+      expect(maxUnits_).to.equals(units);
+      expect(price_).to.equals(parseEther('55').div(units));
+
+      const buyConfig: BuyConfigStruct = {
+        minimumUnits: units,
+        desiredUnits: units,
+        maximumPrice: price_,
+      };
+
+      await vapour721A.connect(buyer0).mintNFT(buyConfig)
+    });
+
+    it("it should eval the correct price for a second mint", async () => {
+      const units = 3
+      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+        buyer0.address,
+        units
+      );
+      expect(maxUnits_).to.equals(units);
+      expect(price_).to.equals(parseEther('36').div(units));
+
+      const buyConfig: BuyConfigStruct = {
+        minimumUnits: units,
+        desiredUnits: units,
+        maximumPrice: price_,
+      };
+
+      await vapour721A.connect(buyer0).mintNFT(buyConfig)
+    });
+  });
+});
