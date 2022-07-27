@@ -9,7 +9,7 @@ import {
   ConstructorConfigStruct,
   Vapour721A,
 } from "../../typechain/Vapour721A";
-import { buyer0, owner, vapour721AFactory, recipient, currency } from "../1_setup";
+import { buyer0, buyer1, owner, vapour721AFactory, recipient, currency } from "../1_setup";
 import {
   BN,
   concat,
@@ -600,9 +600,11 @@ describe("Script Tests", () => {
       return { unitPrice, totalCost }
     }
 
+    const supplyLimit = ethers.BigNumber.from(100)
+    const priceIncreasePerToken = parseEther('0.1'); // sale price
+    const startingToken = 101
+
     before(async () => {
-      const priceIncreasePerToken = parseEther('1'); // sale price
-      const startingToken = 1
       const vmStateConfig: StateConfig = VM.pair(
         // quantity script
         {
@@ -614,51 +616,72 @@ describe("Script Tests", () => {
           constants: []
         },
         // price script
-        {
-          sources: [
-            concat([
-              // stacking the actual units that will be purchased
-              op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
-              op(Opcode.IERC721A_TOTAL_MINTED),
-              op(Opcode.SUB, 2),
-              op(Opcode.CONTEXT, 1), // units
-              op(Opcode.STACK, 0), // the eval of the q script
-              op(Opcode.MIN, 3), // the min of q, desiredUnits and supplyLimit - totalMinted
+        VM.ifelse(
+          {
+            sources: [
+              concat([
+                op(Opcode.CONTEXT, 0),
+                op(Opcode.CONSTANT, 0),
+                op(Opcode.EQUAL_TO, 2)
+              ])
+            ],
+            constants: [buyer1.address]
+          },
+          {
+            sources: [
+              concat([
+                op(Opcode.CONSTANT, 0)
+              ]),
+            ],
+            constants: [0]
+          },
+          {
+            sources: [
+              concat([
+                // stacking the actual units that will be purchased
+                op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+                op(Opcode.IERC721A_TOTAL_MINTED),
+                op(Opcode.SATURATING_SUB, 2),
+                op(Opcode.CONTEXT, 1), // units
+                op(Opcode.STACK, 0), // the eval of the q script
+                op(Opcode.MIN, 3), // the min of q, desiredUnits and supplyLimit - totalMinted
 
-              // (u(2t + u + 1) / 2 * i) / u
-              op(Opcode.IERC721A_TOTAL_MINTED), // total minted
-              op(Opcode.IERC721A_TOTAL_MINTED), // total minted
+                // (u(2t + u + 1) / 2 * i) / u
+                op(Opcode.IERC721A_TOTAL_MINTED), // total minted
+                op(Opcode.IERC721A_TOTAL_MINTED), // total minted
 
-              op(Opcode.STACK, 1), // units
+                op(Opcode.STACK, 1), // units
 
-              op(Opcode.CONSTANT, 0), // 3
-              op(Opcode.ADD, 4),
-              op(Opcode.CONSTANT, 3), // starting token
-              op(Opcode.CONSTANT, 3), // starting token
-              op(Opcode.SUB, 3),
+                op(Opcode.CONSTANT, 0), // 3
+                op(Opcode.ADD, 4),
+                op(Opcode.CONSTANT, 3), // starting token
+                op(Opcode.CONSTANT, 3), // starting token
+                op(Opcode.SATURATING_SUB, 3),
 
-              op(Opcode.STACK, 1), // units
+                op(Opcode.STACK, 1), // units
 
-              op(Opcode.MUL, 2),
-              op(Opcode.CONSTANT, 1), // 2
-              op(Opcode.DIV, 2),
-              op(Opcode.CONSTANT, 2), // price increase
-              op(Opcode.MUL, 2),
+                op(Opcode.MUL, 2),
+                op(Opcode.CONSTANT, 1), // 2
+                op(Opcode.DIV, 2),
+                op(Opcode.CONSTANT, 2), // price increase
+                op(Opcode.MUL, 2),
 
-              op(Opcode.STACK, 1), // units
+                op(Opcode.STACK, 1), // units
 
-              op(Opcode.DIV, 2),
-            ])
-          ],
-          constants: [3, 2, priceIncreasePerToken, startingToken]
-        }
+                op(Opcode.DIV, 2),
+              ])
+            ],
+            constants: [3, 2, priceIncreasePerToken, startingToken]
+          },
+        ),
+        false
       )
 
       vapour721AConstructorConfig = {
         name: "nft",
         symbol: "NFT",
         baseURI: "BASE_URI",
-        supplyLimit: 100,
+        supplyLimit,
         recipient: recipient.address,
         owner: owner.address,
         royaltyBPS: 1000,
@@ -674,18 +697,49 @@ describe("Script Tests", () => {
       const child = await getChild(vapour721AFactory, deployTrx);
       vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-      await currency.connect(buyer0).mintTokens(1000)
-      await currency.connect(buyer0).approve(vapour721A.address, parseEther('1000'))
+      await currency.connect(buyer0).mintTokens(100000)
+      await currency.connect(buyer0).approve(vapour721A.address, parseEther('100000'))
     });
 
-    it("it should eval the correct price", async () => {
+    it("should mint free tokens for buyer1", async () => {
+
+      const units = ethers.BigNumber.from(5)
+
+      const { unitPrice, totalCost } = increasingPricePurchase(units, ethers.BigNumber.from(0), priceIncreasePerToken, startingToken)
+      console.log('total', totalCost.toString())
+      console.log('unit price', unitPrice.toString())
+
+      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+        buyer1.address,
+        units
+      );
+
+      const buyConfig: BuyConfigStruct = {
+        minimumUnits: units,
+        desiredUnits: units,
+        maximumPrice: 0,
+      };
+
+      const balanceBefore = await currency.balanceOf(buyer0.address)
+
+      await vapour721A.connect(buyer0).mintNFT(buyConfig)
+
+      const balanceAfter = await currency.balanceOf(buyer0.address)
+
+      const total = balanceBefore.sub(balanceAfter)
+      expect(total).to.equals(0)
+    })
+
+    it("should eval the correct price", async () => {
       const units = ethers.BigNumber.from(10)
       const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
         buyer0.address,
         units
       );
 
-      const { unitPrice, totalCost } = increasingPricePurchase(units, ethers.BigNumber.from(0), parseEther('1'), 1)
+      const totalMinted = await vapour721A.totalSupply()
+
+      const { unitPrice, totalCost } = increasingPricePurchase(units, totalMinted, priceIncreasePerToken, startingToken)
       console.log('total', totalCost.toString())
       console.log('unit price', unitPrice.toString())
 
@@ -698,7 +752,14 @@ describe("Script Tests", () => {
         maximumPrice: price_,
       };
 
+      const balanceBefore = await currency.balanceOf(buyer0.address)
+
       await vapour721A.connect(buyer0).mintNFT(buyConfig)
+
+      const balanceAfter = await currency.balanceOf(buyer0.address)
+
+      const total = balanceBefore.sub(balanceAfter)
+      expect(totalCost).to.equals(total)
     });
 
     it("it should eval the correct price for a second mint", async () => {
@@ -710,7 +771,7 @@ describe("Script Tests", () => {
 
       const totalMinted = await vapour721A.totalSupply()
 
-      const { unitPrice, totalCost } = increasingPricePurchase(units, totalMinted, parseEther('1'), 1)
+      const { unitPrice, totalCost } = increasingPricePurchase(units, totalMinted, priceIncreasePerToken, startingToken)
       console.log('total', totalCost.toString())
       console.log('unit price', unitPrice.toString())
 
@@ -724,7 +785,54 @@ describe("Script Tests", () => {
         maximumPrice: price_,
       };
 
+      const balanceBefore = await currency.balanceOf(buyer0.address)
+
       await vapour721A.connect(buyer0).mintNFT(buyConfig)
+
+      const balanceAfter = await currency.balanceOf(buyer0.address)
+
+      const total = balanceBefore.sub(balanceAfter)
+      expect(totalCost).to.equals(total)
+    });
+
+    it("should give the correct price until the supply is sold out", async () => {
+      let supply = await vapour721A.totalSupply()
+
+      while (supply.lt(supplyLimit)) {
+        const units = ethers.BigNumber.from(Math.floor(Math.random() * 20) + 1)
+
+        const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+          buyer0.address,
+          units
+        );
+
+        const maxUnits = supplyLimit.sub(supply).lt(units) ? supplyLimit.sub(supply) : units;
+
+        const { unitPrice, totalCost } = increasingPricePurchase(maxUnits, supply, priceIncreasePerToken, startingToken)
+        console.log('total', totalCost.toString())
+        console.log('unit price', unitPrice.toString())
+
+        expect(maxUnits_).to.equals(maxUnits);
+        expect(price_).to.equals(unitPrice);
+
+        const buyConfig: BuyConfigStruct = {
+          minimumUnits: 1,
+          desiredUnits: units,
+          maximumPrice: price_,
+        };
+
+        const balanceBefore = await currency.balanceOf(buyer0.address)
+
+        await vapour721A.connect(buyer0).mintNFT(buyConfig)
+
+        const balanceAfter = await currency.balanceOf(buyer0.address)
+
+        const total = balanceBefore.sub(balanceAfter)
+        expect(totalCost).to.equals(total)
+
+        supply = await vapour721A.totalSupply()
+      }
+
     });
   });
 });
