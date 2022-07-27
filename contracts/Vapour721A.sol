@@ -63,18 +63,18 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	using FixedPointMath for uint256;
 
 	// storage variables
-	uint256 public _supplyLimit;
+	uint256 private _supplyLimit;
 	uint256 private _amountWithdrawn;
-	uint256 public _amountPayable;
+	uint256 private _amountPayable;
 
 	address private _vmStatePointer;
-	address public _currency;
-	address payable public _recipient;
+	address private _currency;
+	address payable private _recipient;
 
 	// Royalty amount in bps
 	uint256 private _royaltyBPS;
 
-	string public baseURI;
+	string private baseURI;
 
 	event Construct(ConstructorConfig config_);
 	event Initialize(InitializeConfig config_);
@@ -86,10 +86,10 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	);
 
 	/// Admin role for `DELEGATED_MINTER`.
-	bytes32 public constant DELEGATED_MINTER_ADMIN =
+	bytes32 private constant DELEGATED_MINTER_ADMIN =
 		keccak256("DELEGATED_MINTER_ADMIN");
 	/// Role for `DELEGATED_MINTER`.
-	bytes32 public constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
+	bytes32 private constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
 
 	constructor(ConstructorConfig memory config_)
 		ERC721A(config_.name, config_.symbol)
@@ -232,12 +232,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		uint256 minimumUnits,
 		uint256 desiredUnits
 	) external payable onlyRole(DELEGATED_MINTER) {
-		BuyConfig memory _config = BuyConfig(
-			maximumPrice,
-			minimumUnits,
-			desiredUnits
-		);
-		_mintNFT(receiver, _config);
+		_mintNFT(receiver, BuyConfig(maximumPrice, minimumUnits, desiredUnits));
 	}
 
 	function setRecipient(address newRecipient) public {
