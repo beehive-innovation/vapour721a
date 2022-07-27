@@ -663,16 +663,50 @@ describe("Script Tests", () => {
       }
     }
 
-    const receiverAddressIs = (address: string): StateConfig => {
+    const receiverAddressIsIn = (addresses: string[]): StateConfig => {
       return {
         sources: [
           concat([
-            op(Opcode.CONTEXT, 0),
-            op(Opcode.CONSTANT, 0),
-            op(Opcode.EQUAL_TO)
+            ...addresses.map((address, i) =>
+              concat([
+                op(Opcode.CONTEXT, 0),
+                op(Opcode.CONSTANT, i),
+                op(Opcode.EQUAL_TO)
+              ])
+            ),
+            op(Opcode.ANY, addresses.length)
           ])
         ],
-        constants: [address]
+        constants: [...addresses]
+      }
+    }
+
+    const maxCapForWallet = (cap: number): StateConfig => {
+      return {
+        sources: [
+          concat([
+            op(Opcode.CONSTANT, 0), // cap
+            op(Opcode.CONTEXT, 0), // address of minter
+            op(Opcode.IERC721A_NUMBER_MINTED), // number they've minted
+            op(Opcode.SATURATING_SUB, 2) // (the cap) - (what they've minted so far)
+          ])
+        ],
+        constants: [cap]
+      }
+    }
+
+    const remainingUnits = (): StateConfig => {
+      return {
+        sources: [
+          concat([
+            op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+            op(Opcode.IERC721A_TOTAL_MINTED),
+            op(Opcode.SATURATING_SUB, 2),
+            op(Opcode.CONTEXT, 1), // units
+            op(Opcode.MIN, 2)
+          ])
+        ],
+        constants: []
       }
     }
 
@@ -695,25 +729,30 @@ describe("Script Tests", () => {
 
     before(async () => {
       const rules = [
-        // rule 1
+        // rule 0
         VM.and([
           tokenIsLessThan(11),
-          receiverAddressIs(buyer0.address)
+          receiverAddressIsIn([buyer0.address])
+        ]),
+        // rule 1
+        VM.and([
+          tokenIsLessThan(21),
+          receiverAddressIsIn([buyer1.address])
         ]),
         // rule 2
         VM.and([
-          tokenIsLessThan(21),
-          receiverAddressIs(buyer1.address)
+          tokenIsLessThan(41),
+          receiverAddressIsIn([buyer2.address])
         ]),
         // rule 3
         VM.and([
-          tokenIsLessThan(41),
-          receiverAddressIs(buyer2.address)
-        ]),
-        // rule 4
-        VM.and([
           tokenIsLessThan(101),
-          receiverAddressIs(buyer3.address)
+          receiverAddressIsIn([
+            buyer0.address,
+            buyer1.address,
+            buyer2.address,
+            buyer3.address
+          ])
         ])
       ]
 
@@ -721,18 +760,14 @@ describe("Script Tests", () => {
         [
           ...rules,
           // quantity script
-          {
-            sources: [
-              concat([
-                op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
-                op(Opcode.IERC721A_TOTAL_MINTED),
-                op(Opcode.SATURATING_SUB, 2),
-                op(Opcode.CONTEXT, 1), // units
-                op(Opcode.MIN, 2)
-              ])
-            ],
-            constants: []
-          },
+          VM.ifelse(
+            rule(3),
+            VM.min([
+              maxCapForWallet(25),
+              remainingUnits()
+            ]),
+            remainingUnits()
+          ),
           // price script
           VM.ifelse(
             rule(3),
@@ -775,7 +810,7 @@ describe("Script Tests", () => {
 
     it("should mint free tokens for buyer1", async () => {
 
-      const units = ethers.BigNumber.from(100)
+      const units = ethers.BigNumber.from(25)
 
       const { unitPrice, totalCost } = increasingPricePurchase(units, ethers.BigNumber.from(0), priceIncreasePerToken, startingToken)
 
@@ -784,19 +819,36 @@ describe("Script Tests", () => {
         units
       );
 
+      console.log({ maxUnits_, price_ })
+
       const buyConfig: BuyConfigStruct = {
         minimumUnits: units,
         desiredUnits: units,
         maximumPrice: 0,
       };
 
-      const balanceBefore = await currency.balanceOf(buyer0.address)
+      let balanceBefore = await currency.balanceOf(buyer0.address)
+      await vapour721A.connect(buyer0).mintNFT(buyConfig)
+      let balanceAfter = await currency.balanceOf(buyer0.address)
+      let total = balanceBefore.sub(balanceAfter)
+      expect(total).to.equals(0)
 
+      balanceBefore = await currency.balanceOf(buyer1.address)
+      await vapour721A.connect(buyer1).mintNFT(buyConfig)
+      balanceAfter = await currency.balanceOf(buyer1.address)
+      total = balanceBefore.sub(balanceAfter)
+      expect(total).to.equals(0)
+
+      balanceBefore = await currency.balanceOf(buyer2.address)
+      await vapour721A.connect(buyer2).mintNFT(buyConfig)
+      balanceAfter = await currency.balanceOf(buyer2.address)
+      total = balanceBefore.sub(balanceAfter)
+      expect(total).to.equals(0)
+
+      balanceBefore = await currency.balanceOf(buyer3.address)
       await vapour721A.connect(buyer3).mintNFT(buyConfig)
-
-      const balanceAfter = await currency.balanceOf(buyer0.address)
-
-      const total = balanceBefore.sub(balanceAfter)
+      balanceAfter = await currency.balanceOf(buyer3.address)
+      total = balanceBefore.sub(balanceAfter)
       expect(total).to.equals(0)
     })
 
