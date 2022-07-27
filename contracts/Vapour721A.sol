@@ -76,14 +76,11 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 
 	string private baseURI;
 
+	event Buy(uint256 _const);
 	event Construct(ConstructorConfig config_);
 	event Initialize(InitializeConfig config_);
 	event RecipientChanged(address newRecipient);
-	event Withdraw(
-		address _withdrawer,
-		uint256 _amountWithdrawn,
-		uint256 _totalWithdrawn
-	);
+	event Withdraw(address _withdrawer);
 
 	/// Admin role for `DELEGATED_MINTER`.
 	bytes32 private constant DELEGATED_MINTER_ADMIN =
@@ -206,6 +203,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 
 		_amountPayable = _amountPayable + cost_;
 		_mint(receiver, units_);
+		emit Buy(cost_);
 	}
 
 	function mintNFT(BuyConfig calldata config_) external payable {
@@ -343,7 +341,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	function withdraw() external {
 		require(_amountPayable > 0, "ZERO_FUND");
 		_amountWithdrawn = _amountWithdrawn + _amountPayable;
-		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
+		emit Withdraw(msg.sender);
 
 		if (_currency == address(0)) Address.sendValue(_recipient, _amountPayable);
 		else IERC20(_currency).transfer(_recipient, _amountPayable);
