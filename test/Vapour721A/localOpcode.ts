@@ -5,6 +5,7 @@ import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
 	Vapour721A,
+	WithdrawEvent,
 } from "../../typechain/Vapour721A";
 import {
 	buyer0,
@@ -20,6 +21,7 @@ import {
 	concat,
 	eighteenZeros,
 	getChild,
+	getEventArgs,
 	op,
 	Opcode,
 	StorageOpcodes,
@@ -480,7 +482,15 @@ describe("Vapour721A localOpcodes test", () => {
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(5);
 			expect(await vapour721A.totalSupply()).to.equals(5);
 
-			expect(await vapour721A._amountPayable()).to.equals(BN(5));
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+			expect(amountWithdrawn).to.equals(BN(5));
 		});
 
 		it("Should be able to buy 5 nfts with 10% discount", async () => {
@@ -488,8 +498,6 @@ describe("Vapour721A localOpcodes test", () => {
 			await currency.connect(buyer1).approve(vapour721A.address, BN(5));
 
 			const expectedAmountPayable = nftPrice.mul(5).mul(90).div(100);
-
-			await vapour721A.connect(recipient).withdraw();
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -501,7 +509,15 @@ describe("Vapour721A localOpcodes test", () => {
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(10);
 			expect(await vapour721A.totalSupply()).to.equals(10);
 
-			expect(await vapour721A._amountPayable()).to.equals(expectedAmountPayable);
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+			expect(amountWithdrawn).to.equals(expectedAmountPayable);
 		});
 	});
 
@@ -636,7 +652,15 @@ describe("Vapour721A localOpcodes test", () => {
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(5);
 			expect(await vapour721A.totalSupply()).to.equals(5);
 
-			expect(await vapour721A._amountPayable()).to.equals(nftPrice.mul(5));
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+			expect(amountWithdrawn).to.equals(nftPrice.mul(5));
 		});
 
 		it("Should be able to buy 5 nfts with 10% discount", async () => {
@@ -646,8 +670,6 @@ describe("Vapour721A localOpcodes test", () => {
 			const expectedAmountPayable = nftPrice.mul(5).mul(90).div(100);
 
 			for (let i = 1; i <= 5; i++) await vapour721A.connect(buyer1).burn(i);
-
-			await vapour721A.connect(recipient).withdraw();
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 1,
@@ -659,7 +681,15 @@ describe("Vapour721A localOpcodes test", () => {
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(5);
 			expect(await vapour721A.totalSupply()).to.equals(5);
 
-			expect(await vapour721A._amountPayable()).to.equals(expectedAmountPayable);
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+			expect(amountWithdrawn).to.equals(expectedAmountPayable);
 		});
 	});
 
@@ -719,15 +749,20 @@ describe("Vapour721A localOpcodes test", () => {
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(2);
 			expect(await vapour721A.totalSupply()).to.equals(2);
 
-			let amountPayable = await vapour721A.connect(buyer1)._amountPayable()
 			buyCalc = await vapour721A.connect(buyer1).calculateBuy(buyer1.address, 1)
-			expect(buyCalc.price_).to.equals(amountPayable)
+
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+			expect(buyCalc.price_).to.equals(amountWithdrawn)
 		});
 
 		it("should eval price to the correct amount payable after a withdraw", async () => {
-			await vapour721A.connect(recipient).withdraw();
-
-			expect(await vapour721A.connect(buyer1)._amountPayable()).to.equals(0);
 
 			const buyConfig: BuyConfigStruct = {
 				minimumUnits: 2,
@@ -743,9 +778,17 @@ describe("Vapour721A localOpcodes test", () => {
 			expect(await vapour721A.balanceOf(buyer1.address)).to.equals(4);
 			expect(await vapour721A.totalSupply()).to.equals(4);
 
-			let amountPayable = await vapour721A.connect(buyer1)._amountPayable()
 			buyCalc = await vapour721A.connect(buyer1).calculateBuy(buyer1.address, 1)
-			expect(buyCalc.price_).to.equals(amountPayable)
+
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+			expect(buyCalc.price_).to.equals(amountWithdrawn)
 		});
 	});
 
