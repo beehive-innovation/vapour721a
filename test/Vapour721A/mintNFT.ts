@@ -7,6 +7,7 @@ import {
 	BuyConfigStruct,
 	ConstructorConfigStruct,
 	Vapour721A,
+	WithdrawEvent,
 } from "../../typechain/Vapour721A";
 import {
 	buyer0,
@@ -23,6 +24,7 @@ import {
 	concat,
 	getBalance,
 	getChild,
+	getEventArgs,
 	getGasUsed,
 	op,
 	ZERO_ADDRESS,
@@ -721,7 +723,17 @@ describe("mintNFT tests (Native Tokens)", () => {
 			const buyerAfterBalance = await getBalance(ZERO_ADDRESS, buyer2);
 
 			expect(buyerBeforeBalance.sub(gasUsed)).to.equals(buyerAfterBalance.add(BN(2)));
-			expect(await vapour721A._amountPayable()).to.equals(BN(2));
+
+			const withdrawTx = await vapour721A.connect(recipient).withdraw();
+
+			const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+				withdrawTx,
+				"Withdraw",
+				vapour721A
+			) as WithdrawEvent["args"];
+
+
+			expect(amountWithdrawn).to.equals(BN(2));
 
 		});
 	});

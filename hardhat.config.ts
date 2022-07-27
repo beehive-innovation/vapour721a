@@ -37,7 +37,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 100,
+            runs: 10,
           },
           metadata: {
             useLiteralContent: true,
@@ -49,7 +49,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 100,
           },
         },
       },
