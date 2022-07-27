@@ -567,7 +567,7 @@ describe("Script Tests", () => {
     });
   });
 
-  describe("increasing price per token sale", () => {
+  describe.only("increasing price per token sale", () => {
 
     const increasingPricePurchase = (
       units: BigNumber,
@@ -579,12 +579,10 @@ describe("Script Tests", () => {
       totalCost: BigNumber
     } => {
       const bn = ethers.BigNumber
-      totalMinted = totalMinted.sub(bn.from(startingToken - 1))
       // u = units
       // t = totalMinted
       // i = priceIncrease
       // s = startingToken
-      // (u(2t + u + 1) / 2 * i)
       // (u(2t - 2s + u + 3) / 2 * i)
       const totalCost =
         totalMinted
@@ -604,7 +602,7 @@ describe("Script Tests", () => {
 
     before(async () => {
       const priceIncreasePerToken = parseEther('1'); // sale price
-
+      const startingToken = 1
       const vmStateConfig: StateConfig = VM.pair(
         // quantity script
         {
@@ -619,23 +617,40 @@ describe("Script Tests", () => {
         {
           sources: [
             concat([
+              // stacking the actual units that will be purchased
+              op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
+              op(Opcode.IERC721A_TOTAL_MINTED),
+              op(Opcode.SUB, 2),
+              op(Opcode.CONTEXT, 1), // units
+              op(Opcode.STACK, 0), // the eval of the q script
+              op(Opcode.MIN, 3), // the min of q, desiredUnits and supplyLimit - totalMinted
+
               // (u(2t + u + 1) / 2 * i) / u
-              op(Opcode.CONTEXT, 1), // u
-              op(Opcode.CONSTANT, 0), // 1
-              op(Opcode.IERC721A_TOTAL_MINTED), // t
-              op(Opcode.IERC721A_TOTAL_MINTED), // t
+              op(Opcode.IERC721A_TOTAL_MINTED), // total minted
+              op(Opcode.IERC721A_TOTAL_MINTED), // total minted
+
+              op(Opcode.STACK, 1), // units
+
+              op(Opcode.CONSTANT, 0), // 3
               op(Opcode.ADD, 4),
-              op(Opcode.CONTEXT, 1), //u
+              op(Opcode.CONSTANT, 3), // starting token
+              op(Opcode.CONSTANT, 3), // starting token
+              op(Opcode.SUB, 3),
+
+              op(Opcode.STACK, 1), // units
+
               op(Opcode.MUL, 2),
-              op(Opcode.CONSTANT, 1),
+              op(Opcode.CONSTANT, 1), // 2
               op(Opcode.DIV, 2),
-              op(Opcode.CONSTANT, 2),
+              op(Opcode.CONSTANT, 2), // price increase
               op(Opcode.MUL, 2),
-              op(Opcode.CONTEXT, 1), // u
+
+              op(Opcode.STACK, 1), // units
+
               op(Opcode.DIV, 2),
             ])
           ],
-          constants: [1, 2, priceIncreasePerToken]
+          constants: [3, 2, priceIncreasePerToken, startingToken]
         }
       )
 
@@ -671,7 +686,8 @@ describe("Script Tests", () => {
       );
 
       const { unitPrice, totalCost } = increasingPricePurchase(units, ethers.BigNumber.from(0), parseEther('1'), 1)
-      console.log(unitPrice.toString())
+      console.log('total', totalCost.toString())
+      console.log('unit price', unitPrice.toString())
 
       expect(maxUnits_).to.equals(units);
       expect(price_).to.equals(unitPrice);
@@ -686,13 +702,21 @@ describe("Script Tests", () => {
     });
 
     it("it should eval the correct price for a second mint", async () => {
-      const units = 3
+      const units = ethers.BigNumber.from(3)
       const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
         buyer0.address,
         units
       );
+
+      const totalMinted = await vapour721A.totalSupply()
+
+      const { unitPrice, totalCost } = increasingPricePurchase(units, totalMinted, parseEther('1'), 1)
+      console.log('total', totalCost.toString())
+      console.log('unit price', unitPrice.toString())
+
+
       expect(maxUnits_).to.equals(units);
-      expect(price_).to.equals(parseEther('36').div(units));
+      expect(price_).to.equals(unitPrice);
 
       const buyConfig: BuyConfigStruct = {
         minimumUnits: units,
