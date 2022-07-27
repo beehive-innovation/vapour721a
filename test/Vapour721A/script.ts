@@ -1,4 +1,5 @@
 import { expect } from "chai";
+import { BigNumber } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { BetweenTimestamps, CombineTierGenerator, IncDecPrice, StateConfig, utils, VM } from "rain-sdk";
@@ -561,6 +562,40 @@ describe("Script Tests", () => {
   });
 
   describe("increasing price per token sale", () => {
+
+    const increasingPricePurchase = (
+      units: BigNumber,
+      totalMinted: BigNumber,
+      priceIncrease: BigNumber,
+      startingToken: number = 1
+    ): {
+      unitPrice: BigNumber,
+      totalCost: BigNumber
+    } => {
+      const bn = ethers.BigNumber
+      totalMinted = totalMinted.sub(bn.from(startingToken - 1))
+      // u = units
+      // t = totalMinted
+      // i = priceIncrease
+      // s = startingToken
+      // (u(2t + u + 1) / 2 * i)
+      // (u(2t - 2s + u + 3) / 2 * i)
+      const totalCost =
+        totalMinted
+          .add(totalMinted)
+          .sub(startingToken)
+          .sub(startingToken)
+          .add(units)
+          .add(bn.from(3))
+          .mul(units)
+          .div(bn.from(2))
+          .mul(priceIncrease)
+
+      // divide by number of units to get the price per unit
+      const unitPrice = totalCost.div(units)
+      return { unitPrice, totalCost }
+    }
+
     before(async () => {
       const priceIncreasePerToken = parseEther('1'); // sale price
 
@@ -621,14 +656,18 @@ describe("Script Tests", () => {
       await currency.connect(buyer0).approve(vapour721A.address, parseEther('1000'))
     });
 
-    it("it should eval the correct price", async () => {
-      const units = 10
+    it.only("it should eval the correct price", async () => {
+      const units = ethers.BigNumber.from(10)
       const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
         buyer0.address,
         units
       );
+
+      const { unitPrice, totalCost } = increasingPricePurchase(units, ethers.BigNumber.from(0), parseEther('1'), 1)
+      console.log(unitPrice.toString())
+
       expect(maxUnits_).to.equals(units);
-      expect(price_).to.equals(parseEther('55').div(units));
+      expect(price_).to.equals(unitPrice);
 
       const buyConfig: BuyConfigStruct = {
         minimumUnits: units,
