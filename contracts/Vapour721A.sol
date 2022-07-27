@@ -11,7 +11,7 @@ import "@beehiveinnovation/rain-protocol/contracts/math/FixedPointMath.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
-import "hardhat/console.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
 /**
  * config for deploying Vapour721A contract
@@ -23,6 +23,7 @@ struct ConstructorConfig {
 	uint256 supplyLimit;
 	address recipient;
 	address owner;
+	address admin;
 	uint256 royaltyBPS;
 }
 
@@ -55,25 +56,25 @@ uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
 
 uint256 constant LOCAL_OPS_LENGTH = 4;
 
-contract Vapour721A is ERC721A, RainVM, Ownable {
+contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	using Strings for uint256;
 	using Math for uint256;
 	using LibFnPtrs for bytes;
 	using FixedPointMath for uint256;
 
 	// storage variables
-	uint256 public _supplyLimit;
+	uint256 private _supplyLimit;
 	uint256 private _amountWithdrawn;
-	uint256 public _amountPayable;
+	uint256 private _amountPayable;
 
 	address private _vmStatePointer;
-	address public _currency;
-	address public _recipient;
+	address private _currency;
+	address payable private _recipient;
 
 	// Royalty amount in bps
 	uint256 private _royaltyBPS;
 
-	string public baseURI;
+	string private baseURI;
 
 	event Construct(ConstructorConfig config_);
 	event Initialize(InitializeConfig config_);
@@ -83,6 +84,12 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 		uint256 _amountWithdrawn,
 		uint256 _totalWithdrawn
 	);
+
+	/// Admin role for `DELEGATED_MINTER`.
+	bytes32 private constant DELEGATED_MINTER_ADMIN =
+		keccak256("DELEGATED_MINTER_ADMIN");
+	/// Role for `DELEGATED_MINTER`.
+	bytes32 private constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
 
 	constructor(ConstructorConfig memory config_)
 		ERC721A(config_.name, config_.symbol)
@@ -95,6 +102,11 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 
 		setRecipient(config_.recipient);
 		transferOwnership(config_.owner);
+
+		require(config_.admin != address(0), "0_ADMIN");
+		_setRoleAdmin(DELEGATED_MINTER, DELEGATED_MINTER_ADMIN);
+
+		_grantRole(DELEGATED_MINTER_ADMIN, config_.admin);
 
 		emit Construct(config_);
 	}
@@ -170,7 +182,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 		);
 	}
 
-	function mintNFT(BuyConfig calldata config_) external {
+	function _mintNFT(address receiver, BuyConfig memory config_) internal {
 		require(0 < config_.minimumUnits, "0_MINIMUM");
 		require(
 			config_.minimumUnits <= config_.desiredUnits,
@@ -180,20 +192,47 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 		uint256 remainingUnits_ = _supplyLimit - _totalMinted();
 		uint256 targetUnits_ = config_.desiredUnits.min(remainingUnits_);
 
-		(uint256 maxUnits_, uint256 price_) = calculateBuy(
-			msg.sender,
-			targetUnits_
-		);
+		(uint256 maxUnits_, uint256 price_) = calculateBuy(receiver, targetUnits_);
 
 		uint256 units_ = maxUnits_.min(targetUnits_);
 		require(units_ >= config_.minimumUnits, "INSUFFICIENT_STOCK");
 
 		require(price_ <= config_.maximumPrice, "MAXIMUM_PRICE");
 		uint256 cost_ = price_ * units_;
-		IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
+		if (_currency == address(0)) {
+			require(msg.value >= cost_, "INSUFFICIENT_FUND");
+			Address.sendValue(payable(msg.sender), msg.value - cost_);
+		} else IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
 
 		_amountPayable = _amountPayable + cost_;
-		_mint(msg.sender, units_);
+		_mint(receiver, units_);
+	}
+
+	function mintNFT(BuyConfig calldata config_) external payable {
+		_mintNFT(msg.sender, config_);
+	}
+
+	/// A minting function that allows minting to an address other than the
+	/// sender of the transaction/account that pays. This opens up the
+	/// possibility of using 3rd party services that will mint on a user's
+	/// behalf if they pay with some other form of payment. The BuyConfig for
+	/// the mint is split out of its struct, also for easier integration.
+	/// The downside is, this way of minting could be vulnerable to a phishing
+	/// attack - an attacker could create a duplicate front end that makes the
+	/// user think they are minting to themselves, when actually they are
+	/// minting to someone else. To mitigate against this we restrict access to
+	/// this function to only those accounts with the 'DELEGATED_MINTER' role.
+	/// @param receiver the receiver of the NFTs
+	/// @param maximumPrice maximum price, as per BuyConfig
+	/// @param minimumUnits minimum units, as per BuyConfig
+	/// @param desiredUnits desired units, as per BuyConfig
+	function mintNFTFor(
+		address receiver,
+		uint256 maximumPrice,
+		uint256 minimumUnits,
+		uint256 desiredUnits
+	) external payable onlyRole(DELEGATED_MINTER) {
+		_mintNFT(receiver, BuyConfig(maximumPrice, minimumUnits, desiredUnits));
 	}
 
 	function setRecipient(address newRecipient) public {
@@ -302,11 +341,13 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 	}
 
 	function withdraw() external {
-		require(_recipient == msg.sender, "RECIPIENT_ONLY");
 		require(_amountPayable > 0, "ZERO_FUND");
 		_amountWithdrawn = _amountWithdrawn + _amountPayable;
 		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
-		IERC20(_currency).transfer(_recipient, _amountPayable);
+
+		if (_currency == address(0)) Address.sendValue(_recipient, _amountPayable);
+		else IERC20(_currency).transfer(_recipient, _amountPayable);
+
 		_amountPayable = 0;
 	}
 
@@ -321,5 +362,15 @@ contract Vapour721A is ERC721A, RainVM, Ownable {
 			return (_recipient, 0);
 		}
 		return (_recipient, (_salePrice * _royaltyBPS) / 10_000);
+	}
+
+	function supportsInterface(bytes4 interfaceId)
+		public
+		view
+		virtual
+		override(ERC721A, AccessControl)
+		returns (bool)
+	{
+		return super.supportsInterface(interfaceId);
 	}
 }

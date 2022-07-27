@@ -1,17 +1,17 @@
 import { Logger } from "@ethersproject/logger";
 import { version } from "./_version";
-import { ContractTransaction, Contract, BigNumber } from "ethers";
+import { ContractTransaction, Contract, BigNumber, Overrides, ContractReceipt } from "ethers";
 import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { AllStandardOps } from "rain-sdk";
-import { NewChildEvent } from "../typechain/Vapour721AFactory";
+import { AllStandardOps, ERC20, StateConfig } from "rain-sdk";
+import { Vapour721AFactory, NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers } from "hardhat";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Factory } from "../typechain";
-import { utils } from "ethers"
-
 const logger = new Logger(version);
+const utils = ethers.utils
 
 export const eighteenZeros = "000000000000000000";
 export const BN = (num: number): BigNumber => {
@@ -374,4 +374,18 @@ export async function getPrice(
 
   if (price_.lt(endPrice)) return price_;
   return endPrice;
+}
+
+
+export async function getBalance(contract: string, signer: SignerWithAddress): Promise<BigNumber> {
+  if (contract == ZERO_ADDRESS) {
+    return await ethers.provider.getBalance(signer.address);
+  }
+  let token = new ERC20(contract, signer);
+  return await token.balanceOf(signer.address);
+}
+
+export async function getGasUsed(trx: ContractTransaction): Promise<BigNumber> {
+  const receipt = await trx.wait();
+  return BigNumber.from(receipt.cumulativeGasUsed).mul(BigNumber.from(receipt.effectiveGasPrice));
 }

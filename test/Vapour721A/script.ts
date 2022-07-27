@@ -53,7 +53,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -128,7 +129,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -182,7 +184,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -237,7 +240,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -314,7 +318,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -516,7 +521,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
@@ -640,7 +646,8 @@ describe("Script Tests", () => {
         supplyLimit: 100,
         recipient: recipient.address,
         owner: owner.address,
-        royaltyBPS: 1000
+        royaltyBPS: 1000,
+        admin: buyer0.address
       };
 
       const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
@@ -656,7 +663,7 @@ describe("Script Tests", () => {
       await currency.connect(buyer0).approve(vapour721A.address, parseEther('1000'))
     });
 
-    it.only("it should eval the correct price", async () => {
+    it("it should eval the correct price", async () => {
       const units = ethers.BigNumber.from(10)
       const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
         buyer0.address,

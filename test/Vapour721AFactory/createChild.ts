@@ -32,12 +32,13 @@ before(async () => {
 		supplyLimit: 1000,
 		recipient: recipient_.address,
 		owner: owner_.address,
-		royaltyBPS: 1000
+		royaltyBPS: 1000,
+		admin: signer1.address
 	};
 
 	encodedConfig = ethers.utils.defaultAbiCoder.encode(
 		[
-			"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner)",
+			"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner, address admin, uint256 royaltyBPS)",
 		],
 		[constructorConfig]
 	);

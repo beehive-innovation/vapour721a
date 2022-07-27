@@ -28,17 +28,4 @@ export const checkChildIntegrity = async (
 		constructorConfig.symbol,
 		`symbol is ${vapour721a.symbol()} not ${constructorConfig.symbol}`
 	);
-	expect(await vapour721a.baseURI()).to.equals(
-		constructorConfig.baseURI,
-		`tokenURI is ${vapour721a.tokenURI(2)} not ${constructorConfig.baseURI}`
-	);
-	expect(await vapour721a._supplyLimit()).to.equals(
-		constructorConfig.supplyLimit,
-		`totalSupply is ${vapour721a.totalSupply()} not ${constructorConfig.supplyLimit
-		}`
-	);
-	expect(await vapour721a._recipient()).to.equals(
-		constructorConfig.recipient,
-		`totalSupply is ${vapour721a._recipient()} not ${constructorConfig.recipient}`
-	);
 };

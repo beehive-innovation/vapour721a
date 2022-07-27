@@ -44,7 +44,8 @@ describe("Vapour721A tokenURI test", () => {
 			supplyLimit: 800,
 			recipient: recipient.address,
 			owner: owner.address,
-			royaltyBPS: 1000
+			royaltyBPS: 1000,
+			admin: buyer0.address
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -146,7 +147,8 @@ const deployWithBaseURI = async (baseURI: string) => {
 		supplyLimit: 800,
 		recipient: recipient.address,
 		owner: owner.address,
-		royaltyBPS: 1000
+		royaltyBPS: 1000,
+		admin: buyer0.address
 	};
 
 	const deployTrx = await vapour721AFactory.createChildTyped(
@@ -172,3 +174,4 @@ const deployWithBaseURI = async (baseURI: string) => {
 
 	return await vapour721A.tokenURI(1)
 }
+VM

@@ -15,7 +15,7 @@ import {
 } from "../utils";
 import { assert } from "console";
 import { expect } from "chai";
-import { config, owner, vapour721AFactory, recipient, currency } from "../1_setup";
+import { config, owner, vapour721AFactory, recipient, currency, buyer0 } from "../1_setup";
 import { StateConfig, VM } from "rain-sdk";
 
 let vapour721AConstructorConfig: ConstructorConfigStruct;
@@ -42,7 +42,8 @@ describe("Vapour721A Initialize test", () => {
 			supplyLimit: 36,
 			recipient: recipient.address,
 			owner: owner.address,
-			royaltyBPS: 1000
+			royaltyBPS: 1000,
+			admin: buyer0.address
 		};
 
 		vapour721AInitializeConfig = {
@@ -82,7 +83,7 @@ describe("Vapour721A Initialize test", () => {
 	it("Should be able to initialize after creating with createChild method", async () => {
 		let encodedConfig = ethers.utils.defaultAbiCoder.encode(
 			[
-				"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner)",
+				"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner, address admin, uint256 royaltyBPS)",
 			],
 			[vapour721AConstructorConfig]
 		);
