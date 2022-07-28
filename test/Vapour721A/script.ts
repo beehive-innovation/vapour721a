@@ -629,15 +629,19 @@ describe("Script Tests", () => {
             op(Opcode.MUL, 2),
 
             op(Opcode.STACK, numberOfRules), // the eval of the q script
+            op(Opcode.ISZERO),
+            op(Opcode.CONSTANT, 4),
+            op(Opcode.STACK, numberOfRules), // the eval of the q script
+            op(Opcode.EAGER_IF), // avoiding division by zero here
 
             op(Opcode.DIV, 2),
           ])
         ],
-        constants: [3, 2, priceIncrease, startingToken]
+        constants: [3, 2, priceIncrease, startingToken, 1]
       }
     }
 
-    const free = (): StateConfig => {
+    const zero = (): StateConfig => {
       return {
         sources: [
           concat([
@@ -660,6 +664,21 @@ describe("Script Tests", () => {
           ]),
         ],
         constants: [endToken]
+      }
+    }
+
+    const tokenIsGreaterThan = (token: number): StateConfig => {
+      return {
+        sources: [
+          concat([
+            op(Opcode.IERC721A_TOTAL_MINTED),
+            op(Opcode.CONTEXT, 1),
+            op(Opcode.ADD, 2),
+            op(Opcode.CONSTANT, 0),
+            op(Opcode.GREATER_THAN),
+          ]),
+        ],
+        constants: [token]
       }
     }
 
@@ -721,24 +740,38 @@ describe("Script Tests", () => {
       }
     }
 
-    const generateWallets = async (number: number): Promise<Signer[]> => {
+    const generateWallets = async (number: number, name?: string): Promise<Signer[]> => {
       let wallets: Signer[] = []
+      process.stdout.write(` `);
       for (let i = 0; i < number; i++) {
+        process.stdout.write('\r\x1b[K');
+        process.stdout.write(`${name}... `);
+        process.stdout.write(`${i + 1}/${number}`);
         // Get a new wallet
         const wallet = ethers.Wallet.createRandom().connect(ethers.provider);
         // send ETH to the new wallet so it can perform a tx
         await buyer0.sendTransaction({ to: wallet.address, value: ethers.utils.parseEther("1") });
         wallets.push(wallet)
       }
+      process.stdout.write('\n');
       return wallets
     }
 
     const topupWallets = async (signers: Signer[], currency: Token, vapour721A: Vapour721A) => {
+      let i = 1
+      console.log('')
+      console.log('=====')
+      process.stdout.write('\n');
       for (const signer of signers) {
+        process.stdout.write('\r\x1b[K');
+        process.stdout.write(`\rminting currency for wallet ${i}...`)
         // get the wallet some tokens
-        await currency.connect(signer).mintTokens(100)
-        await currency.approve(vapour721A.address, parseEther('100'))
+        await currency.connect(signer).mintTokens(10000)
+        await currency.connect(signer).approve(vapour721A.address, parseEther('10000'))
+        i++
       }
+      process.stdout.write('\n');
+      console.log(' ')
     }
 
     const getSignerAddresses = async (signers: Signer[]): Promise<string[]> => {
@@ -770,6 +803,10 @@ describe("Script Tests", () => {
       expect(total).to.equals(price_.mul(maxUnits))
     }
 
+    //////////////////////////
+    // config for this sale //
+    //////////////////////////
+
     const supplyLimit = ethers.BigNumber.from(1111)
     const priceIncreasePerToken = parseEther('0.1'); // sale price
     const startingToken = 101
@@ -784,30 +821,33 @@ describe("Script Tests", () => {
     before(async () => {
 
       // create the wallets for each phase
-      founders = await generateWallets(2)
-      friends = await generateWallets(5)
-      community = await generateWallets(20)
-      anons = await generateWallets(5)
+      console.log('')
+      console.log('generating wallets:')
+      founders = await generateWallets(2, 'founders')
+      friends = await generateWallets(5, 'friends')
+      community = await generateWallets(20, 'community')
+      anons = await generateWallets(60, 'anons')
       everyone = [...founders, ...friends, ...community, ...anons]
 
       // the conditions for each phase
       const rules = [
-        // rule 0
+        // phase 0
+        receiverAddressIsIn(await getSignerAddresses(founders)),
+        // phase 1
         VM.and([
-          tokenIsLessThan(11),
-          receiverAddressIsIn(await getSignerAddresses(founders))
-        ]),
-        // rule 1
-        VM.and([
-          tokenIsLessThan(21),
+          tokenIsGreaterThan(10),
           receiverAddressIsIn(await getSignerAddresses(friends))
         ]),
-        // rule 2
+        // phase 2
         VM.and([
-          tokenIsLessThan(41),
+          tokenIsGreaterThan(20),
           receiverAddressIsIn(await getSignerAddresses(community))
         ]),
-        // rule 3
+        // phase 3
+        tokenIsGreaterThan(40),
+        // phase 4
+        tokenIsGreaterThan(100),
+        // rule 5 = phases 0 - 3
         tokenIsLessThan(101),
       ]
 
@@ -816,24 +856,21 @@ describe("Script Tests", () => {
           ...rules,
           // quantity script
           VM.ifelse(
-            rule(0),
-            maxCapForWallet(phase0cap),
+            rule(4),
+            remainingUnits(),
             VM.ifelse(
-              rule(1),
-              maxCapForWallet(phase1cap),
+              rule(3),
+              maxCapForWallet(phase3cap),
               VM.ifelse(
                 rule(2),
                 maxCapForWallet(phase2cap),
                 VM.ifelse(
-                  rule(3),
-                  maxCapForWallet(phase3cap),
+                  rule(1),
+                  maxCapForWallet(phase1cap),
                   VM.ifelse(
-                    rule(4),
-                    remainingUnits(),
-                    {
-                      sources: [op(Opcode.CONSTANT, 0)],
-                      constants: [0]
-                    },
+                    rule(0),
+                    maxCapForWallet(phase0cap),
+                    zero(),
                     false
                   ),
                   false
@@ -846,9 +883,10 @@ describe("Script Tests", () => {
           ),
           // price script
           VM.ifelse(
-            rule(3),
-            free(),
-            increasingPricePurchaseSC(priceIncreasePerToken, startingToken, rules.length), false
+            rule(5),
+            zero(),
+            increasingPricePurchaseSC(priceIncreasePerToken, startingToken, rules.length),
+            false
           ),
         ], false
       )
@@ -888,10 +926,25 @@ describe("Script Tests", () => {
         maximumPrice: 0,
       };
 
+      // make sure a non-founder can't mint
+      await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+
+      // price for founders should be 0
+      const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
+        await founders[0].getAddress(),
+        units
+      );
+
+      expect(price_).to.equals(0)
+
+      let index = 0
       for (const signer of founders) {
         await mintForSigner(signer, buyConfig, currency, vapour721A)
+        console.log(`minting #${(index * phase0cap) + 1}-${(index + 1) * phase0cap}/${founders.length * phase0cap} (phase 0)`)
+        console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
+        console.log('=====')
+        index++
       }
-
     })
 
     it("should mint for phase 1", async () => {
@@ -904,8 +957,24 @@ describe("Script Tests", () => {
         maximumPrice: 0,
       };
 
+      // make sure a non-friend can't mint
+      await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+
+      // price for founders should be 0
+      const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
+        await founders[0].getAddress(),
+        units
+      );
+
+      expect(price_).to.equals(0)
+
+      let index = 0
       for (const signer of friends) {
         await mintForSigner(signer, buyConfig, currency, vapour721A)
+        console.log(`minting #${(index * phase1cap) + 1}-${(index + 1) * phase1cap}/${friends.length * phase1cap} (phase 1)`)
+        console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
+        console.log('=====')
+        index++
       }
     })
 
@@ -919,8 +988,25 @@ describe("Script Tests", () => {
         maximumPrice: 0,
       };
 
+      // make sure a non-community can't mint
+      await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+
+      // price for community should be 0
+      const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
+        await founders[0].getAddress(),
+        units
+      );
+
+      expect(price_).to.equals(0)
+
+      let index = 0
       for (const signer of community) {
         await mintForSigner(signer, buyConfig, currency, vapour721A)
+        console.log(`minting #${(index * phase2cap) + 1}-${(index + 1) * phase2cap}/${community.length * phase2cap} (phase 2)`)
+        console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
+        console.log('=====')
+        index++
+
       }
     })
 
@@ -937,9 +1023,9 @@ describe("Script Tests", () => {
       console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
 
       for (let index = 0; index < 60; index++) {
-        const signer = everyone[index % everyone.length]
+        const signer = anons[index % anons.length]
         await mintForSigner(signer, buyConfig, currency, vapour721A)
-        console.log(`minting ${index} for phase 3`)
+        console.log(`minting #${index + 1}/60 (phase 3)`)
         console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
         console.log('=====')
       }
@@ -953,17 +1039,17 @@ describe("Script Tests", () => {
         const units = ethers.BigNumber.from(Math.floor(Math.random() * 30) + 1)
         const buyerAddress = await everyone[buyerNum].getAddress()
 
+        const maxUnits = supplyLimit.sub(supply).lt(units) ? supplyLimit.sub(supply) : units;
+
         const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
           buyerAddress,
-          units
+          maxUnits
         );
-
-        const maxUnits = supplyLimit.sub(supply).lt(units) ? supplyLimit.sub(supply) : units;
 
         const { unitPrice, totalCost } = increasingPricePurchase(maxUnits, supply, priceIncreasePerToken, startingToken)
 
-        // expect(maxUnits_).to.equals(maxUnits);
-        // expect(price_).to.equals(unitPrice);
+        expect(maxUnits_).to.equals(maxUnits);
+        expect(price_).to.equals(unitPrice);
 
         const buyConfig: BuyConfigStruct = {
           minimumUnits: 1,
@@ -981,6 +1067,13 @@ describe("Script Tests", () => {
         expect(totalCost).to.equals(total)
 
         supply = await vapour721A.totalSupply()
+
+        console.log(`minting ${units.toString()} tokens (phase 4)`)
+        console.log(`average price: ${price_.toString()}`)
+        console.log(`total cost: ${price_.mul(units).toString()}`)
+        console.log(`${supply.toString()} tokens minted so far`)
+        console.log('=====')
+
         buyerNum = (buyerNum + 1) % everyone.length
       }
 
