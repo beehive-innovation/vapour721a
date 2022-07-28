@@ -1,9 +1,9 @@
 import { expect } from "chai";
-import { BigNumber } from "ethers";
+import { BigNumber, Signer } from "ethers";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { BetweenTimestamps, CombineTierGenerator, IncDecPrice, StateConfig, utils, VM } from "rain-sdk";
-import { Verify, VerifyFactory, VerifyTier, VerifyTierFactory } from "../../typechain";
+import { ReserveToken, Token, Verify, VerifyFactory, VerifyTier, VerifyTierFactory } from "../../typechain";
 import {
   BuyConfigStruct,
   ConstructorConfigStruct,
@@ -567,7 +567,7 @@ describe("Script Tests", () => {
     });
   });
 
-  describe.only("increasing price per token sale", () => {
+  describe.skip("increasing price per token sale", () => {
 
     const increasingPricePurchase = (
       units: BigNumber,
@@ -721,39 +721,94 @@ describe("Script Tests", () => {
       }
     }
 
+    const generateWallets = async (number: number): Promise<Signer[]> => {
+      let wallets: Signer[] = []
+      for (let i = 0; i < number; i++) {
+        // Get a new wallet
+        const wallet = ethers.Wallet.createRandom().connect(ethers.provider);
+        // send ETH to the new wallet so it can perform a tx
+        await buyer0.sendTransaction({ to: wallet.address, value: ethers.utils.parseEther("1") });
+        wallets.push(wallet)
+      }
+      return wallets
+    }
+
+    const topupWallets = async (signers: Signer[], currency: Token, vapour721A: Vapour721A) => {
+      for (const signer of signers) {
+        // get the wallet some tokens
+        await currency.connect(signer).mintTokens(100)
+        await currency.approve(vapour721A.address, parseEther('100'))
+      }
+    }
+
+    const getSignerAddresses = async (signers: Signer[]): Promise<string[]> => {
+      return await Promise.all(signers.map(async (signer) => await signer.getAddress()))
+    }
+
+    const mintForSigner = async (signer: Signer, buyConfig: BuyConfigStruct, currency: Token, vapour721A: Vapour721A) => {
+      // desired units
+      const units = ethers.BigNumber.from(buyConfig.desiredUnits)
+
+      // get the expected price per unit
+      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+        buyer0.address,
+        units
+      );
+
+      const supply = await vapour721A.totalSupply()
+
+      // how many they'll actually mint
+      const maxUnits = supplyLimit.sub(supply).lt(units) ? supplyLimit.sub(supply) : units;
+
+      const address = await signer.getAddress()
+      const balanceBefore = await currency.balanceOf(address)
+      await vapour721A.connect(signer).mintNFT(buyConfig)
+      const balanceAfter = await currency.balanceOf(address)
+      const total = balanceBefore.sub(balanceAfter)
+
+      // make sure the correct amount was paid
+      expect(total).to.equals(price_.mul(maxUnits))
+    }
+
     const supplyLimit = ethers.BigNumber.from(1111)
     const priceIncreasePerToken = parseEther('0.1'); // sale price
     const startingToken = 101
 
-    console.log(buyer0)
+    const phase0cap = 5
+    const phase1cap = 2
+    const phase2cap = 1
+    const phase3cap = 1
+
+    let founders: Signer[], friends: Signer[], community: Signer[], anons: Signer[], everyone: Signer[]
 
     before(async () => {
+
+      // create the wallets for each phase
+      founders = await generateWallets(2)
+      friends = await generateWallets(5)
+      community = await generateWallets(20)
+      anons = await generateWallets(5)
+      everyone = [...founders, ...friends, ...community, ...anons]
+
+      // the conditions for each phase
       const rules = [
         // rule 0
         VM.and([
           tokenIsLessThan(11),
-          receiverAddressIsIn([buyer0.address])
+          receiverAddressIsIn(await getSignerAddresses(founders))
         ]),
         // rule 1
         VM.and([
           tokenIsLessThan(21),
-          receiverAddressIsIn([buyer1.address])
+          receiverAddressIsIn(await getSignerAddresses(friends))
         ]),
         // rule 2
         VM.and([
           tokenIsLessThan(41),
-          receiverAddressIsIn([buyer2.address])
+          receiverAddressIsIn(await getSignerAddresses(community))
         ]),
         // rule 3
-        VM.and([
-          tokenIsLessThan(101),
-          receiverAddressIsIn([
-            buyer0.address,
-            buyer1.address,
-            buyer2.address,
-            buyer3.address
-          ])
-        ])
+        tokenIsLessThan(101),
       ]
 
       const vmStateConfig: StateConfig = VM.multi(
@@ -761,12 +816,33 @@ describe("Script Tests", () => {
           ...rules,
           // quantity script
           VM.ifelse(
-            rule(3),
-            VM.min([
-              maxCapForWallet(25),
-              remainingUnits()
-            ]),
-            remainingUnits()
+            rule(0),
+            maxCapForWallet(phase0cap),
+            VM.ifelse(
+              rule(1),
+              maxCapForWallet(phase1cap),
+              VM.ifelse(
+                rule(2),
+                maxCapForWallet(phase2cap),
+                VM.ifelse(
+                  rule(3),
+                  maxCapForWallet(phase3cap),
+                  VM.ifelse(
+                    rule(4),
+                    remainingUnits(),
+                    {
+                      sources: [op(Opcode.CONSTANT, 0)],
+                      constants: [0]
+                    },
+                    false
+                  ),
+                  false
+                ),
+                false
+              ),
+              false
+            ),
+            false
           ),
           // price script
           VM.ifelse(
@@ -797,29 +873,14 @@ describe("Script Tests", () => {
       const child = await getChild(vapour721AFactory, deployTrx);
       vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-      await currency.connect(buyer0).mintTokens(100000)
-      await currency.connect(buyer0).approve(vapour721A.address, parseEther('100000'))
-      await currency.connect(buyer1).mintTokens(100000)
-      await currency.connect(buyer1).approve(vapour721A.address, parseEther('100000'))
-      await currency.connect(buyer2).mintTokens(100000)
-      await currency.connect(buyer2).approve(vapour721A.address, parseEther('100000'))
-      await currency.connect(buyer3).mintTokens(100000)
-      await currency.connect(buyer3).approve(vapour721A.address, parseEther('100000'))
+      // top up all the wallets
+      await topupWallets(everyone, currency, vapour721A)
 
     });
 
-    it("should mint free tokens for buyer1", async () => {
+    it("should mint for phase 0", async () => {
 
-      const units = ethers.BigNumber.from(25)
-
-      const { unitPrice, totalCost } = increasingPricePurchase(units, ethers.BigNumber.from(0), priceIncreasePerToken, startingToken)
-
-      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-        buyer1.address,
-        units
-      );
-
-      console.log({ maxUnits_, price_ })
+      const units = ethers.BigNumber.from(phase0cap)
 
       const buyConfig: BuyConfigStruct = {
         minimumUnits: units,
@@ -827,99 +888,73 @@ describe("Script Tests", () => {
         maximumPrice: 0,
       };
 
-      let balanceBefore = await currency.balanceOf(buyer0.address)
-      await vapour721A.connect(buyer0).mintNFT(buyConfig)
-      let balanceAfter = await currency.balanceOf(buyer0.address)
-      let total = balanceBefore.sub(balanceAfter)
-      expect(total).to.equals(0)
+      for (const signer of founders) {
+        await mintForSigner(signer, buyConfig, currency, vapour721A)
+      }
 
-      balanceBefore = await currency.balanceOf(buyer1.address)
-      await vapour721A.connect(buyer1).mintNFT(buyConfig)
-      balanceAfter = await currency.balanceOf(buyer1.address)
-      total = balanceBefore.sub(balanceAfter)
-      expect(total).to.equals(0)
-
-      balanceBefore = await currency.balanceOf(buyer2.address)
-      await vapour721A.connect(buyer2).mintNFT(buyConfig)
-      balanceAfter = await currency.balanceOf(buyer2.address)
-      total = balanceBefore.sub(balanceAfter)
-      expect(total).to.equals(0)
-
-      balanceBefore = await currency.balanceOf(buyer3.address)
-      await vapour721A.connect(buyer3).mintNFT(buyConfig)
-      balanceAfter = await currency.balanceOf(buyer3.address)
-      total = balanceBefore.sub(balanceAfter)
-      expect(total).to.equals(0)
     })
 
-    it("should eval the correct price", async () => {
-      const units = ethers.BigNumber.from(10)
-      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-        buyer0.address,
-        units
-      );
+    it("should mint for phase 1", async () => {
 
-      const totalMinted = await vapour721A.totalSupply()
-
-      const { unitPrice, totalCost } = increasingPricePurchase(units, totalMinted, priceIncreasePerToken, startingToken)
-
-      expect(maxUnits_).to.equals(units);
-      expect(price_).to.equals(unitPrice);
+      const units = ethers.BigNumber.from(phase1cap)
 
       const buyConfig: BuyConfigStruct = {
         minimumUnits: units,
         desiredUnits: units,
-        maximumPrice: price_,
+        maximumPrice: 0,
       };
 
-      const balanceBefore = await currency.balanceOf(buyer0.address)
+      for (const signer of friends) {
+        await mintForSigner(signer, buyConfig, currency, vapour721A)
+      }
+    })
 
-      await vapour721A.connect(buyer0).mintNFT(buyConfig)
+    it("should mint for phase 2", async () => {
 
-      const balanceAfter = await currency.balanceOf(buyer0.address)
-
-      const total = balanceBefore.sub(balanceAfter)
-      expect(totalCost).to.equals(total)
-    });
-
-    it("it should eval the correct price for a second mint", async () => {
-      const units = ethers.BigNumber.from(3)
-      const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-        buyer0.address,
-        units
-      );
-
-      const totalMinted = await vapour721A.totalSupply()
-
-      const { unitPrice, totalCost } = increasingPricePurchase(units, totalMinted, priceIncreasePerToken, startingToken)
-
-      expect(maxUnits_).to.equals(units);
-      expect(price_).to.equals(unitPrice);
+      const units = ethers.BigNumber.from(phase2cap)
 
       const buyConfig: BuyConfigStruct = {
         minimumUnits: units,
         desiredUnits: units,
-        maximumPrice: price_,
+        maximumPrice: 0,
       };
 
-      const balanceBefore = await currency.balanceOf(buyer0.address)
+      for (const signer of community) {
+        await mintForSigner(signer, buyConfig, currency, vapour721A)
+      }
+    })
 
-      await vapour721A.connect(buyer0).mintNFT(buyConfig)
+    it("should mint for phase 3", async () => {
 
-      const balanceAfter = await currency.balanceOf(buyer0.address)
+      const units = ethers.BigNumber.from(phase3cap)
 
-      const total = balanceBefore.sub(balanceAfter)
-      expect(totalCost).to.equals(total)
-    });
+      const buyConfig: BuyConfigStruct = {
+        minimumUnits: units,
+        desiredUnits: units,
+        maximumPrice: 0,
+      };
+
+      console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
+
+      for (let index = 0; index < 60; index++) {
+        const signer = everyone[index % everyone.length]
+        await mintForSigner(signer, buyConfig, currency, vapour721A)
+        console.log(`minting ${index} for phase 3`)
+        console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
+        console.log('=====')
+      }
+    })
 
     it("should give the correct price until the supply is sold out", async () => {
       let supply = await vapour721A.totalSupply()
+      let buyerNum = 0
 
       while (supply.lt(supplyLimit)) {
-        const units = ethers.BigNumber.from(Math.floor(Math.random() * 400) + 1)
+        const units = ethers.BigNumber.from(Math.floor(Math.random() * 30) + 1)
+        const buyerAddress = await everyone[buyerNum].getAddress()
 
         const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-          buyer0.address,
+          buyerAddress,
           units
         );
 
@@ -927,8 +962,8 @@ describe("Script Tests", () => {
 
         const { unitPrice, totalCost } = increasingPricePurchase(maxUnits, supply, priceIncreasePerToken, startingToken)
 
-        expect(maxUnits_).to.equals(maxUnits);
-        expect(price_).to.equals(unitPrice);
+        // expect(maxUnits_).to.equals(maxUnits);
+        // expect(price_).to.equals(unitPrice);
 
         const buyConfig: BuyConfigStruct = {
           minimumUnits: 1,
@@ -936,17 +971,20 @@ describe("Script Tests", () => {
           maximumPrice: price_,
         };
 
-        const balanceBefore = await currency.balanceOf(buyer0.address)
+        const balanceBefore = await currency.balanceOf(buyerAddress)
 
-        await vapour721A.connect(buyer0).mintNFT(buyConfig)
+        await vapour721A.connect(everyone[buyerNum]).mintNFT(buyConfig)
 
-        const balanceAfter = await currency.balanceOf(buyer0.address)
+        const balanceAfter = await currency.balanceOf(buyerAddress)
 
         const total = balanceBefore.sub(balanceAfter)
         expect(totalCost).to.equals(total)
 
         supply = await vapour721A.totalSupply()
+        buyerNum = (buyerNum + 1) % everyone.length
       }
+
+      expect(await vapour721A.totalSupply()).to.equals(supplyLimit)
 
     });
   });
