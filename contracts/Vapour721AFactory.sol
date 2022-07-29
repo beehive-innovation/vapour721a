@@ -2,13 +2,13 @@
 pragma solidity 0.8.10;
 
 import "@beehiveinnovation/rain-protocol/contracts/factory/IFactory.sol";
-import {ReentrancyGuard} from "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./Vapour721A.sol";
 
-contract Vapour721AFactory is IFactory, ReentrancyGuard {
+contract Vapour721AFactory is IFactory {
     mapping(address => bool) private contracts;
-    address vmStateBuilder;
+    address private vmStateBuilder;
 
+    
     constructor(address vmStateBuilder_){
         vmStateBuilder = vmStateBuilder_;
     }
@@ -29,7 +29,6 @@ contract Vapour721AFactory is IFactory, ReentrancyGuard {
         external
         virtual
         override
-        nonReentrant
         returns (address)
     {
         // Create child contract using hook.

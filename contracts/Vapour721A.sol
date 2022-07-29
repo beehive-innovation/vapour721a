@@ -205,7 +205,9 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 			Address.sendValue(payable(msg.sender), msg.value - cost_);
 		} else IERC20(_currency).transferFrom(msg.sender, address(this), cost_);
 
-		_amountPayable = _amountPayable + cost_;
+		unchecked {
+			_amountPayable = _amountPayable + cost_;
+		}
 		_mint(receiver, units_);
 		emit Buy(receiver, units_, cost_);
 	}
@@ -344,7 +346,9 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 
 	function withdraw() external {
 		require(_amountPayable > 0, "ZERO_FUND");
-		_amountWithdrawn = _amountWithdrawn + _amountPayable;
+		unchecked {
+			_amountWithdrawn = _amountWithdrawn + _amountPayable;
+		}
 		emit Withdraw(msg.sender, _amountPayable, _amountWithdrawn);
 
 		if (_currency == address(0)) Address.sendValue(_recipient, _amountPayable);
