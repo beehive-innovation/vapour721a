@@ -1,16 +1,18 @@
-import { artifacts, ethers } from "hardhat";
-import { expect } from "chai";
-import { Vapour721A } from "../../typechain/Vapour721A";
+import {ethers} from "hardhat";
+import {expect} from "chai";
+import type {
+	Vapour721A,
+	InitializeConfigStruct,
+} from "../../typechain/Vapour721A";
+import type {Vapour721AFactory} from "../../typechain/Vapour721AFactory";
 
 export const checkChildIntegrity = async (
-	vapour721AFactory,
-	child,
-	initializeConfig
+	vapour721AFactory: Vapour721AFactory,
+	child: string,
+	initializeConfig: InitializeConfigStruct
 ) => {
 	let vapour721a = (await ethers.getContractAt(
-		(
-			await artifacts.readArtifact("Vapour721A")
-		).abi,
+		"Vapour721A",
 		child
 	)) as Vapour721A;
 

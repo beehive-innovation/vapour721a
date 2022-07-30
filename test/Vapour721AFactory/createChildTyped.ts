@@ -8,6 +8,8 @@ import { ReserveToken } from "../../typechain/ReserveToken";
 import { Token } from "../../typechain/Token";
 import { StateConfig, VM } from "rain-sdk";
 import { vapour721AFactory } from "../1_setup";
+import { NewChildEvent } from "../../typechain/Vapour721AFactory";
+
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -31,7 +33,6 @@ before(async () => {
 
 	currency = (await tokenFactory.deploy()) as ReserveToken;
 	await currency.deployed();
-
 });
 
 it("should allow anyone to create a child (createChildTyped)", async () => {
@@ -50,20 +51,20 @@ it("should allow anyone to create a child (createChildTyped)", async () => {
 		royaltyBPS: 1000,
 		admin: signer1.address,
 		currency: currency.address,
-		vmStateConfig: vmStateConfig
+		vmStateConfig: vmStateConfig,
 	};
 
 	const createChildTx = await vapour721AFactory
 		.connect(signer2)
 		.createChildTyped(initializeConfig);
 
-	const { sender, child } = await getEventArgs(
+	const {sender, child} = (await getEventArgs(
 		createChildTx,
 		"NewChild",
 		vapour721AFactory
-	);
+	)) as NewChildEvent["args"];
 
-	expect(sender).to.equals(vapour721AFactory.address);
+	expect(sender).to.equals(signer2.address);
 
 	await checkChildIntegrity(vapour721AFactory, child, initializeConfig);
 });
