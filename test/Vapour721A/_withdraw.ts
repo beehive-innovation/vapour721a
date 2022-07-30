@@ -3,10 +3,10 @@ import { ethers } from "hardhat";
 import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
-	ConstructorConfigStruct,
 	Vapour721A,
 	WithdrawEvent,
 } from "../../typechain/Vapour721A";
+import { InitializeConfigStruct } from "../../typechain/Vapour721AFactory";
 import {
 	buyer0,
 	buyer1,
@@ -19,9 +19,8 @@ import {
 } from "../1_setup";
 import { BN, concat, eighteenZeros, getBalance, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
 
-let vapour721AConstructorConfig: ConstructorConfigStruct;
 let vapour721A: Vapour721A;
-
+let vapour721AInitializeConfig: InitializeConfigStruct;
 const nftPrice = BN(1);
 let totalWithdrawn = BN(0);
 
@@ -35,7 +34,7 @@ describe("Token withdraw tests", () => {
 			constants: [20, nftPrice],
 		};
 
-		vapour721AConstructorConfig = {
+		vapour721AInitializeConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -43,13 +42,13 @@ describe("Token withdraw tests", () => {
 			recipient: recipient.address,
 			owner: owner.address,
 			royaltyBPS: 1000,
-			admin: buyer0.address
+			admin: buyer0.address,
+			currency: currency.address,
+			vmStateConfig: vmStateConfig
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
-			vapour721AConstructorConfig,
-			currency.address,
-			vmStateConfig
+			vapour721AInitializeConfig,
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
@@ -218,7 +217,7 @@ describe("Native Token withdraw tests", () => {
 			constants: [20, nftPrice],
 		};
 
-		vapour721AConstructorConfig = {
+		vapour721AInitializeConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -226,13 +225,13 @@ describe("Native Token withdraw tests", () => {
 			recipient: recipient.address,
 			owner: owner.address,
 			royaltyBPS: 1000,
-			admin: buyer0.address
+			admin: buyer0.address,
+			currency: ZERO_ADDRESS,
+			vmStateConfig: vmStateConfig
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
-			vapour721AConstructorConfig,
-			ZERO_ADDRESS,
-			vmStateConfig
+			vapour721AInitializeConfig
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;

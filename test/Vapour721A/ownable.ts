@@ -1,7 +1,7 @@
 import { ethers } from "hardhat";
 import {
 	Vapour721A,
-	ConstructorConfigStruct,
+	
 	InitializeConfigStruct,
 	OwnershipTransferredEvent,
 } from "../../typechain/Vapour721A";
@@ -18,7 +18,6 @@ import {
 } from "../1_setup";
 import { StateConfig } from "rain-sdk";
 
-let vapour721AConstructorConfig: ConstructorConfigStruct;
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
@@ -29,7 +28,7 @@ describe("Vapour721A Ownable test", () => {
 			constants: [1],
 		};
 
-		vapour721AConstructorConfig = {
+		vapour721AInitializeConfig = {
 			name: "nft",
 			symbol: "NFT",
 			baseURI: "BASE_URI",
@@ -37,19 +36,13 @@ describe("Vapour721A Ownable test", () => {
 			recipient: recipient.address,
 			owner: owner.address,
 			royaltyBPS: 1000,
-			admin: buyer0.address
-		};
-
-		vapour721AInitializeConfig = {
-			vmStateBuilder: config.allStandardOpsStateBuilder,
+			admin: buyer0.address,
 			vmStateConfig: vmStateConfig,
 			currency: currency.address,
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
-			vapour721AConstructorConfig,
-			currency.address,
-			vmStateConfig
+			vapour721AInitializeConfig
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 
@@ -58,7 +51,7 @@ describe("Vapour721A Ownable test", () => {
 
 	it("Should be the correct owner", async () => {
 		expect(await await vapour721A.owner()).to.equals(
-			vapour721AConstructorConfig.owner
+			vapour721AInitializeConfig.owner
 		);
 	});
 

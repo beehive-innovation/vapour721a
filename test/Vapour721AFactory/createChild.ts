@@ -1,11 +1,12 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "hardhat";
-import { ConstructorConfigStruct } from "../../typechain/Vapour721A";
-import { getEventArgs } from "../utils";
+import { InitializeConfigStruct } from "../../typechain/Vapour721A";
+import { concat, eighteenZeros, getEventArgs, op, ZERO_ADDRESS } from "../utils";
 import { checkChildIntegrity } from "./childIntegrity";
 
 import { expect } from "chai";
 import { vapour721AFactory } from "../1_setup";
+import { StateConfig, VM } from "rain-sdk";
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -13,7 +14,7 @@ export let factoryDeployer: SignerWithAddress,
 	recipient_: SignerWithAddress,
 	owner_: SignerWithAddress;
 
-let constructorConfig: ConstructorConfigStruct;
+let initializeConfig: InitializeConfigStruct;
 
 let encodedConfig;
 
@@ -24,8 +25,15 @@ before(async () => {
 	signer2 = signers[2];
 	recipient_ = signers[3];
 	owner_ = signers[4];
+	
+	const vmStateConfig: StateConfig = {
+		sources: [
+			concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+		],
+		constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
+	};
 
-	constructorConfig = {
+	initializeConfig = {
 		name: "vapour721A",
 		symbol: "VAPOUR721A",
 		baseURI: "BASE_URI",
@@ -33,14 +41,16 @@ before(async () => {
 		recipient: recipient_.address,
 		owner: owner_.address,
 		royaltyBPS: 1000,
-		admin: signer1.address
+		admin: signer1.address,
+		currency: ZERO_ADDRESS,
+		vmStateConfig: vmStateConfig
 	};
 
 	encodedConfig = ethers.utils.defaultAbiCoder.encode(
 		[
-			"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner, address admin, uint256 royaltyBPS)",
+			"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner, address admin, uint256 royaltyBPS, address currency, tuple(bytes[] sources, uint256[] constants) vmStateConfig)",
 		],
-		[constructorConfig]
+		[initializeConfig]
 	);
 });
 
@@ -57,5 +67,5 @@ it("Anyone should be able to create child (createChild)", async () => {
 
 	expect(sender).to.equals(signer1.address);
 
-	await checkChildIntegrity(vapour721AFactory, child, constructorConfig);
+	await checkChildIntegrity(vapour721AFactory, child, initializeConfig);
 });

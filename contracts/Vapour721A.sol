@@ -1,22 +1,22 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.10;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "erc721a/contracts/ERC721A.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@beehiveinnovation/rain-protocol/contracts/math/FixedPointMath.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
-import "@openzeppelin/contracts/access/AccessControl.sol";
+import 'erc721a-upgradeable/contracts/ERC721AUpgradeable.sol';
 
 /**
  * config for deploying Vapour721A contract
  */
-struct ConstructorConfig {
+struct InitializeConfig {
 	string name;
 	string symbol;
 	string baseURI;
@@ -25,15 +25,7 @@ struct ConstructorConfig {
 	address owner;
 	address admin;
 	uint256 royaltyBPS;
-}
-
-/**
-config for Initializing VMstateConfig
- */
-
-struct InitializeConfig {
 	address currency;
-	address vmStateBuilder;
 	StateConfig vmStateConfig;
 }
 
@@ -56,7 +48,7 @@ uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
 
 uint256 constant LOCAL_OPS_LENGTH = 4;
 
-contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
+contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessControlUpgradeable {
 	using Strings for uint256;
 	using Math for uint256;
 	using LibFnPtrs for bytes;
@@ -77,8 +69,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	string private baseURI;
 
 	event Buy(address _receiver, uint256 _units, uint256 _cost);
-	event Construct(ConstructorConfig config_);
-	event Initialize(InitializeConfig config_);
+	event Initialize(InitializeConfig config_, address vmStateBuilder_);
 	event RecipientChanged(address newRecipient);
 	event Withdraw(
 		address _withdrawer,
@@ -92,14 +83,16 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	/// Role for `DELEGATED_MINTER`.
 	bytes32 private constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
 
-	constructor(ConstructorConfig memory config_)
-		ERC721A(config_.name, config_.symbol)
-	{
+	function initialize(InitializeConfig memory config_, address vmStateBuilder_) initializerERC721A initializer external{
+		__ERC721A_init(config_.name, config_.symbol);
+		__Ownable_init();
+
+		
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
 
-		_royaltyBPS = config_.royaltyBPS;
 		require(_royaltyBPS < 10_000, "MAX_ROYALTY");
+		_royaltyBPS = config_.royaltyBPS;
 
 		setRecipient(config_.recipient);
 		transferOwnership(config_.owner);
@@ -109,11 +102,6 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 
 		_grantRole(DELEGATED_MINTER_ADMIN, config_.admin);
 
-		emit Construct(config_);
-	}
-
-	function initialize(InitializeConfig memory config_) external {
-		require(_vmStatePointer == address(0), "INITIALIZED");
 
 		_currency = config_.currency;
 
@@ -121,11 +109,10 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		vmScript.entrypoint = 0;
 		Bounds[] memory boundss_ = new Bounds[](1);
 		boundss_[0] = vmScript;
-		bytes memory vmStateBytes_ = VMStateBuilder(config_.vmStateBuilder)
+		bytes memory vmStateBytes_ = VMStateBuilder(vmStateBuilder_)
 			.buildState(address(this), config_.vmStateConfig, boundss_);
 		_vmStatePointer = SSTORE2.write(vmStateBytes_);
-
-		emit Initialize(config_);
+		emit Initialize(config_, vmStateBuilder_);
 	}
 
 	/// @inheritdoc RainVM
@@ -374,7 +361,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		public
 		view
 		virtual
-		override(ERC721A, AccessControl)
+		override(AccessControlUpgradeable, ERC721AUpgradeable)
 		returns (bool)
 	{
 		return super.supportsInterface(interfaceId);

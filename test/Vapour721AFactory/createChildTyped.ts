@@ -1,8 +1,6 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "hardhat";
-import {
-	ConstructorConfigStruct,
-} from "../../typechain/Vapour721A";
+import { InitializeConfigStruct } from "../../typechain/Vapour721A";
 import { concat, getEventArgs, op } from "../utils";
 import { checkChildIntegrity } from "./childIntegrity";
 import { expect } from "chai";
@@ -17,7 +15,7 @@ export let factoryDeployer: SignerWithAddress,
 	recipient_: SignerWithAddress,
 	owner_: SignerWithAddress;
 
-let constructorConfig: ConstructorConfigStruct;
+let initializeConfig: InitializeConfigStruct;
 
 let currency: Token;
 
@@ -34,16 +32,6 @@ before(async () => {
 	currency = (await tokenFactory.deploy()) as ReserveToken;
 	await currency.deployed();
 
-	constructorConfig = {
-		name: "vapour721A",
-		symbol: "VAPOUR721A",
-		baseURI: "BASE_URI",
-		supplyLimit: 1000,
-		recipient: recipient_.address,
-		owner: owner_.address,
-		royaltyBPS: 1000,
-		admin: signer1.address
-	};
 });
 
 it("should allow anyone to create a child (createChildTyped)", async () => {
@@ -52,9 +40,22 @@ it("should allow anyone to create a child (createChildTyped)", async () => {
 		constants: [1],
 	};
 
+	initializeConfig = {
+		name: "vapour721A",
+		symbol: "VAPOUR721A",
+		baseURI: "BASE_URI",
+		supplyLimit: 1000,
+		recipient: recipient_.address,
+		owner: owner_.address,
+		royaltyBPS: 1000,
+		admin: signer1.address,
+		currency: currency.address,
+		vmStateConfig: vmStateConfig
+	};
+
 	const createChildTx = await vapour721AFactory
 		.connect(signer2)
-		.createChildTyped(constructorConfig, currency.address, vmStateConfig);
+		.createChildTyped(initializeConfig);
 
 	const { sender, child } = await getEventArgs(
 		createChildTx,
@@ -64,5 +65,5 @@ it("should allow anyone to create a child (createChildTyped)", async () => {
 
 	expect(sender).to.equals(vapour721AFactory.address);
 
-	await checkChildIntegrity(vapour721AFactory, child, constructorConfig);
+	await checkChildIntegrity(vapour721AFactory, child, initializeConfig);
 });

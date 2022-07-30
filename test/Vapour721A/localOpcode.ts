@@ -3,7 +3,9 @@ import { ethers } from "hardhat";
 import { StateConfig } from "rain-sdk";
 import {
 	BuyConfigStruct,
-	ConstructorConfigStruct,
+	
+	InitializeConfigStruct,
+	
 	Vapour721A,
 	WithdrawEvent,
 } from "../../typechain/Vapour721A";
@@ -27,7 +29,7 @@ import {
 	StorageOpcodes,
 } from "../utils";
 
-let vapour721AConstructorConfig: ConstructorConfigStruct;
+let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
 const nftPrice = ethers.BigNumber.from(1 + eighteenZeros);
@@ -45,7 +47,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -53,13 +55,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 
 			const child = await getChild(vapour721AFactory, deployTx);
@@ -69,7 +71,7 @@ describe("Vapour721A localOpcodes test", () => {
 		it("should eval the correct supplyLimit", async () => {
 			const [maxUnits, price] = await vapour721A.calculateBuy(buyer1.address, BN(20))
 			expect(maxUnits).to.equals(
-				vapour721AConstructorConfig.supplyLimit
+				vapour721AInitializeConfig.supplyLimit
 			);
 		});
 
@@ -83,7 +85,7 @@ describe("Vapour721A localOpcodes test", () => {
 			expect((await vapour721A.balanceOf(buyer1.address))).to.equals(1)
 
 			expect(maxUnits).to.equals(
-				vapour721AConstructorConfig.supplyLimit
+				vapour721AInitializeConfig.supplyLimit
 			);
 		});
 	});
@@ -109,7 +111,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice, cap],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -117,13 +119,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 
 			const child = await getChild(vapour721AFactory, deployTx);
@@ -230,7 +232,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice, cap],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -238,13 +240,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 
 			const child = await getChild(vapour721AFactory, deployTx);
@@ -352,7 +354,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice, cap],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -360,13 +362,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig,
 			);
 			const child = await getChild(vapour721AFactory, deployTrx);
 			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
@@ -447,7 +449,7 @@ describe("Vapour721A localOpcodes test", () => {
 			};
 			// Will get 10% discount if minted 5 nfts
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -455,13 +457,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 			const child = await getChild(vapour721AFactory, deployTrx);
 			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
@@ -539,7 +541,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -547,13 +549,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 			const child = await getChild(vapour721AFactory, deployTrx);
 			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
@@ -617,7 +619,7 @@ describe("Vapour721A localOpcodes test", () => {
 			};
 			// Will get 10% discount if burned 5 nfts
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -625,13 +627,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 			const child = await getChild(vapour721AFactory, deployTrx);
 			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
@@ -711,7 +713,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -719,13 +721,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 			const child = await getChild(vapour721AFactory, deployTrx);
 			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
@@ -810,7 +812,7 @@ describe("Vapour721A localOpcodes test", () => {
 				constants: [nftPrice],
 			};
 
-			vapour721AConstructorConfig = {
+			vapour721AInitializeConfig = {
 				name: "nft",
 				symbol: "NFT",
 				baseURI: "BASE_URI",
@@ -818,13 +820,13 @@ describe("Vapour721A localOpcodes test", () => {
 				recipient: recipient.address,
 				owner: owner.address,
 				royaltyBPS: 1000,
-				admin: buyer0.address
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig: vmStateConfig
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
-				vapour721AConstructorConfig,
-				currency.address,
-				vmStateConfig
+				vapour721AInitializeConfig
 			);
 			const child = await getChild(vapour721AFactory, deployTrx);
 			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;

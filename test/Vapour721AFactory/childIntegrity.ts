@@ -5,7 +5,7 @@ import { Vapour721A } from "../../typechain/Vapour721A";
 export const checkChildIntegrity = async (
 	vapour721AFactory,
 	child,
-	constructorConfig
+	initializeConfig
 ) => {
 	let vapour721a = (await ethers.getContractAt(
 		(
@@ -17,15 +17,15 @@ export const checkChildIntegrity = async (
 	expect(await vapour721AFactory.isChild(child)).to.be.true;
 	expect(vapour721a.address).to.equals(child);
 	expect(await vapour721a.owner()).to.equals(
-		constructorConfig.owner,
-		`Owner is ${vapour721a.owner()} not ${constructorConfig.owner}`
+		initializeConfig.owner,
+		`Owner is ${vapour721a.owner()} not ${initializeConfig.owner}`
 	);
 	expect(await vapour721a.name()).to.equals(
-		constructorConfig.name,
-		`name is ${vapour721a.name()} not ${constructorConfig.name}`
+		initializeConfig.name,
+		`name is ${vapour721a.name()} not ${initializeConfig.name}`
 	);
 	expect(await vapour721a.symbol()).to.equals(
-		constructorConfig.symbol,
-		`symbol is ${vapour721a.symbol()} not ${constructorConfig.symbol}`
+		initializeConfig.symbol,
+		`symbol is ${vapour721a.symbol()} not ${initializeConfig.symbol}`
 	);
 };

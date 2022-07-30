@@ -2,10 +2,9 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { StateConfig, VM } from "rain-sdk";
 import {
-	ConstructEvent,
-	ConstructorConfigStruct,
 	InitializeConfigStruct,
 	Vapour721A,
+	InitializeEvent
 } from "../../typechain/Vapour721A";
 import {
 	buyer0,
@@ -19,7 +18,6 @@ import {
 } from "../1_setup";
 import { concat, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
 
-let vapour721AConstructorConfig: ConstructorConfigStruct;
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
@@ -30,16 +28,6 @@ describe("Vapour721A recipient test", () => {
 			constants: [1],
 		};
 
-		vapour721AConstructorConfig = {
-			name: "nft",
-			symbol: "NFT",
-			baseURI: "BASE_URI",
-			supplyLimit: 36,
-			recipient: recipient.address,
-			owner: owner.address,
-			royaltyBPS: 1000,
-			admin: buyer0.address
-		};
 	});
 
 	it("Should set the correct recipient", async () => {
@@ -48,10 +36,21 @@ describe("Vapour721A recipient test", () => {
 			constants: [1],
 		};
 
+		vapour721AInitializeConfig = {
+			name: "nft",
+			symbol: "NFT",
+			baseURI: "BASE_URI",
+			supplyLimit: 36,
+			recipient: recipient.address,
+			owner: owner.address,
+			royaltyBPS: 1000,
+			admin: buyer0.address,
+			currency: currency.address,
+			vmStateConfig: vmStateConfig
+		};
+
 		const deployTrx = await vapour721AFactory.createChildTyped(
-			vapour721AConstructorConfig,
-			currency.address,
-			vmStateConfig
+			vapour721AInitializeConfig
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 
@@ -59,11 +58,11 @@ describe("Vapour721A recipient test", () => {
 
 		const [config_] = (await getEventArgs(
 			deployTrx,
-			"Construct",
+			"Initialize",
 			vapour721A
-		)) as ConstructEvent["args"];
+		)) as InitializeEvent["args"];
 
-		expect(config_.recipient).to.equals(vapour721AConstructorConfig.recipient);
+		expect(config_.recipient).to.equals(vapour721AInitializeConfig.recipient);
 	});
 
 	it("Should fail to change recipient by non-recipient user", async () => {
