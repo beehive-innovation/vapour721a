@@ -16,7 +16,7 @@ contract Vapour721AFactory is Factory {
 		vmStateBuilder = vmStateBuilder_;
 	}
 
-	function _createChild(bytes calldata data_)
+	function _createChild(bytes memory data_)
 		internal
 		virtual
 		override
