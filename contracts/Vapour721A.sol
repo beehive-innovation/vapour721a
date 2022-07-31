@@ -91,8 +91,8 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessCon
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
 
-		require(_royaltyBPS < 10_000, "MAX_ROYALTY");
 		_royaltyBPS = config_.royaltyBPS;
+		require(_royaltyBPS < 10_000, "MAX_ROYALTY");
 
 		setRecipient(config_.recipient);
 		transferOwnership(config_.owner);

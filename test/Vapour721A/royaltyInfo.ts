@@ -28,7 +28,7 @@ let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
 describe('royaltyInfo test', () => {
-    it('shouldnt allow a BPS royalty over 10000', async () => {
+    it("shouldn't allow a BPS royalty over 10000", async () => {
         const vmStateConfig: StateConfig = {
             sources: [
                 concat([op(Opcode.CONSTANT, 0), op(Opcode.CONSTANT, 1)]),
@@ -82,7 +82,7 @@ describe('royaltyInfo test', () => {
         const child = await getChild(vapour721AFactory, deployTrx);
         vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
 
-        const { config_: { royaltyBPS } } = await getEventArgs(deployTrx, "Construct", vapour721A)
+        const { config_: { royaltyBPS } } = await getEventArgs(deployTrx, "Initialize", vapour721A)
         expect(royaltyBPS).to.equals(1000)
     })
 
