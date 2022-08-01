@@ -1,13 +1,13 @@
 import { Logger } from "@ethersproject/logger";
 import { version } from "./_version";
-import { ContractTransaction, Contract, BigNumber, Overrides, ContractReceipt } from "ethers";
+import { ContractTransaction, Contract, Overrides, ContractReceipt, BigNumber } from "ethers";
 import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
 import { AllStandardOps, ERC20, StateConfig } from "rain-sdk";
-import { Vapour721AFactory, NewChildEvent } from "../typechain/Vapour721AFactory";
-import { ethers } from "hardhat";
+import { NewChildEvent } from "../typechain/Vapour721AFactory";
+import { ethers, web3 } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Factory } from "../typechain";
 const logger = new Logger(version);
@@ -388,4 +388,32 @@ export async function getBalance(contract: string, signer: SignerWithAddress): P
 export async function getGasUsed(trx: ContractTransaction): Promise<BigNumber> {
   const receipt = await trx.wait();
   return BigNumber.from(receipt.cumulativeGasUsed).mul(BigNumber.from(receipt.effectiveGasPrice));
+}
+
+export enum slot{
+  _supplyLimit = 201,
+  _amountWithdrawn,
+  _amountPayable,
+  _vmStatePointer,
+  _currency,
+  _recipient,
+  _royaltyBPS,
+  baseURI
+}
+
+export async function getPrivate_uint256(contractAddress: string, slotIndex: number): Promise<BigNumber> {
+  const variable = await ethers.provider.getStorageAt(contractAddress, slotIndex);
+  return ethers.BigNumber.from(variable);
+}
+
+export async function getPrivate_string(contractAddress: string, slotIndex: number): Promise<string> {
+  const variable = await ethers.provider.getStorageAt(contractAddress, slotIndex);
+  const hexLength = "0x" + variable.slice(64);
+  const length = parseInt(hexLength, 16);
+  return web3.utils.toAscii(variable.slice(0, length + 2));
+}
+
+export async function getPrivate_address(contractAddress: string, slotIndex: number): Promise<string> {
+  const variable = await ethers.provider.getStorageAt(contractAddress, slotIndex);
+  return ("0x" + variable.slice(26));
 }

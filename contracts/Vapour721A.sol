@@ -11,7 +11,8 @@ import "@beehiveinnovation/rain-protocol/contracts/math/FixedPointMath.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
-import 'erc721a-upgradeable/contracts/ERC721AUpgradeable.sol';
+import "erc721a-upgradeable/contracts/ERC721AUpgradeable.sol";
+import "hardhat/console.sol";
 
 /**
  * config for deploying Vapour721A contract
@@ -86,7 +87,6 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessCon
 	function initialize(InitializeConfig memory config_, address vmStateBuilder_) initializerERC721A initializer external{
 		__ERC721A_init(config_.name, config_.symbol);
 		__Ownable_init();
-
 		
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
