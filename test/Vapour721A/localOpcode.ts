@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { StateConfig } from "rain-sdk";
+import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	
@@ -27,6 +27,7 @@ import {
 	op,
 	Opcode,
 	StorageOpcodes,
+	trueTransferScript,
 } from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
@@ -57,7 +58,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
@@ -121,7 +122,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
@@ -242,7 +243,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTx = await vapour721AFactory.createChildTyped(
@@ -364,7 +365,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -459,7 +460,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -551,7 +552,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -629,7 +630,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -723,7 +724,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -822,7 +823,7 @@ describe("Vapour721A localOpcodes test", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(

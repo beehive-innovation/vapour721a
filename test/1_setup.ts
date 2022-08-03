@@ -3,7 +3,6 @@ import hre, { ethers } from "hardhat";
 import path from "path";
 import { Vapour721AStateBuilder } from "../typechain/Vapour721AStateBuilder";
 import {
-	InitializeConfigStruct,
 	Vapour721A,
 } from "../typechain/Vapour721A";
 import { Vapour721AFactory, ImplementationEvent } from "../typechain/Vapour721AFactory";

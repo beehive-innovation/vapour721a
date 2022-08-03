@@ -5,7 +5,7 @@ import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { AllStandardOps, ERC20, StateConfig } from "rain-sdk";
+import { AllStandardOps, ERC20, StateConfig, VM } from "rain-sdk";
 import { NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers, web3 } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -416,4 +416,22 @@ export async function getPrivate_string(contractAddress: string, slotIndex: numb
 export async function getPrivate_address(contractAddress: string, slotIndex: number): Promise<string> {
   const variable = await ethers.provider.getStorageAt(contractAddress, slotIndex);
   return ("0x" + variable.slice(26));
+}
+
+export const trueTransferScript: StateConfig = {
+  sources: [
+    concat([
+      op(VM.Opcodes.CONSTANT, 0)
+    ])
+  ],
+  constants: [1]
+}
+
+export const falseTransferScript: StateConfig = {
+  sources: [
+    concat([
+      op(VM.Opcodes.CONSTANT, 0)
+    ])
+  ],
+  constants: [0]
 }

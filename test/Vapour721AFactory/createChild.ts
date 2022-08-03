@@ -1,7 +1,7 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {InitializeConfigStruct} from "../../typechain/Vapour721A";
-import {concat, eighteenZeros, getEventArgs, op, ZERO_ADDRESS} from "../utils";
+import {concat, eighteenZeros, getEventArgs, op, trueTransferScript, ZERO_ADDRESS} from "../utils";
 import {checkChildIntegrity} from "./childIntegrity";
 import {NewChildEvent} from "../../typechain/Vapour721AFactory";
 
@@ -42,7 +42,7 @@ before(async () => {
 		royaltyBPS: 1000,
 		admin: signer1.address,
 		currency: ZERO_ADDRESS,
-		vmStateConfig: vmStateConfig,
+		vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0}),
 	};
 
 	encodedConfig = ethers.utils.defaultAbiCoder.encode(

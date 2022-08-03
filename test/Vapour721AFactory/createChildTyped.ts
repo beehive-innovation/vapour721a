@@ -1,7 +1,7 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { ethers } from "hardhat";
 import { InitializeConfigStruct } from "../../typechain/Vapour721A";
-import { concat, getEventArgs, op } from "../utils";
+import { concat, getEventArgs, op, trueTransferScript } from "../utils";
 import { checkChildIntegrity } from "./childIntegrity";
 import { expect } from "chai";
 import { ReserveToken } from "../../typechain/ReserveToken";
@@ -36,10 +36,13 @@ before(async () => {
 });
 
 it("should allow anyone to create a child (createChildTyped)", async () => {
-	const vmStateConfig: StateConfig = {
+	const calculateScript: StateConfig = {
 		sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
 		constants: [1],
 	};
+
+	const vmStateConfig = VM.combiner(trueTransferScript, calculateScript, { numberOfSources: 0})
+	console.log(vmStateConfig);
 
 	initializeConfig = {
 		name: "vapour721A",
@@ -51,7 +54,7 @@ it("should allow anyone to create a child (createChildTyped)", async () => {
 		royaltyBPS: 1000,
 		admin: signer1.address,
 		currency: currency.address,
-		vmStateConfig: vmStateConfig,
+		vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0}),
 	};
 
 	const createChildTx = await vapour721AFactory

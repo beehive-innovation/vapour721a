@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import { parseEther } from "ethers/lib/utils";
 import { ethers } from "hardhat";
-import { StateConfig } from "rain-sdk";
+import { StateConfig, VM } from "rain-sdk";
 import {
     
     InitializeConfigStruct,
@@ -22,6 +22,7 @@ import {
     getEventArgs,
     op,
     Opcode,
+    trueTransferScript,
 } from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
@@ -46,7 +47,7 @@ describe('royaltyInfo test', () => {
             royaltyBPS: 10001,
             admin: buyer0.address,
             currency: currency.address,
-            vmStateConfig: vmStateConfig
+            vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
         };
 
         await expect(vapour721AFactory.createChildTyped(
@@ -72,7 +73,7 @@ describe('royaltyInfo test', () => {
             royaltyBPS: 1000,
             admin: buyer0.address,
             currency: currency.address,
-            vmStateConfig: vmStateConfig
+            vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(
@@ -104,7 +105,7 @@ describe('royaltyInfo test', () => {
             royaltyBPS: 1000,
             admin: buyer0.address,
             currency: currency.address,
-            vmStateConfig: vmStateConfig
+            vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(
@@ -141,7 +142,7 @@ describe('royaltyInfo test', () => {
             royaltyBPS: 1000,
             admin: buyer0.address,
             currency: currency.address,
-            vmStateConfig: vmStateConfig
+            vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(
@@ -180,7 +181,7 @@ describe('royaltyInfo test', () => {
             royaltyBPS: 1000,
             admin: buyer0.address,
             currency: currency.address,
-            vmStateConfig: vmStateConfig
+            vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
         };
 
         const deployTrx = await vapour721AFactory.createChildTyped(

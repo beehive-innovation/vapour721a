@@ -5,7 +5,7 @@ import {
 	InitializeConfigStruct,
 	OwnershipTransferredEvent,
 } from "../../typechain/Vapour721A";
-import { concat, getChild, op } from "../utils";
+import { concat, getChild, op, trueTransferScript } from "../utils";
 import { VM } from "rain-sdk";
 import { expect } from "chai";
 import {
@@ -37,7 +37,7 @@ describe("Vapour721A Ownable test", () => {
 			owner: owner.address,
 			royaltyBPS: 1000,
 			admin: buyer0.address,
-			vmStateConfig: vmStateConfig,
+			vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0}),
 			currency: currency.address,
 		};
 

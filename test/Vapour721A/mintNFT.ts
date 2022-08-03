@@ -29,6 +29,7 @@ import {
 	getEventArgs,
 	getGasUsed,
 	op,
+	trueTransferScript,
 	ZERO_ADDRESS,
 } from "../utils";
 
@@ -59,7 +60,7 @@ describe("mintNFT tests", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -141,7 +142,7 @@ describe("mintNFT tests", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -237,7 +238,7 @@ describe("mintNFT tests", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -291,7 +292,7 @@ describe("mintNFT tests", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: currency.address,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -389,7 +390,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: ZERO_ADDRESS,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -460,7 +461,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: ZERO_ADDRESS,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -541,7 +542,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: ZERO_ADDRESS,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -595,7 +596,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: ZERO_ADDRESS,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(
@@ -699,7 +700,7 @@ describe("mintNFT tests (Native Tokens)", () => {
 				royaltyBPS: 1000,
 				admin: buyer0.address,
 				currency: ZERO_ADDRESS,
-				vmStateConfig: vmStateConfig
+				vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 			};
 
 			const deployTrx = await vapour721AFactory.createChildTyped(

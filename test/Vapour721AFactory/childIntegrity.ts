@@ -1,4 +1,4 @@
-import {ethers, web3} from "hardhat";
+import {ethers} from "hardhat";
 import {expect} from "chai";
 import type {
 	Vapour721A,
@@ -17,7 +17,6 @@ export const checkChildIntegrity = async (
 		"Vapour721A",
 		child
 	)) as Vapour721A;
-	
 	const supplyLimit = await getPrivate_uint256(child, slot._supplyLimit);
 	const amountWithdrawn = await getPrivate_uint256(child, slot._amountWithdrawn);
 	const amountPayable = await getPrivate_uint256(child, slot._amountPayable);

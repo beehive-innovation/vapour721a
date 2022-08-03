@@ -21,6 +21,7 @@ import {
   op,
   Opcode,
   StorageOpcodes,
+  trueTransferScript,
 } from "../utils";
 
 
@@ -58,7 +59,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -134,7 +135,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -189,7 +190,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -245,7 +246,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -323,7 +324,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.createChildTyped(
@@ -526,7 +527,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
@@ -903,7 +904,7 @@ describe("Script Tests", () => {
         royaltyBPS: 1000,
         admin: buyer0.address,
         currency: currency.address,
-        vmStateConfig: vmStateConfig
+        vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
       };
 
       const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(

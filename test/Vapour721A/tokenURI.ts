@@ -22,7 +22,7 @@ import {
 	currency,
 	vapour721AFactory,
 } from "../1_setup";
-import { concat, eighteenZeros, getChild, op } from "../utils";
+import { concat, eighteenZeros, getChild, op, trueTransferScript } from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
@@ -46,7 +46,7 @@ describe("Vapour721A tokenURI test", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: currency.address,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -149,7 +149,7 @@ const deployWithBaseURI = async (baseURI: string) => {
 		royaltyBPS: 1000,
 		admin: buyer0.address,
 		currency: currency.address,
-		vmStateConfig: vmStateConfig
+		vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 	};
 
 	const deployTrx = await vapour721AFactory.createChildTyped(

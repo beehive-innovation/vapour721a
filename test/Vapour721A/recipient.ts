@@ -16,7 +16,7 @@ import {
 	recipient,
 	currency,
 } from "../1_setup";
-import { concat, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
+import { concat, getChild, getEventArgs, op, trueTransferScript, ZERO_ADDRESS } from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
@@ -46,7 +46,7 @@ describe("Vapour721A recipient test", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: currency.address,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(

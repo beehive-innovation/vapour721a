@@ -17,7 +17,7 @@ import {
 	currency,
 	buyer7,
 } from "../1_setup";
-import { BN, concat, eighteenZeros, getBalance, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
+import { BN, concat, eighteenZeros, getBalance, getChild, getEventArgs, op, trueTransferScript, ZERO_ADDRESS } from "../utils";
 
 let vapour721A: Vapour721A;
 let vapour721AInitializeConfig: InitializeConfigStruct;
@@ -44,7 +44,7 @@ describe("Token withdraw tests", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: currency.address,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -227,7 +227,7 @@ describe("Native Token withdraw tests", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: ZERO_ADDRESS,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0})
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(

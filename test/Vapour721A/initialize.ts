@@ -10,6 +10,7 @@ import {
 	getChild,
 	getEventArgs,
 	op,
+	trueTransferScript,
 	ZERO_ADDRESS,
 } from "../utils";
 import { assert } from "console";
@@ -42,7 +43,7 @@ describe("Vapour721A Initialize test", () => {
 			owner: owner.address,
 			royaltyBPS: 1000,
 			admin: buyer0.address,
-			vmStateConfig: vmStateConfig,
+			vmStateConfig: VM.combiner(trueTransferScript, vmStateConfig, { numberOfSources: 0}),
 			currency: currency.address,
 		};
 
@@ -52,11 +53,6 @@ describe("Vapour721A Initialize test", () => {
 		const child = await getChild(vapour721AFactory, trx);
 
 		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
-		for(let i=0;i<6;i++){
-			let provider = new ethers.providers.JsonRpcProvider();
-			let sl = await provider.getStorageAt(child, i);
-			console.log(i,sl);
-		}
 
 		assert(child != ZERO_ADDRESS, "Vapour721A Address not found");
 		const [config_, vmStateBuilder_] = (await getEventArgs(

@@ -49,7 +49,12 @@ uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
 
 uint256 constant LOCAL_OPS_LENGTH = 4;
 
-contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessControlUpgradeable {
+contract Vapour721A is
+	ERC721AUpgradeable,
+	RainVM,
+	OwnableUpgradeable,
+	AccessControlUpgradeable
+{
 	using Strings for uint256;
 	using Math for uint256;
 	using LibFnPtrs for bytes;
@@ -84,10 +89,14 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessCon
 	/// Role for `DELEGATED_MINTER`.
 	bytes32 private constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
 
-	function initialize(InitializeConfig memory config_, address vmStateBuilder_) initializerERC721A initializer external{
+	function initialize(InitializeConfig memory config_, address vmStateBuilder_)
+		external
+		initializerERC721A
+		initializer
+	{
 		__ERC721A_init(config_.name, config_.symbol);
 		__Ownable_init();
-		
+
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
 
@@ -102,15 +111,20 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessCon
 
 		_grantRole(DELEGATED_MINTER_ADMIN, config_.admin);
 
-
 		_currency = config_.currency;
 
+		Bounds memory transferScript;
+		transferScript.entrypoint = 0;
 		Bounds memory vmScript;
-		vmScript.entrypoint = 0;
-		Bounds[] memory boundss_ = new Bounds[](1);
-		boundss_[0] = vmScript;
-		bytes memory vmStateBytes_ = VMStateBuilder(vmStateBuilder_)
-			.buildState(address(this), config_.vmStateConfig, boundss_);
+		vmScript.entrypoint = 1;
+		Bounds[] memory boundss_ = new Bounds[](2);
+		boundss_[0] = transferScript;
+		boundss_[1] = vmScript;
+		bytes memory vmStateBytes_ = VMStateBuilder(vmStateBuilder_).buildState(
+			address(this),
+			config_.vmStateConfig,
+			boundss_
+		);
 		_vmStatePointer = SSTORE2.write(vmStateBytes_);
 		emit Initialize(config_, vmStateBuilder_);
 	}
@@ -144,6 +158,28 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessCon
 		return string(abi.encodePacked(baseURI, "/", tokenId.toString(), ".json"));
 	}
 
+	function _beforeTokenTransfers(
+		address from,
+		address to,
+		uint256 startTokenId,
+		uint256 quantity
+	) internal virtual override {
+		if (from != address(0)) {
+			State memory state_ = _loadState();
+
+			bytes memory context_ = new bytes(0x40);
+			assembly {
+				mstore(add(context_, 0x20), to)
+				mstore(add(add(context_, 0x20), 0x20), startTokenId)
+			}
+
+			eval(context_, state_, 0);
+			console.log(state_.stack[state_.stackIndex - 1]);
+
+			require(state_.stack[state_.stackIndex - 1] == 1, "CANT_TRANSFER");
+		}
+	}
+
 	function _loadState() internal view returns (State memory) {
 		return LibState.fromBytesPacked(SSTORE2.read(_vmStatePointer));
 	}
@@ -162,7 +198,7 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, OwnableUpgradeable, AccessCon
 			mstore(add(add(context_, 0x20), 0x20), targetUnits_)
 		}
 
-		eval(context_, state_, 0);
+		eval(context_, state_, 1);
 
 		(maxUnits_, price_) = (
 			state_.stack[state_.stackIndex - 2],
