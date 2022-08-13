@@ -1,15 +1,13 @@
-import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ethers } from "hardhat";
-import {
-	ConstructorConfigStruct,
-} from "../../typechain/Vapour721A";
-import { concat, getEventArgs, op } from "../utils";
-import { checkChildIntegrity } from "./childIntegrity";
-import { expect } from "chai";
-import { ReserveToken } from "../../typechain/ReserveToken";
-import { Token } from "../../typechain/Token";
-import { StateConfig, VM } from "rain-sdk";
-import { vapour721AFactory } from "../1_setup";
+import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
+import {ethers} from "hardhat";
+import {ConstructorConfigStruct} from "../../typechain/Vapour721A";
+import {concat, getEventArgs, op, Opcode} from "../utils";
+import {checkChildIntegrity} from "./childIntegrity";
+import {expect} from "chai";
+import {ReserveToken} from "../../typechain/ReserveToken";
+import {Token} from "../../typechain/Token";
+import {StateConfig, VM} from "rain-sdk";
+import {vapour721AFactory} from "../1_setup";
 
 export let factoryDeployer: SignerWithAddress,
 	signer1: SignerWithAddress,
@@ -42,21 +40,23 @@ before(async () => {
 		recipient: recipient_.address,
 		owner: owner_.address,
 		royaltyBPS: 1000,
-		admin: signer1.address
+		admin: signer1.address,
 	};
 });
 
 it("should allow anyone to create a child (createChildTyped)", async () => {
 	const vmStateConfig: StateConfig = {
-		sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+		sources: [concat([op(Opcode.VAL, 0)])],
 		constants: [1],
+		stackLength: 2,
+		argumentsLength: 0,
 	};
 
 	const createChildTx = await vapour721AFactory
 		.connect(signer2)
 		.createChildTyped(constructorConfig, currency.address, vmStateConfig);
 
-	const { sender, child } = await getEventArgs(
+	const {sender, child} = await getEventArgs(
 		createChildTx,
 		"NewChild",
 		vapour721AFactory

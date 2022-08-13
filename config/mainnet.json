@@ -1,0 +1,6 @@
+{
+  "network": "mainnet",
+  "vapour721AStateBuilder": "0x714607c3dc6D3983574bE6DcBCcd368658646899",
+  "vapour721AFactory": "0x30F91A5Ed1f8a33b9F62adFB3234738184648D72",
+  "vapour721AFactoryBlock": 15270000
+}

@@ -6,12 +6,6 @@ import "./Vapour721A.sol";
 
 contract Vapour721AFactory is IFactory {
     mapping(address => bool) private contracts;
-    address private vmStateBuilder;
-
-    
-    constructor(address vmStateBuilder_){
-        vmStateBuilder = vmStateBuilder_;
-    }
 
     function _createChild(bytes calldata data_)
         internal
@@ -62,8 +56,7 @@ contract Vapour721AFactory is IFactory {
         child_ = Vapour721A(this.createChild(abi.encode(constructorConfig_)));
         Vapour721A(child_).initialize(InitializeConfig({
             currency: currency_,
-            vmStateConfig: vmStateConfig_,
-            vmStateBuilder: vmStateBuilder
+            vmStateConfig: vmStateConfig_
         }));
     }
 }

@@ -5,8 +5,8 @@ import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { AllStandardOps, ERC20, StateConfig } from "rain-sdk";
-import { Vapour721AFactory, NewChildEvent } from "../typechain/Vapour721AFactory";
+import { AllStandardOps, ERC20, } from "rain-sdk";
+import { NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Factory } from "../typechain";
@@ -19,14 +19,13 @@ export const BN = (num: number): BigNumber => {
 };
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 
-export enum StorageOpcodes {
-  SUPPLY_LIMIT,
+export enum LocalOpcodes {
+  SUPPLY_LIMIT = AllStandardOps.length,
   AMOUNT_WITHDRAWN,
   AMOUNT_PAYABLE,
-}
-
-export enum LocalOpcodes {
-  IERC721A_TOTAL_SUPPLY = AllStandardOps.length,
+  ACCOUNT,
+  TARGET_UNITS,
+  IERC721A_TOTAL_SUPPLY,
   IERC721A_TOTAL_MINTED,
   IERC721A_NUMBER_MINTED,
   IERC721A_NUMBER_BURNED,

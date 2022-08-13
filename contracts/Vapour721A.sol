@@ -6,12 +6,11 @@ import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "erc721a/contracts/ERC721A.sol";
-import "@beehiveinnovation/rain-protocol/contracts/math/FixedPointMath.sol";
-import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
-import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
-import "@beehiveinnovation/rain-protocol/contracts/vm/VMStateBuilder.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "erc721a/contracts/ERC721A.sol";
+import "@beehiveinnovation/rain-protocol/contracts/vm/RainVM.sol";
+import {AllStandardOps, ALL_STANDARD_OPS_START, ALL_STANDARD_OPS_LENGTH} from "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
+import {VMState, StateConfig} from "@beehiveinnovation/rain-protocol/contracts/vm/libraries/VMState.sol";
 
 /**
  * config for deploying Vapour721A contract
@@ -33,7 +32,6 @@ config for Initializing VMstateConfig
 
 struct InitializeConfig {
 	address currency;
-	address vmStateBuilder;
 	StateConfig vmStateConfig;
 }
 
@@ -43,31 +41,38 @@ struct BuyConfig {
 	uint256 desiredUnits;
 }
 
-uint256 constant STORAGE_OPCODES_LENGTH = 3;
-
+// supply limit
+uint256 constant LOCAL_OP_SUPPLYLIMIT = 0;
+// amount withdrawn
+uint256 constant LOCAL_OP_AMOUNT_WITHDRAWN = 1;
+//amount payable
+uint256 constant LOCAL_OP_AMOUNT_PAYABLE = 2;
+//amount payable
+uint256 constant LOCAL_OP_ACCOUNT = 3;
+//amount payable
+uint256 constant LOCAL_OP_TARGET_UNITS = 4;
 // the total numbers of tokens
-uint256 constant LOCAL_OP_TOTAL_SUPPLY = ALL_STANDARD_OPS_LENGTH;
+uint256 constant LOCAL_OP_TOTAL_SUPPLY = 5;
 // the total unites minted
-uint256 constant LOCAL_OP_TOTAL_MINTED = LOCAL_OP_TOTAL_SUPPLY + 1;
+uint256 constant LOCAL_OP_TOTAL_MINTED = 6;
 // number of tokens minted by `owner`.
-uint256 constant LOCAL_OP_NUMBER_MINTED = LOCAL_OP_TOTAL_MINTED + 1;
+uint256 constant LOCAL_OP_NUMBER_MINTED = 7;
 // number of tokens burned by `owner`.
-uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
+uint256 constant LOCAL_OP_NUMBER_BURNED = 8;
 
-uint256 constant LOCAL_OPS_LENGTH = 4;
+uint256 constant LOCAL_OPS_LENGTH = 9;
 
-contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
+contract Vapour721A is ERC721A, RainVM, VMState, Ownable, AccessControl {
 	using Strings for uint256;
 	using Math for uint256;
-	using LibFnPtrs for bytes;
-	using FixedPointMath for uint256;
 
-	// storage variables
+	uint256 private immutable localOpsStart;
+
 	uint256 private _supplyLimit;
 	uint256 private _amountWithdrawn;
 	uint256 private _amountPayable;
 
-	address private _vmStatePointer;
+	address private _statePointer;
 	address private _currency;
 	address payable private _recipient;
 
@@ -95,6 +100,7 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	constructor(ConstructorConfig memory config_)
 		ERC721A(config_.name, config_.symbol)
 	{
+		localOpsStart = ALL_STANDARD_OPS_START + ALL_STANDARD_OPS_LENGTH;
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
 
@@ -113,33 +119,13 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 	}
 
 	function initialize(InitializeConfig memory config_) external {
-		require(_vmStatePointer == address(0), "INITIALIZED");
+		require(_statePointer == address(0), "INITIALIZED");
 
 		_currency = config_.currency;
 
-		Bounds memory vmScript;
-		vmScript.entrypoint = 0;
-		Bounds[] memory boundss_ = new Bounds[](1);
-		boundss_[0] = vmScript;
-		bytes memory vmStateBytes_ = VMStateBuilder(config_.vmStateBuilder)
-			.buildState(address(this), config_.vmStateConfig, boundss_);
-		_vmStatePointer = SSTORE2.write(vmStateBytes_);
+		_statePointer = _snapshot(_newState(config_.vmStateConfig));
 
 		emit Initialize(config_);
-	}
-
-	/// @inheritdoc RainVM
-	function storageOpcodesRange()
-		public
-		pure
-		override
-		returns (StorageOpcodesRange memory)
-	{
-		uint256 slot_;
-		assembly {
-			slot_ := _supplyLimit.slot
-		}
-		return StorageOpcodesRange(slot_, STORAGE_OPCODES_LENGTH);
 	}
 
 	function _startTokenId() internal view virtual override returns (uint256) {
@@ -157,25 +143,15 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		return string(abi.encodePacked(baseURI, "/", tokenId.toString(), ".json"));
 	}
 
-	function _loadState() internal view returns (State memory) {
-		return LibState.fromBytesPacked(SSTORE2.read(_vmStatePointer));
-	}
 
 	function calculateBuy(address account_, uint256 targetUnits_)
 		public
 		view
 		returns (uint256 maxUnits_, uint256 price_)
 	{
-		require(_vmStatePointer != address(0), "NOT_INITIALIZED");
-		State memory state_ = _loadState();
 
-		bytes memory context_ = new bytes(0x40);
-		assembly {
-			mstore(add(context_, 0x20), account_)
-			mstore(add(add(context_, 0x20), 0x20), targetUnits_)
-		}
-
-		eval(context_, state_, 0);
+        State memory state_ = _restore(_statePointer);
+		eval(abi.encode(account_, targetUnits_), state_, 0);
 
 		(maxUnits_, price_) = (
 			state_.stack[state_.stackIndex - 2],
@@ -252,94 +228,6 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 		emit RecipientChanged(newRecipient);
 	}
 
-	function opTotalSupply(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 totalSupply_ = totalSupply();
-		assembly {
-			mstore(stackTopLocation_, totalSupply_)
-			stackTopLocation_ := add(stackTopLocation_, 0x20)
-		}
-		return stackTopLocation_;
-	}
-
-	function opTotalMinted(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 totalMinted_ = _totalMinted();
-		assembly {
-			mstore(stackTopLocation_, totalMinted_)
-			stackTopLocation_ := add(stackTopLocation_, 0x20)
-		}
-		return stackTopLocation_;
-	}
-
-	function opNumberMinted(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 location_;
-		address account_;
-		assembly {
-			location_ := sub(stackTopLocation_, 0x20)
-			account_ := mload(location_)
-		}
-		uint256 totalMinted_ = _numberMinted(address(uint160(account_)));
-		assembly {
-			mstore(location_, totalMinted_)
-		}
-		return stackTopLocation_;
-	}
-
-	function opNumberBurned(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 location_;
-		address account_;
-		assembly {
-			location_ := sub(stackTopLocation_, 0x20)
-			account_ := mload(location_)
-		}
-		uint256 totalMinted_ = _numberBurned(address(uint160(account_)));
-		assembly {
-			mstore(location_, totalMinted_)
-		}
-		return stackTopLocation_;
-	}
-
-	function localFnPtrs() internal pure returns (bytes memory localFnPtrs_) {
-		unchecked {
-			localFnPtrs_ = new bytes(LOCAL_OPS_LENGTH * 0x20);
-			localFnPtrs_.insertOpPtr(
-				LOCAL_OP_TOTAL_SUPPLY - ALL_STANDARD_OPS_LENGTH,
-				opTotalSupply
-			);
-			localFnPtrs_.insertOpPtr(
-				LOCAL_OP_TOTAL_MINTED - ALL_STANDARD_OPS_LENGTH,
-				opTotalMinted
-			);
-			localFnPtrs_.insertOpPtr(
-				LOCAL_OP_NUMBER_MINTED - ALL_STANDARD_OPS_LENGTH,
-				opNumberMinted
-			);
-			localFnPtrs_.insertOpPtr(
-				LOCAL_OP_NUMBER_BURNED - ALL_STANDARD_OPS_LENGTH,
-				opNumberBurned
-			);
-		}
-	}
-
-	function fnPtrs() public pure override returns (bytes memory) {
-		return bytes.concat(AllStandardOps.fnPtrs(), localFnPtrs());
-	}
-
 	function burn(uint256 tokenId) external {
 		_burn(tokenId, true);
 	}
@@ -368,6 +256,59 @@ contract Vapour721A is ERC721A, RainVM, Ownable, AccessControl {
 			return (_recipient, 0);
 		}
 		return (_recipient, (_salePrice * _royaltyBPS) / 10_000);
+	}
+
+	/// @inheritdoc RainVM
+	function applyOp(
+		bytes memory context_,
+		State memory state_,
+		uint256 opcode_,
+		uint256 operand_
+	) internal view override {
+		unchecked {
+			if (opcode_ < localOpsStart) {
+				AllStandardOps.applyOp(
+					state_,
+					opcode_ - ALL_STANDARD_OPS_START,
+					operand_
+				);
+			} else {
+				opcode_ -= localOpsStart;
+				require(opcode_ < LOCAL_OPS_LENGTH, "MAX_OPCODE");
+				if (opcode_ == LOCAL_OP_AMOUNT_PAYABLE) {
+					state_.stack[state_.stackIndex] = _amountPayable;
+				} else if (opcode_ == LOCAL_OP_AMOUNT_WITHDRAWN) {
+					state_.stack[state_.stackIndex] = _amountWithdrawn;
+				} else if (opcode_ == LOCAL_OP_SUPPLYLIMIT) {
+					state_.stack[state_.stackIndex] = _supplyLimit;
+				} else if (opcode_ == LOCAL_OP_ACCOUNT) {
+					(uint256 account_, uint256 units_) = abi.decode(
+						context_,
+						(uint256, uint256)
+					);
+					state_.stack[state_.stackIndex] = account_;
+				} else if (opcode_ == LOCAL_OP_TARGET_UNITS) {
+					(uint256 account_, uint256 units_) = abi.decode(
+						context_,
+						(uint256, uint256)
+					);
+					state_.stack[state_.stackIndex] = units_;
+				} else if (opcode_ == LOCAL_OP_TOTAL_SUPPLY) {
+					state_.stack[state_.stackIndex] = totalSupply();
+				} else if (opcode_ == LOCAL_OP_TOTAL_MINTED) {
+					state_.stack[state_.stackIndex] = _totalMinted();
+				} else if (opcode_ == LOCAL_OP_NUMBER_MINTED) {
+					address account = address(uint160(state_.stack[state_.stackIndex - 1]));
+					state_.stack[state_.stackIndex - 1] = _numberMinted(account);
+					state_.stackIndex--;
+				} else if (opcode_ == LOCAL_OP_NUMBER_BURNED) {
+					address account = address(uint160(state_.stack[state_.stackIndex - 1]));
+					state_.stack[state_.stackIndex - 1] = _numberBurned(account);
+					state_.stackIndex--;
+				}
+				state_.stackIndex++;
+			}
+		}
 	}
 
 	function supportsInterface(bytes4 interfaceId)
