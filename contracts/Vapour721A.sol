@@ -143,14 +143,12 @@ contract Vapour721A is ERC721A, RainVM, VMState, Ownable, AccessControl {
 		return string(abi.encodePacked(baseURI, "/", tokenId.toString(), ".json"));
 	}
 
-
 	function calculateBuy(address account_, uint256 targetUnits_)
 		public
 		view
 		returns (uint256 maxUnits_, uint256 price_)
 	{
-
-        State memory state_ = _restore(_statePointer);
+		State memory state_ = _restore(_statePointer);
 		eval(abi.encode(account_, targetUnits_), state_, 0);
 
 		(maxUnits_, price_) = (
@@ -273,6 +271,10 @@ contract Vapour721A is ERC721A, RainVM, VMState, Ownable, AccessControl {
 					operand_
 				);
 			} else {
+				(uint256 account_, uint256 units_) = abi.decode(
+					context_,
+					(uint256, uint256)
+				);
 				opcode_ -= localOpsStart;
 				require(opcode_ < LOCAL_OPS_LENGTH, "MAX_OPCODE");
 				if (opcode_ == LOCAL_OP_AMOUNT_PAYABLE) {
@@ -282,27 +284,23 @@ contract Vapour721A is ERC721A, RainVM, VMState, Ownable, AccessControl {
 				} else if (opcode_ == LOCAL_OP_SUPPLYLIMIT) {
 					state_.stack[state_.stackIndex] = _supplyLimit;
 				} else if (opcode_ == LOCAL_OP_ACCOUNT) {
-					(uint256 account_, uint256 units_) = abi.decode(
-						context_,
-						(uint256, uint256)
-					);
 					state_.stack[state_.stackIndex] = account_;
 				} else if (opcode_ == LOCAL_OP_TARGET_UNITS) {
-					(uint256 account_, uint256 units_) = abi.decode(
-						context_,
-						(uint256, uint256)
-					);
 					state_.stack[state_.stackIndex] = units_;
 				} else if (opcode_ == LOCAL_OP_TOTAL_SUPPLY) {
 					state_.stack[state_.stackIndex] = totalSupply();
 				} else if (opcode_ == LOCAL_OP_TOTAL_MINTED) {
 					state_.stack[state_.stackIndex] = _totalMinted();
 				} else if (opcode_ == LOCAL_OP_NUMBER_MINTED) {
-					address account = address(uint160(state_.stack[state_.stackIndex - 1]));
+					address account = address(
+						uint160(state_.stack[state_.stackIndex - 1])
+					);
 					state_.stack[state_.stackIndex - 1] = _numberMinted(account);
 					state_.stackIndex--;
 				} else if (opcode_ == LOCAL_OP_NUMBER_BURNED) {
-					address account = address(uint160(state_.stack[state_.stackIndex - 1]));
+					address account = address(
+						uint160(state_.stack[state_.stackIndex - 1])
+					);
 					state_.stack[state_.stackIndex - 1] = _numberBurned(account);
 					state_.stackIndex--;
 				}
