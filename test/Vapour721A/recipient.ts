@@ -1,6 +1,6 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { StateConfig, VM } from "rain-sdk";
+import {expect} from "chai";
+import {ethers} from "hardhat";
+import {StateConfig, VM} from "rain-sdk";
 import {
 	InitializeConfigStruct,
 	Vapour721A,
@@ -16,7 +16,14 @@ import {
 	recipient,
 	currency,
 } from "../1_setup";
-import { concat, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
+import {
+	concat,
+	getChild,
+	getEventArgs,
+	op,
+	Opcode,
+	ZERO_ADDRESS,
+} from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
@@ -24,16 +31,20 @@ let vapour721A: Vapour721A;
 describe("Vapour721A recipient test", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
-			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+			sources: [concat([op(Opcode.VAL, 0)])],
 			constants: [1],
+			stackLength: 2,
+			argumentsLength: 0,
 		};
 
 	});
 
 	it("Should set the correct recipient", async () => {
 		const vmStateConfig: StateConfig = {
-			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+			sources: [concat([op(Opcode.VAL, 0)])],
 			constants: [1],
+			stackLength: 2,
+			argumentsLength: 0
 		};
 
 		vapour721AInitializeConfig = {
@@ -47,6 +58,16 @@ describe("Vapour721A recipient test", () => {
 			admin: buyer0.address,
 			currency: currency.address,
 			vmStateConfig: vmStateConfig
+
+		};
+	});
+
+	it("Should set the correct recipient", async () => {
+		const vmStateConfig: StateConfig = {
+			sources: [concat([op(Opcode.VAL, 0)])],
+			constants: [1],
+			stackLength: 2,
+			argumentsLength: 0,
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -54,7 +75,10 @@ describe("Vapour721A recipient test", () => {
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 
-		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		vapour721A = (await ethers.getContractAt(
+			"Vapour721A",
+			child
+		)) as Vapour721A;
 
 		const [config_] = (await getEventArgs(
 			deployTrx,

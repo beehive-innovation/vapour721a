@@ -1,13 +1,13 @@
-import { ethers } from "hardhat";
+import {ethers} from "hardhat";
 import {
 	Vapour721A,
 	
 	InitializeConfigStruct,
 	OwnershipTransferredEvent,
 } from "../../typechain/Vapour721A";
-import { concat, getChild, op } from "../utils";
-import { VM } from "rain-sdk";
-import { expect } from "chai";
+import {concat, getChild, op, Opcode} from "../utils";
+import {VM} from "rain-sdk";
+import {expect} from "chai";
 import {
 	buyer0,
 	config,
@@ -16,7 +16,7 @@ import {
 	recipient,
 	currency,
 } from "../1_setup";
-import { StateConfig } from "rain-sdk";
+import {StateConfig} from "rain-sdk";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
@@ -24,8 +24,10 @@ let vapour721A: Vapour721A;
 describe("Vapour721A Ownable test", () => {
 	before(async () => {
 		const vmStateConfig: StateConfig = {
-			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+			sources: [concat([op(Opcode.VAL, 0)])],
 			constants: [1],
+			stackLength: 2,
+			argumentsLength: 0,
 		};
 
 		vapour721AInitializeConfig = {
@@ -46,7 +48,10 @@ describe("Vapour721A Ownable test", () => {
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 
-		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		vapour721A = (await ethers.getContractAt(
+			"Vapour721A",
+			child
+		)) as Vapour721A;
 	});
 
 	it("Should be the correct owner", async () => {

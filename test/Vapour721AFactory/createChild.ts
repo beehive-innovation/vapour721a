@@ -1,7 +1,7 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
 import {InitializeConfigStruct} from "../../typechain/Vapour721A";
-import {concat, eighteenZeros, getEventArgs, op, ZERO_ADDRESS} from "../utils";
+import {concat, eighteenZeros, getEventArgs, op, Opcode, ZERO_ADDRESS} from "../utils";
 import {checkChildIntegrity} from "./childIntegrity";
 import {NewChildEvent} from "../../typechain/Vapour721AFactory";
 
@@ -28,8 +28,10 @@ before(async () => {
 	owner_ = signers[4];
 
 	const vmStateConfig: StateConfig = {
-		sources: [concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)])],
+		sources: [concat([op(Opcode.VAL, 0), op(Opcode.VAL, 1)])],
 		constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
+		stackLength: 2,
+		argumentsLength: 0
 	};
 
 	initializeConfig = {
@@ -47,7 +49,7 @@ before(async () => {
 
 	encodedConfig = ethers.utils.defaultAbiCoder.encode(
 		[
-			"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner, address admin, uint256 royaltyBPS, address currency, tuple(bytes[] sources, uint256[] constants) vmStateConfig)",
+			"tuple(string name, string symbol, string baseURI, uint256 supplyLimit, address recipient, address owner, address admin, uint256 royaltyBPS, address currency, tuple(bytes[] sources, uint256[] constants, uint256 stackLength, uint256 argumentsLength) vmStateConfig)",
 		],
 		[initializeConfig]
 	);

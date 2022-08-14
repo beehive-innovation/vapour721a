@@ -39,7 +39,7 @@
 		"hardhat-storage-layout": "^0.1.6",
 		"prettier": "^2.3.2",
 		"pretty-quick": "^3.1.1",
-		"rain-sdk": "git+https://github.com/beehive-innovation/rain-sdk.git#7b1b24767ff5514051dddebd4b49d0e7ffb24410",
+		"rain-sdk": "1.3.8",
 		"solc-0.8": "npm:solc@^0.8.10",
 		"solhint": "^3.3.4",
 		"solidity-docgen": "^0.5.13",
@@ -49,7 +49,8 @@
 		"web3": "^1.7.5"
 	},
 	"dependencies": {
-		"@beehiveinnovation/rain-protocol": "git+https://github.com/beehive-innovation/rain-protocol.git#b4af313dbe0dd2b2c4f630e7f7fe37a9ac6e073f",
+		"@beehiveinnovation/rain-protocol": "git+https://github.com/beehive-innovation/rain-protocol.git#e590ce7ef673224afba04c43384a278a9500500d",
+		"@beehiveinnovation/rain-statusfi": "git+https://github.com/beehive-innovation/rain-statusfi.git#499b0a05e0bea8685dcd3b4b03af7da91fd31258",
 		"@nomiclabs/hardhat-waffle": "^2.0.3",
 		"@openzeppelin/contracts": "^4.6.0",
 		"dotenv": "^16.0.0"
