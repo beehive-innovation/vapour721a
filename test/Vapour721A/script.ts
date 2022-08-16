@@ -653,46 +653,48 @@ describe("Script Tests", () => {
 	//     return { unitPrice, totalCost }
 	//   }
 
-	//   const increasingPricePurchaseSC = (
-	//     priceIncrease: BigNumber,
-	//     startingToken: number = 1,
-	//     numberOfRules: number = 0
-	//   ): StateConfig => {
-	//     return {
-	//       sources: [
-	//         concat([
-	//           // (u(2t + u + 1) / 2 * i) / u
-	//           op(Opcode.IERC721A_TOTAL_MINTED), // total minted
-	//           op(Opcode.IERC721A_TOTAL_MINTED), // total minted
+	const increasingPricePurchaseSC = (
+		priceIncrease: BigNumber,
+		startingToken: number = 1,
+		numberOfRules: number = 0
+	): StateConfig => {
+		return {
+			sources: [
+				concat([
+					// (u(2t + u + 1) / 2 * i) / u
+					op(Opcode.IERC721A_TOTAL_MINTED), // total minted
+					op(Opcode.IERC721A_TOTAL_MINTED), // total minted
 
-	//           op(Opcode.STACK, numberOfRules), // the eval of the q script
+					op(Opcode.DUP, numberOfRules), // the eval of the q script
 
-	//           op(Opcode.VAL, 0), // 3
-	//           op(Opcode.ADD, 4),
-	//           op(Opcode.VAL, 3), // starting token
-	//           op(Opcode.VAL, 3), // starting token
-	//           op(Opcode.SATURATING_SUB, 3),
+					op(Opcode.VAL, 0), // 3
+					op(Opcode.ADD, 4),
+					op(Opcode.VAL, 3), // starting token
+					op(Opcode.VAL, 3), // starting token
+					op(Opcode.SATURATING_SUB, 3),
 
-	//           op(Opcode.STACK, numberOfRules), // the eval of the q script
+					op(Opcode.DUP, numberOfRules), // the eval of the q script
 
-	//           op(Opcode.MUL, 2),
-	//           op(Opcode.VAL, 1), // 2
-	//           op(Opcode.DIV, 2),
-	//           op(Opcode.VAL, 2), // price increase
-	//           op(Opcode.MUL, 2),
+					op(Opcode.MUL, 2),
+					op(Opcode.VAL, 1), // 2
+					op(Opcode.DIV, 2),
+					op(Opcode.VAL, 2), // price increase
+					op(Opcode.MUL, 2),
 
-	//           op(Opcode.STACK, numberOfRules), // the eval of the q script
-	//           op(Opcode.ISZERO),
-	//           op(Opcode.VAL, 4),
-	//           op(Opcode.STACK, numberOfRules), // the eval of the q script
-	//           op(Opcode.EAGER_IF), // avoiding division by zero here
+					op(Opcode.DUP, numberOfRules), // the eval of the q script
+					op(Opcode.ISZERO),
+					op(Opcode.VAL, 4),
+					op(Opcode.DUP, numberOfRules), // the eval of the q script
+					op(Opcode.EAGER_IF), // avoiding division by zero here
 
-	//           op(Opcode.DIV, 2),
-	//         ])
-	//       ],
-	//       constants: [3, 2, priceIncrease, startingToken, 1]
-	//     }
-	//   }
+					op(Opcode.DIV, 2),
+				])
+			],
+			constants: [3, 2, priceIncrease, startingToken, 1],
+			stackLength: 50,
+			argumentsLength: 0
+		}
+	}
 
 	//   const zero = (): StateConfig => {
 	//     return {
