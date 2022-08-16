@@ -275,6 +275,18 @@ contract Vapour721A is
 		emit RecipientChanged(newRecipient);
 	}
 
+	function totalMinted() external view returns (uint256) {
+		return _totalMinted();
+	}
+
+	function numberMinted(address account_) external view returns (uint256) {
+		return _numberMinted(account_);
+	}
+
+	function numberBurned(address account_) external view returns (uint256) {
+		return _numberBurned(account_);
+	}
+
 	function opTotalSupply(uint256, uint256 stackTopLocation_)
 		internal
 		view
