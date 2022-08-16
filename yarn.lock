@@ -126,8 +126,10 @@
   version "0.0.16"
   resolved "https://codeload.github.com/beehive-innovation/rain-protocol/tar.gz/e25840ed7579b0a307594fdc042a2a357b9c416f"
   dependencies:
-    "@openzeppelin/contracts" "=4.7.1"
-    "@openzeppelin/contracts-upgradeable" "=4.7.1"
+    "@beehiveinnovation/balancer-core" "0.0.7"
+    "@beehiveinnovation/configurable-rights-pool" "0.0.1"
+    "@openzeppelin/contracts" "^4.3.3"
+    "@openzeppelin/contracts-upgradeable" "^4.4.1"
 
 "@beehiveinnovation/rain-protocol@git+https://github.com/beehive-innovation/rain-protocol.git#e590ce7ef673224afba04c43384a278a9500500d":
   version "0.0.16"
@@ -9095,10 +9097,10 @@ quick-lru@^5.1.1:
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
 
-rain-sdk@1.3.8:
-  version "1.3.8"
-  resolved "https://registry.yarnpkg.com/rain-sdk/-/rain-sdk-1.3.8.tgz#ca679988b51de6132e7d0f7b20b3d9eb67cca974"
-  integrity sha512-m1Ijlyrfqdfqr0fjrXpb+57e/wphEwpPECPWwHqoO50ZUPEIxH5pM7puV+VIaMOrcDRrtMQd6SvFhe0Be9DUkw==
+rain-sdk@1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/rain-sdk/-/rain-sdk-1.4.0.tgz#852aef0eefff483a9487cdfc282dee66289c013f"
+  integrity sha512-bYQCFWT4o1O6Ii34zOit43yGmJCir7eBTk3+mUn+9Z3W8HMMJkyIqmqGzG576j/Af7sgg2b/Fu3UzEu4RbHT1w==
   dependencies:
     ethers "^5.5.2"
     prettier "^2.6.2"

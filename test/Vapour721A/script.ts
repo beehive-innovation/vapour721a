@@ -253,7 +253,7 @@ describe("Script Tests", () => {
 		});
 	});
 
-	describe.only("Buy between timestamp test", () => {
+	describe("Buy between timestamp test", () => {
 		before(async () => {
 			const block_before = await ethers.provider.getBlock("latest");
 			const start_time = block_before.timestamp + 3600;
@@ -470,7 +470,7 @@ describe("Script Tests", () => {
 	//   });
 	// });
 
-	describe("multi round sale", () => {
+	describe.only("multi round sale", () => {
 		before(async () => {
 
 			// deplying factories
@@ -534,7 +534,7 @@ describe("Script Tests", () => {
 					VM.ifelse(
 						//rule 2
 						VM.and([
-							new BetweenTimestamps(time1, time2),
+							VM.betweenTimes(time1, time2),
 							VM.hasAnyTier(
 								new CombineTierGenerator(verifyTierAddress2)
 							)
@@ -556,7 +556,7 @@ describe("Script Tests", () => {
 					VM.ifelse(
 						// rule 2
 						VM.and([
-							new BetweenTimestamps(time1, time2),
+							VM.betweenTimes(time1, time2),
 							VM.hasAnyTier(
 								new CombineTierGenerator(verifyTierAddress2)
 							)
