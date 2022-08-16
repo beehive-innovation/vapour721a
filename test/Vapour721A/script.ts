@@ -1,15 +1,15 @@
 import { expect } from "chai";
 import { BigNumber, Signer } from "ethers";
-import { parseEther } from "ethers/lib/utils";
+import { parseEther, parseUnits } from "ethers/lib/utils";
 import { ethers } from "hardhat";
 import { CombineTierGenerator, StateConfig, utils, VM } from "rain-sdk";
 import { Token, Verify, VerifyFactory, VerifyTier, VerifyTierFactory } from "../../typechain";
 import {
-  BuyConfigStruct,
-  
-  InitializeConfigStruct,
-  
-  Vapour721A,
+	BuyConfigStruct,
+
+	InitializeConfigStruct,
+
+	Vapour721A,
 } from "../../typechain/Vapour721A";
 import { buyer0, owner, vapour721AFactory, recipient, currency } from "../1_setup";
 
@@ -114,180 +114,229 @@ describe("Script Tests", () => {
 		});
 	});
 
-	// describe("Buy after timestamp test", () => {
-	//   before(async () => {
-	//     const block_before = await ethers.provider.getBlock("latest");
+	describe("Buy after timestamp test", () => {
+		before(async () => {
+			const block_before = await ethers.provider.getBlock("latest");
 
-	//     const vmStateConfig: StateConfig = VM.pair(
-	//       VM.ifelse(
-	//         VM.beforeAfterTime(block_before.timestamp + 100, "gte"),
-	//         VM.constant(100),
-	//         VM.constant(0)
-	//       ),
-	//       VM.constant(BN(1))
-	//     )
+			const vmStateConfig: StateConfig = VM.combiner(
+				{
+					sources: [
+						concat([
+							op(Opcode.BLOCK_TIMESTAMP),
+							op(Opcode.VAL, 0),
+							op(Opcode.GREATER_THAN),
+							op(Opcode.VAL, 1), // 100
+							op(Opcode.VAL, 2), // 0
+							op(Opcode.EAGER_IF)
+						])
+					],
+					constants: [block_before.timestamp + 100, 100, 0],
+					stackLength: 5,
+					argumentsLength: 0
+				},
+				{
+					sources: [concat([op(Opcode.VAL, 0)])],
+					constants: [ethers.utils.parseUnits('1')],
+					stackLength: 1,
+					argumentsLength: 0
+				},
+			)
 
-	//     vapour721AConstructorConfig = {
-	//       name: "nft",
-	//       symbol: "NFT",
-	//       baseURI: "BASE_URI",
-	//       supplyLimit: 100,
-	//       recipient: recipient.address,
-	//       owner: owner.address,
-	//       royaltyBPS: 1000,
-	//       admin: buyer0.address
-	//     };
+			vapour721AInitializeConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+				royaltyBPS: 1000,
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig
+			};
 
-	//     const deployTrx = await vapour721AFactory.createChildTyped(
-	//       vapour721AConstructorConfig,
-	//       currency.address,
-	//       vmStateConfig
-	//     );
-	//     const child = await getChild(vapour721AFactory, deployTrx);
-	//     vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
-	//   });
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AInitializeConfig
+			);
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		});
 
-	//   it("it Should return 0 Units", async () => {
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
-	//     expect(price_).to.equals(BN(1));
-	//   });
+		it("it Should return 0 Units", async () => {
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
+			expect(price_).to.equals(BN(1));
+		});
 
-	//   it("it Should return 100 Units", async () => {
-	//     await ethers.provider.send("evm_increaseTime", [36000]);
-	//     await ethers.provider.send("evm_mine", []);
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-	//     expect(price_).to.equals(BN(1));
-	//   });
-	// });
+		it("it Should return 100 Units", async () => {
+			await ethers.provider.send("evm_increaseTime", [36000]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(BN(1));
+		});
+	});
 
-	// describe("Buy before timestamp test", () => {
-	//   before(async () => {
-	//     const block_before = await ethers.provider.getBlock("latest");
-	//     const time = block_before.timestamp + 3600;
+	describe("Buy before timestamp test", () => {
+		before(async () => {
+			const block_before = await ethers.provider.getBlock("latest");
+			const time = block_before.timestamp + 3600;
 
-	//     const vmStateConfig: StateConfig = VM.pair(
-	//       VM.ifelse(
-	//         VM.beforeAfterTime(time, "lte"),
-	//         VM.constant(100),
-	//         VM.constant(0)
-	//       ),
-	//       VM.constant(BN(1))
-	//     )
+			const vmStateConfig: StateConfig = VM.combiner(
+				{
+					sources: [
+						concat([
+							op(Opcode.BLOCK_TIMESTAMP),
+							op(Opcode.VAL, 0),
+							op(Opcode.LESS_THAN),
+							op(Opcode.VAL, 1), // 100
+							op(Opcode.VAL, 2), // 0
+							op(Opcode.EAGER_IF)
+						])
+					],
+					constants: [block_before.timestamp + 100, 100, 0],
+					stackLength: 5,
+					argumentsLength: 0
+				},
+				{
+					sources: [concat([op(Opcode.VAL, 0)])],
+					constants: [ethers.utils.parseUnits('1')],
+					stackLength: 1,
+					argumentsLength: 0
+				},
+			)
 
-	//     vapour721AConstructorConfig = {
-	//       name: "nft",
-	//       symbol: "NFT",
-	//       baseURI: "BASE_URI",
-	//       supplyLimit: 100,
-	//       recipient: recipient.address,
-	//       owner: owner.address,
-	//       royaltyBPS: 1000,
-	//       admin: buyer0.address
-	//     };
+			vapour721AInitializeConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+				royaltyBPS: 1000,
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig
+			};
 
-	//     const deployTrx = await vapour721AFactory.createChildTyped(
-	//       vapour721AConstructorConfig,
-	//       currency.address,
-	//       vmStateConfig
-	//     );
-	//     const child = await getChild(vapour721AFactory, deployTrx);
-	//     vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
-	//   });
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AInitializeConfig
+			);
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		});
 
-	//   it("it Should return 100 Units", async () => {
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-	//     expect(price_).to.equals(BN(1));
-	//   });
+		it("it Should return 100 Units", async () => {
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(BN(1));
+		});
 
-	//   it("it Should return 0 Units", async () => {
-	//     await ethers.provider.send("evm_increaseTime", [3600]);
-	//     await ethers.provider.send("evm_mine", []);
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
-	//     expect(price_).to.equals(BN(1));
-	//   });
-	// });
+		it("it Should return 0 Units", async () => {
+			await ethers.provider.send("evm_increaseTime", [3600]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
+			expect(price_).to.equals(BN(1));
+		});
+	});
 
-	// describe("Buy between timestamp test", () => {
-	//   before(async () => {
-	//     const block_before = await ethers.provider.getBlock("latest");
-	//     const start_time = block_before.timestamp + 3600;
-	//     const end_time = start_time + 3600;
+	describe.only("Buy between timestamp test", () => {
+		before(async () => {
+			const block_before = await ethers.provider.getBlock("latest");
+			const start_time = block_before.timestamp + 3600;
+			const end_time = start_time + 3600;
 
-	//     const vmStateConfig: StateConfig = VM.pair(
-	//       VM.ifelse(
-	//         new BetweenTimestamps(start_time, end_time),
-	//         VM.constant(100),
-	//         VM.constant(0)
-	//       ),
-	//       VM.constant(BN(1))
-	//     )
+			const vmStateConfig: StateConfig = VM.combiner(
+				{
+					sources: [
+						concat([
+							op(Opcode.BLOCK_TIMESTAMP),
+							op(Opcode.VAL, 0),
+							op(Opcode.GREATER_THAN),
+							op(Opcode.BLOCK_TIMESTAMP),
+							op(Opcode.VAL, 1),
+							op(Opcode.LESS_THAN),
+							op(Opcode.EVERY, 2),
+							op(Opcode.VAL, 2), // 100
+							op(Opcode.VAL, 3), // 0
+							op(Opcode.EAGER_IF)
+						])
+					],
+					constants: [start_time, end_time, 100, 0],
+					stackLength: 5,
+					argumentsLength: 0
+				},
+				{
+					sources: [concat([op(Opcode.VAL, 0)])],
+					constants: [ethers.utils.parseUnits('1')],
+					stackLength: 1,
+					argumentsLength: 0
+				},
+			)
 
-	//     vapour721AConstructorConfig = {
-	//       name: "nft",
-	//       symbol: "NFT",
-	//       baseURI: "BASE_URI",
-	//       supplyLimit: 100,
-	//       recipient: recipient.address,
-	//       owner: owner.address,
-	//       royaltyBPS: 1000,
-	//       admin: buyer0.address
-	//     };
+			vapour721AInitializeConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+				royaltyBPS: 1000,
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig
+			};
 
-	//     const deployTrx = await vapour721AFactory.createChildTyped(
-	//       vapour721AConstructorConfig,
-	//       currency.address,
-	//       vmStateConfig
-	//     );
-	//     const child = await getChild(vapour721AFactory, deployTrx);
-	//     vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
-	//   });
-	//   it("it Should return 0 Units", async () => {
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
-	//     expect(price_).to.equals(BN(1));
-	//   });
+			const deployTrx = await vapour721AFactory.createChildTyped(
+				vapour721AInitializeConfig,
+			);
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		});
+		it("it Should return 0 Units", async () => {
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
+			expect(price_).to.equals(BN(1));
+		});
 
-	//   it("it Should return 100 Units", async () => {
-	//     await ethers.provider.send("evm_increaseTime", [3600]);
-	//     await ethers.provider.send("evm_mine", []);
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-	//     expect(price_).to.equals(BN(1));
-	//   });
+		it("it Should return 100 Units", async () => {
+			await ethers.provider.send("evm_increaseTime", [3600]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(BN(1));
+		});
 
-	//   it("it Should return 0 Units", async () => {
-	//     await ethers.provider.send("evm_increaseTime", [3600]);
-	//     await ethers.provider.send("evm_mine", []);
-	//     const [maxUnits_, price_] = await vapour721A.calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
-	//     expect(price_).to.equals(BN(1));
-	//   });
-	// });
+		it("it Should return 0 Units", async () => {
+			await ethers.provider.send("evm_increaseTime", [3600]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(0));
+			expect(price_).to.equals(BN(1));
+		});
+	});
 
 	// describe("Buy with increasing price", () => {
 	//   let vmStateConfig: StateConfig;
@@ -316,7 +365,7 @@ describe("Script Tests", () => {
 	//       )
 	//     )
 
-	//     vapour721AConstructorConfig = {
+	//     vapour721AInitializeConfig = {
 	//       name: "nft",
 	//       symbol: "NFT",
 	//       baseURI: "BASE_URI",
@@ -328,7 +377,7 @@ describe("Script Tests", () => {
 	//     };
 
 	//     const deployTrx = await vapour721AFactory.createChildTyped(
-	//       vapour721AConstructorConfig,
+	//       vapour721AInitializeConfig,
 	//       currency.address,
 	//       vmStateConfig
 	//     );
@@ -421,155 +470,155 @@ describe("Script Tests", () => {
 	//   });
 	// });
 
-	// describe("multi round sale", () => {
-	//   before(async () => {
+	describe("multi round sale", () => {
+		before(async () => {
 
-	//     // deplying factories
-	//     const verifyFactory = await (await ethers.getContractFactory("VerifyFactory")).deploy() as VerifyFactory;
-	//     const verifyTierFactory = await (await ethers.getContractFactory("VerifyTierFactory")).deploy() as VerifyTierFactory;
+			// deplying factories
+			const verifyFactory = await (await ethers.getContractFactory("VerifyFactory")).deploy() as VerifyFactory;
+			const verifyTierFactory = await (await ethers.getContractFactory("VerifyTierFactory")).deploy() as VerifyTierFactory;
 
-	//     // deploying verify1
-	//     const verifyTx1 = await verifyFactory.createChildTyped({ admin: buyer0.address, callback: ethers.constants.AddressZero })
-	//     const verifyAddress1 = await getChild(verifyFactory, verifyTx1)
-	//     const verify1 = (await ethers.getContractAt("Verify", verifyAddress1)) as Verify;
+			// deploying verify1
+			const verifyTx1 = await verifyFactory.createChildTyped({ admin: buyer0.address, callback: ethers.constants.AddressZero })
+			const verifyAddress1 = await getChild(verifyFactory, verifyTx1)
+			const verify1 = (await ethers.getContractAt("Verify", verifyAddress1)) as Verify;
 
-	//     // deploying verify2
-	//     const verifyTx2 = await verifyFactory.createChildTyped({ admin: buyer0.address, callback: ethers.constants.AddressZero })
-	//     const verifyAddress2 = await getChild(verifyFactory, verifyTx2)
-	//     const verify2 = (await ethers.getContractAt("Verify", verifyAddress2)) as Verify;
+			// deploying verify2
+			const verifyTx2 = await verifyFactory.createChildTyped({ admin: buyer0.address, callback: ethers.constants.AddressZero })
+			const verifyAddress2 = await getChild(verifyFactory, verifyTx2)
+			const verify2 = (await ethers.getContractAt("Verify", verifyAddress2)) as Verify;
 
-	//     // deploying verifyTier1
-	//     const verifyTierTx1 = await verifyTierFactory.createChildTyped(verify1.address)
-	//     const verifyTierAddress1 = await getChild(verifyTierFactory, verifyTierTx1)
+			// deploying verifyTier1
+			const verifyTierTx1 = await verifyTierFactory.createChildTyped(verify1.address)
+			const verifyTierAddress1 = await getChild(verifyTierFactory, verifyTierTx1)
 
-	//     // deploying verifyTier2
-	//     const verifyTierTx2 = await verifyTierFactory.createChildTyped(verify2.address)
-	//     const verifyTierAddress2 = await getChild(verifyTierFactory, verifyTierTx2)
+			// deploying verifyTier2
+			const verifyTierTx2 = await verifyTierFactory.createChildTyped(verify2.address)
+			const verifyTierAddress2 = await getChild(verifyTierFactory, verifyTierTx2)
 
-	//     // Grant approver role to buyer0
-	//     await verify1.connect(buyer0).grantRole(await verify1.APPROVER(), buyer0.address);
+			// Grant approver role to buyer0
+			await verify1.connect(buyer0).grantRole(await verify1.APPROVER(), buyer0.address);
 
-	//     // Approving buyer0
-	//     await verify1.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
+			// Approving buyer0
+			await verify1.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
 
-	//     // Grant approver role to buyer0
-	//     await verify2.connect(buyer0).grantRole(await verify2.APPROVER(), buyer0.address);
+			// Grant approver role to buyer0
+			await verify2.connect(buyer0).grantRole(await verify2.APPROVER(), buyer0.address);
 
-	//     // Approving buyer0
-	//     await verify2.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
+			// Approving buyer0
+			await verify2.connect(buyer0).approve([{ account: buyer0.address, data: [] }]);
 
-	//     const block_before = await ethers.provider.getBlock("latest");
+			const block_before = await ethers.provider.getBlock("latest");
 
-	//     let time1 = block_before.timestamp + 3600; // 1 hour exclusive round
-	//     let time2 = time1 + 3600 * 4; // 4 hours pre-sale
+			let time1 = block_before.timestamp + 3600; // 1 hour exclusive round
+			let time2 = time1 + 3600 * 4; // 4 hours pre-sale
 
-	//     const q1 = 100; // exclusive round mint quantity
-	//     const q2 = 50; // pre-sale round quantity
-	//     const q3 = 5; // sale quantity
+			const q1 = 100; // exclusive round mint quantity
+			const q2 = 50; // pre-sale round quantity
+			const q3 = 5; // sale quantity
 
-	//     const p1 = 1; // exclusive round price
-	//     const p2 = 5; // pre-sale price
-	//     const p3 = 10; // sale price
+			const p1 = 1; // exclusive round price
+			const p2 = 5; // pre-sale price
+			const p3 = 10; // sale price
 
-	//     const vmStateConfig: StateConfig = VM.pair(
-	//       // quantity script
-	//       VM.ifelse(
-	//         // rule 1
-	//         VM.and([
-	//           VM.beforeAfterTime(time1, "lt"),
-	//           VM.hasAnyTier(
-	//             new CombineTierGenerator(verifyTierAddress1)
-	//           )
-	//         ]),
-	//         VM.constant(q1),
-	//         VM.ifelse(
-	//           //rule 2
-	//           VM.and([
-	//             new BetweenTimestamps(time1, time2),
-	//             VM.hasAnyTier(
-	//               new CombineTierGenerator(verifyTierAddress2)
-	//             )
-	//           ]),
-	//           VM.constant(q2),
-	//           VM.constant(q3)
-	//         )
-	//       ),
-	//       // price script
-	//       VM.ifelse(
-	//         // rule 1
-	//         VM.and([
-	//           VM.beforeAfterTime(time1, "lt"),
-	//           VM.hasAnyTier(
-	//             new CombineTierGenerator(verifyTierAddress1)
-	//           )
-	//         ]),
-	//         VM.constant(p1),
-	//         VM.ifelse(
-	//           // rule 2
-	//           VM.and([
-	//             new BetweenTimestamps(time1, time2),
-	//             VM.hasAnyTier(
-	//               new CombineTierGenerator(verifyTierAddress2)
-	//             )
-	//           ]),
-	//           VM.constant(p2),
-	//           VM.constant(p3)
-	//         )
-	//       )
-	//     )
+			const vmStateConfig: StateConfig = VM.pair(
+				// quantity script
+				VM.ifelse(
+					// rule 1
+					VM.and([
+						VM.beforeAfterTime(time1, "lt"),
+						VM.hasAnyTier(
+							new CombineTierGenerator(verifyTierAddress1)
+						)
+					]),
+					VM.constant(q1),
+					VM.ifelse(
+						//rule 2
+						VM.and([
+							new BetweenTimestamps(time1, time2),
+							VM.hasAnyTier(
+								new CombineTierGenerator(verifyTierAddress2)
+							)
+						]),
+						VM.constant(q2),
+						VM.constant(q3)
+					)
+				),
+				// price script
+				VM.ifelse(
+					// rule 1
+					VM.and([
+						VM.beforeAfterTime(time1, "lt"),
+						VM.hasAnyTier(
+							new CombineTierGenerator(verifyTierAddress1)
+						)
+					]),
+					VM.constant(p1),
+					VM.ifelse(
+						// rule 2
+						VM.and([
+							new BetweenTimestamps(time1, time2),
+							VM.hasAnyTier(
+								new CombineTierGenerator(verifyTierAddress2)
+							)
+						]),
+						VM.constant(p2),
+						VM.constant(p3)
+					)
+				)
+			)
 
-	//     vapour721AConstructorConfig = {
-	//       name: "nft",
-	//       symbol: "NFT",
-	//       baseURI: "BASE_URI",
-	//       supplyLimit: 100,
-	//       recipient: recipient.address,
-	//       owner: owner.address,
-	//       royaltyBPS: 1000,
-	//       admin: buyer0.address
-	//     };
+			vapour721AInitializeConfig = {
+				name: "nft",
+				symbol: "NFT",
+				baseURI: "BASE_URI",
+				supplyLimit: 100,
+				recipient: recipient.address,
+				owner: owner.address,
+				royaltyBPS: 1000,
+				admin: buyer0.address,
+				currency: currency.address,
+				vmStateConfig
+			};
 
-	//     const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
-	//       vapour721AConstructorConfig,
-	//       currency.address,
-	//       vmStateConfig
-	//     );
+			const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
+				vapour721AInitializeConfig
+			);
 
-	//     const child = await getChild(vapour721AFactory, deployTrx);
-	//     vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
-	//   });
+			const child = await getChild(vapour721AFactory, deployTrx);
+			vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		});
 
-	//   it("it Should return 100 Units for exclusive round", async () => {
-	//     const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
-	//     expect(price_).to.equals(1);
-	//   });
+		it("it Should return 100 Units for exclusive round", async () => {
+			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(100));
+			expect(price_).to.equals(1);
+		});
 
-	//   it("it Should return 50 Units for pre-sale round", async () => {
-	//     await ethers.provider.send("evm_increaseTime", [3700]);
-	//     await ethers.provider.send("evm_mine", []);
-	//     const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(50));
-	//     expect(price_).to.equals(5);
-	//   });
+		it("it Should return 50 Units for pre-sale round", async () => {
+			await ethers.provider.send("evm_increaseTime", [3700]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(50));
+			expect(price_).to.equals(5);
+		});
 
-	//   it("it Should return 5 Units for sale", async () => {
-	//     await ethers.provider.send("evm_increaseTime", [3700 * 4]);
-	//     await ethers.provider.send("evm_mine", []);
-	//     const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-	//       buyer0.address,
-	//       10
-	//     );
-	//     expect(maxUnits_).to.equals(ethers.BigNumber.from(5));
-	//     expect(price_).to.equals(10);
-	//   });
-	// });
+		it("it Should return 5 Units for sale", async () => {
+			await ethers.provider.send("evm_increaseTime", [3700 * 4]);
+			await ethers.provider.send("evm_mine", []);
+			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
+				buyer0.address,
+				10
+			);
+			expect(maxUnits_).to.equals(ethers.BigNumber.from(5));
+			expect(price_).to.equals(10);
+		});
+	});
 
 	// describe.skip("increasing price per token sale", () => {
 
@@ -895,7 +944,7 @@ describe("Script Tests", () => {
 	//       ], false
 	//     )
 
-	//     vapour721AConstructorConfig = {
+	//     vapour721AInitializeConfig = {
 	//       name: "nft",
 	//       symbol: "NFT",
 	//       baseURI: "BASE_URI",
@@ -907,7 +956,7 @@ describe("Script Tests", () => {
 	//     };
 
 	//     const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
-	//       vapour721AConstructorConfig,
+	//       vapour721AInitializeConfig,
 	//       currency.address,
 	//       vmStateConfig
 	//     );
