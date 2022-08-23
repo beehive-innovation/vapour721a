@@ -689,36 +689,51 @@ describe("Script Tests", () => {
 			}
 		}
 
-		const tokenIsLessThan = (endToken: number): StateConfig => {
+		const nextTokenLessThan = (endToken: number): StateConfig => {
 			return {
 				sources: [
 					concat([
 						op(Opcode.IERC721A_TOTAL_MINTED),
-						op(Opcode.TARGET_UNITS),
-						op(Opcode.ADD, 2),
 						op(Opcode.VAL, 0),
 						op(Opcode.LESS_THAN),
 					]),
 				],
-				constants: [endToken],
+				constants: [endToken - 1],
 				stackLength: 5,
 				argumentsLength: 0
 			}
 		}
 
-		const tokenIsGreaterThan = (token: number): StateConfig => {
+		const nextTokenGreaterThan = (token: number): StateConfig => {
 			return {
 				sources: [
 					concat([
 						op(Opcode.IERC721A_TOTAL_MINTED),
-						op(Opcode.TARGET_UNITS),
-						op(Opcode.ADD, 2),
 						op(Opcode.VAL, 0),
 						op(Opcode.GREATER_THAN),
 					]),
 				],
-				constants: [token],
+				constants: [token - 1],
 				stackLength: 5,
+				argumentsLength: 0
+			}
+		}
+
+		const nextTokenBetween = (startToken: number, endToken: number): StateConfig => {
+			return {
+				sources: [
+					concat([
+						op(Opcode.IERC721A_TOTAL_MINTED),
+						op(Opcode.VAL, 0),
+						op(Opcode.GREATER_THAN),
+						op(Opcode.IERC721A_TOTAL_MINTED),
+						op(Opcode.VAL, 1),
+						op(Opcode.LESS_THAN),
+						op(Opcode.EVERY, 2)
+					]),
+				],
+				constants: [startToken - 1, endToken - 1],
+				stackLength: 10,
 				argumentsLength: 0
 			}
 		}
@@ -789,6 +804,22 @@ describe("Script Tests", () => {
 			}
 		}
 
+		// function to get report script
+		const getReport = (tierContractAddress: string): StateConfig => {
+			return {
+				constants: [tierContractAddress],
+				sources: [
+					concat([
+						op(Opcode.VAL, 0),
+						op(Opcode.ACCOUNT),
+						op(Opcode.REPORT),
+					])
+				],
+				stackLength: 3,
+				argumentsLength: 0
+			}
+		}
+
 		const generateWallets = async (number: number, name?: string): Promise<Signer[]> => {
 			let wallets: Signer[] = []
 			process.stdout.write(` `);
@@ -831,25 +862,34 @@ describe("Script Tests", () => {
 			// desired units
 			const units = ethers.BigNumber.from(buyConfig.desiredUnits)
 
+			// signer address
+			const address = await signer.getAddress()
+
 			// get the expected price per unit
 			const [maxUnits_, price_] = await vapour721A.connect(buyer0).calculateBuy(
-				buyer0.address,
+				address,
 				units
 			);
+			console.log({ units })
+			console.log({ maxUnits_, price_ })
 
 			const supply = await vapour721A.totalSupply()
 
 			// how many they'll actually mint
 			const maxUnits = supplyLimit.sub(supply).lt(units) ? supplyLimit.sub(supply) : units;
 
-			const address = await signer.getAddress()
 			const balanceBefore = await currency.balanceOf(address)
 			await vapour721A.connect(signer).mintNFT(buyConfig)
 			const balanceAfter = await currency.balanceOf(address)
 			const total = balanceBefore.sub(balanceAfter)
 
+			const mintedUnits = await vapour721A.connect(signer).balanceOf(address)
+
 			// make sure the correct amount was paid
 			expect(total).to.equals(price_.mul(maxUnits))
+			// make sure the signer minted the desired units
+			expect(mintedUnits).to.equals(units)
+
 		}
 
 		//////////////////////////
@@ -867,44 +907,132 @@ describe("Script Tests", () => {
 
 		let founders: Signer[], friends: Signer[], community: Signer[], anons: Signer[], everyone: Signer[]
 
+		// use for  mint tests
+		const buyConfigLarge: BuyConfigStruct = {
+			minimumUnits: 1000,
+			desiredUnits: 1000,
+			maximumPrice: parseUnits('1000'),
+		};
+		const buyConfigSmall: BuyConfigStruct = {
+			minimumUnits: 1,
+			desiredUnits: 1,
+			maximumPrice: parseUnits('1000'),
+		};
+
 		before(async () => {
 
 			// create the wallets for each phase
 			console.log('')
 			console.log('generating wallets:')
 
+			// founders = await generateWallets(2, 'founders')
+			// friends = await generateWallets(5, 'friends')
+			// community = await generateWallets(20, 'community')
+			// anons = await generateWallets(60, 'anons')
+
 			founders = await generateWallets(2, 'founders')
 			friends = await generateWallets(5, 'friends')
 			community = await generateWallets(20, 'community')
 			anons = await generateWallets(60, 'anons')
 
-			// founders = await generateWallets(1, 'founders')
-			// friends = await generateWallets(1, 'friends')
-			// community = await generateWallets(1, 'community')
-			// anons = await generateWallets(1, 'anons')
-
 			everyone = [...founders, ...friends, ...community, ...anons]
+
+			///////////////////////////////////////
+			// creating all the verify contracts //
+			///////////////////////////////////////
+
+			// deploying factories
+			const verifyFactory = await (await ethers.getContractFactory("VerifyFactory")).deploy() as VerifyFactory;
+			const verifyTierFactory = await (await ethers.getContractFactory("VerifyTierFactory")).deploy() as VerifyTierFactory;
+
+			// deploying founders verify
+			const verifyTx1 = await verifyFactory.createChildTyped({
+				admin: buyer0.address,
+				callback: ethers.constants.AddressZero
+			})
+			const foundersVerifyAddress = await getChild(verifyFactory, verifyTx1)
+			const foundersVerify = (await ethers.getContractAt("Verify", foundersVerifyAddress)) as Verify;
+
+			// Grant approver role to buyer0
+			await foundersVerify.connect(buyer0).grantRole(await foundersVerify.APPROVER(), buyer0.address);
+
+			// deploying founders verifytier
+			const verifyTierTx1 = await verifyTierFactory.createChildTyped(foundersVerify.address)
+			const foundersVerifyTier = await getChild(verifyTierFactory, verifyTierTx1)
+
+			// approving founders
+			for (const founder of founders) {
+				await foundersVerify.connect(buyer0).approve([{ account: await founder.getAddress(), data: [] }]);
+			}
+
+			// deploying friends verify
+			const verifyTx2 = await verifyFactory.createChildTyped({
+				admin: buyer0.address,
+				callback: ethers.constants.AddressZero
+			})
+			const friendsVerifyAddress = await getChild(verifyFactory, verifyTx2)
+			const friendsVerify = (await ethers.getContractAt("Verify", friendsVerifyAddress)) as Verify;
+
+			// Grant approver role to buyer0
+			await friendsVerify.connect(buyer0).grantRole(await friendsVerify.APPROVER(), buyer0.address);
+
+			// deploying friends verifytier
+			const verifyTierTx2 = await verifyTierFactory.createChildTyped(friendsVerify.address)
+			const friendsVerifyTier = await getChild(verifyTierFactory, verifyTierTx2)
+
+			// approving friends
+			for (const friend of friends) {
+				await friendsVerify.connect(buyer0).approve([{ account: await friend.getAddress(), data: [] }]);
+			}
+
+			// deploying community verify
+			const verifyTx3 = await verifyFactory.createChildTyped({
+				admin: buyer0.address,
+				callback: ethers.constants.AddressZero
+			})
+			const communityVerifyAddress = await getChild(verifyFactory, verifyTx3)
+			const communityVerify = (await ethers.getContractAt("Verify", communityVerifyAddress)) as Verify;
+
+			// Grant approver role to buyer0
+			await communityVerify.connect(buyer0).grantRole(await communityVerify.APPROVER(), buyer0.address);
+
+			// deploying community verifytier
+			const verifyTierTx3 = await verifyTierFactory.createChildTyped(communityVerify.address)
+			const communityVerifyTier = await getChild(verifyTierFactory, verifyTierTx3)
+
+			for (const comm of community) {
+				await communityVerify.connect(buyer0).approve([{ account: await comm.getAddress(), data: [] }]);
+			}
 
 			// the conditions for each phase
 			const rules = [
 				// phase 0
-				receiverAddressIsIn(await getSignerAddresses(founders)),
+				VM.and([
+					nextTokenLessThan(11),
+					VM.hasAnyTier(
+						getReport(foundersVerifyTier)
+					),
+				]),
 				// phase 1
 				VM.and([
-					tokenIsGreaterThan(10),
-					receiverAddressIsIn(await getSignerAddresses(friends))
+					nextTokenLessThan(21),
+					VM.hasAnyTier(
+						getReport(friendsVerifyTier)
+					),
 				]),
 				// phase 2
 				VM.and([
-					tokenIsGreaterThan(20),
-					receiverAddressIsIn(await getSignerAddresses(community))
+					nextTokenLessThan(41),
+					VM.hasAnyTier(
+						getReport(communityVerifyTier)
+					),
 				]),
 				// phase 3
-				tokenIsGreaterThan(40),
+				nextTokenBetween(40, 101),
 				// phase 4
-				tokenIsGreaterThan(100),
+				nextTokenGreaterThan(100),
 				// rule 5 = phases 0 - 3
-				tokenIsLessThan(101),
+				nextTokenLessThan(101),
 			]
 
 			const vmStateConfig: StateConfig = VM.multi(
@@ -912,20 +1040,20 @@ describe("Script Tests", () => {
 					...rules,
 					// quantity script
 					VM.ifelse(
-						rule(4),
-						remainingUnits(),
+						rule(0),
+						maxCapForWallet(phase0cap),
 						VM.ifelse(
-							rule(3),
-							maxCapForWallet(phase3cap),
+							rule(1),
+							maxCapForWallet(phase1cap),
 							VM.ifelse(
 								rule(2),
 								maxCapForWallet(phase2cap),
 								VM.ifelse(
-									rule(1),
-									maxCapForWallet(phase1cap),
+									rule(3),
+									maxCapForWallet(phase3cap),
 									VM.ifelse(
-										rule(0),
-										maxCapForWallet(phase0cap),
+										rule(4),
+										remainingUnits(),
 										zero(),
 										false
 									),
@@ -982,15 +1110,10 @@ describe("Script Tests", () => {
 				maximumPrice: 0,
 			};
 
-			const buyConfigLarge: BuyConfigStruct = {
-				minimumUnits: 1000,
-				desiredUnits: 1000,
-				maximumPrice: parseUnits('1000'),
-			};
-
-			// make sure a non-founder can't mint large amounts
-			// await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
-			// await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigLarge)).to.revertedWith("INSUFFICIENT_STOCK")
+			// make sure anon can't mint small or large amounts
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigLarge)).to.revertedWith("INSUFFICIENT_STOCK")
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigSmall)).to.revertedWith("INSUFFICIENT_STOCK")
 
 			// price for founders should be 0
 			const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
@@ -1001,12 +1124,12 @@ describe("Script Tests", () => {
 			expect(price_).to.equals(0)
 
 			// make sure founders can't mint beyond their cap
-			// const [fmaxUnits_, fprice_] = await vapour721A.connect(founders[0]).calculateBuy(
-			// 	await founders[0].getAddress(),
-			// 	units.mul(BigNumber.from(100))
-			// );
+			const [fmaxUnits_, fprice_] = await vapour721A.connect(founders[0]).calculateBuy(
+				await founders[0].getAddress(),
+				units.mul(BigNumber.from(1000))
+			);
 
-			// expect(fmaxUnits_).to.equals(0)
+			expect(fmaxUnits_).to.equals(phase0cap)
 
 			let index = 0
 			for (const signer of founders) {
@@ -1028,8 +1151,10 @@ describe("Script Tests", () => {
 				maximumPrice: 0,
 			};
 
-			// make sure a non-friend can't mint
+			// make sure anon can't mint small or large amounts
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigLarge)).to.revertedWith("INSUFFICIENT_STOCK")
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigSmall)).to.revertedWith("INSUFFICIENT_STOCK")
 
 			// price for founders should be 0
 			const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
@@ -1059,16 +1184,20 @@ describe("Script Tests", () => {
 				maximumPrice: 0,
 			};
 
-			// make sure a non-community can't mint
+			// make sure anon can't mint small or large amounts
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigLarge)).to.revertedWith("INSUFFICIENT_STOCK")
+			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigSmall)).to.revertedWith("INSUFFICIENT_STOCK")
+
 
 			// price for community should be 0
-			const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
-				await founders[0].getAddress(),
+			const [maxUnits_, price_] = await vapour721A.connect(community[0]).calculateBuy(
+				await community[0].getAddress(),
 				units
 			);
 
 			expect(price_).to.equals(0)
+			expect(maxUnits_).to.equals(phase2cap)
 
 			let index = 0
 			for (const signer of community) {
@@ -1119,6 +1248,10 @@ describe("Script Tests", () => {
 
 				const { unitPrice, totalCost } = increasingPricePurchase(maxUnits, supply, priceIncreasePerToken, startingToken)
 
+				console.log(`minting ${units.toString()} tokens (phase 4)`)
+				console.log(`average price: ${price_.toString()}`)
+				console.log(`total cost: ${price_.mul(units).toString()}`)
+
 				expect(maxUnits_).to.equals(maxUnits);
 				expect(price_).to.equals(unitPrice);
 
@@ -1139,9 +1272,6 @@ describe("Script Tests", () => {
 
 				supply = await vapour721A.totalSupply()
 
-				console.log(`minting ${units.toString()} tokens (phase 4)`)
-				console.log(`average price: ${price_.toString()}`)
-				console.log(`total cost: ${price_.mul(units).toString()}`)
 				console.log(`${supply.toString()} tokens minted so far`)
 				console.log('=====')
 
