@@ -1,6 +1,6 @@
 {
   "network": "mumbai",
   "vapour721AStateBuilder": "0x3A9bA1dD85e6C65D6E1b8FEb1f2dc7cE024b5fb4",
-  "vapour721AFactory": "0x030D4c3a5C79056c6fd83C8824AdA1303DEb2c5F",
-  "vapour721AFactoryBlock": 27391553
+  "vapour721AFactory": "0xE60Feb0C119692A03a6f92E9d47F97e054B92600",
+  "vapour721AFactoryBlock": 27657804
 }

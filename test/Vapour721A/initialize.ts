@@ -99,7 +99,7 @@ describe("Vapour721A Initialize test", () => {
 	});
 
 	it("Should fail to initialize Vapour721A contract deployed by createChild method", async () => {
-		await expect(vapour721A.initialize(vapour721AInitializeConfig, ZERO_ADDRESS)).to.revertedWith(
+		await expect(vapour721A.initialize(vapour721AInitializeConfig)).to.revertedWith(
 			"ERC721A__Initializable: contract is already initialized"
 		);
 	});

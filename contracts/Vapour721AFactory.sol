@@ -7,13 +7,11 @@ import "@openzeppelin/contracts/proxy/Clones.sol";
 
 contract Vapour721AFactory is Factory {
 	address private immutable implementation;
-	address private vmStateBuilder;
 
 	constructor(address vmStateBuilder_) {
-		address implementation_ = address(new Vapour721A());
+		address implementation_ = address(new Vapour721A(vmStateBuilder_));
 		emit Implementation(msg.sender, implementation_);
 		implementation = implementation_;
-		vmStateBuilder = vmStateBuilder_;
 	}
 
 	function _createChild(bytes memory data_)
@@ -24,7 +22,7 @@ contract Vapour721AFactory is Factory {
 	{
 		InitializeConfig memory config_ = abi.decode(data_, (InitializeConfig));
 		address clone_ = Clones.clone(implementation);
-		Vapour721A(clone_).initialize(config_, vmStateBuilder); 
+		Vapour721A(clone_).initialize(config_); 
 		return clone_;
 	}
 
