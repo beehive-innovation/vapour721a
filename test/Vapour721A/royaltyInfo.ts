@@ -31,7 +31,7 @@ describe('royaltyInfo test', () => {
     it("shouldn't allow a BPS royalty over 10000", async () => {
         const vmStateConfig: StateConfig = {
             sources: [
-                concat([op(Opcode.CONSTANT, 0), op(Opcode.CONSTANT, 1)]),
+                concat([op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1))]),
             ],
             constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
         };
@@ -57,7 +57,7 @@ describe('royaltyInfo test', () => {
     it('should allow a BPS royalty under 10000', async () => {
         const vmStateConfig: StateConfig = {
             sources: [
-                concat([op(Opcode.CONSTANT, 0), op(Opcode.CONSTANT, 1)]),
+                concat([op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1))]),
             ],
             constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
         };
@@ -89,7 +89,7 @@ describe('royaltyInfo test', () => {
     it('should correctly report royalty and recipient', async () => {
         const vmStateConfig: StateConfig = {
             sources: [
-                concat([op(Opcode.CONSTANT, 0), op(Opcode.CONSTANT, 1)]),
+                concat([op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1))]),
             ],
             constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
         };
@@ -126,7 +126,7 @@ describe('royaltyInfo test', () => {
     it('should correctly report new receiver after changing', async () => {
         const vmStateConfig: StateConfig = {
             sources: [
-                concat([op(Opcode.CONSTANT, 0), op(Opcode.CONSTANT, 1)]),
+                concat([op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1))]),
             ],
             constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
         };
@@ -165,7 +165,7 @@ describe('royaltyInfo test', () => {
     it('should correctly report royalty for any token', async () => {
         const vmStateConfig: StateConfig = {
             sources: [
-                concat([op(Opcode.CONSTANT, 0), op(Opcode.CONSTANT, 1)]),
+                concat([op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1))]),
             ],
             constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
         };

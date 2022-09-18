@@ -9,25 +9,27 @@ import {
 	eighteenZeros,
 	getChild,
 	getEventArgs,
+	memoryOperand,
+	MemoryType,
 	op,
+	vapour721AOpcodes,
 	ZERO_ADDRESS,
 } from "../utils";
-import { assert } from "console";
-import { expect } from "chai";
+import { expect, assert } from "chai";
 import { config, owner, vapour721AFactory, recipient, currency, buyer0 } from "../1_setup";
-import { StateConfig, VM } from "rain-sdk";
+import { StateConfig } from "rain-sdk";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
-describe("Vapour721A Initialize test", () => {
+describe.only("Vapour721A Initialize test", () => {
 	it("Should deploy Vapour721A contract and initialize", async () => {
 		const vmStateConfig: StateConfig = {
 			sources: [
 				concat([
-					op(VM.Opcodes.CONSTANT, 0),
-					op(VM.Opcodes.CONSTANT, 1),
-					op(VM.Opcodes.CONSTANT, 2),
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 2)),
 				]),
 			],
 			constants: [1, 0, ethers.BigNumber.from("1" + eighteenZeros)],
@@ -52,11 +54,6 @@ describe("Vapour721A Initialize test", () => {
 		const child = await getChild(vapour721AFactory, trx);
 
 		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
-		for(let i=0;i<6;i++){
-			let provider = new ethers.providers.JsonRpcProvider();
-			let sl = await provider.getStorageAt(child, i);
-			console.log(i,sl);
-		}
 
 		assert(child != ZERO_ADDRESS, "Vapour721A Address not found");
 		const [config_, vmStateBuilder_] = (await getEventArgs(

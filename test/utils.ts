@@ -1,15 +1,16 @@
 import { Logger } from "@ethersproject/logger";
 import { version } from "./_version";
-import { ContractTransaction, Contract, Overrides, ContractReceipt, BigNumber } from "ethers";
+import { ContractTransaction, Contract, BigNumber } from "ethers";
 import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { AllStandardOps, ERC20, StateConfig } from "rain-sdk";
+import { ERC20 } from "rain-sdk";
 import { NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers, web3 } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Factory } from "../typechain";
+import { vapour721A } from "./1_setup";
 const logger = new Logger(version);
 const utils = ethers.utils
 
@@ -25,17 +26,60 @@ export enum StorageOpcodes {
   AMOUNT_PAYABLE,
 }
 
-export enum LocalOpcodes {
-  IERC721A_TOTAL_SUPPLY = AllStandardOps.length,
+export enum vapour721AOpcodes {
+  CALL,
+  CONTEXT,
+  DEBUG,
+  DO_WHILE,
+  LOOP_N,
+  STATE,
+  STORAGE,
+  ERC20_BALANCE_OF,
+  ERC20_TOTAL_SUPPLY,
+  ERC20_SNAPSHOT_BALANCE_OF_AT,
+  ERC20_SNAPSHOT_TOTAL_SUPPLY_AT,
+  IERC721_BALANCE_OF,
+  IERC721_OWNER_OF,
+  IERC1155_BALANCE_OF,
+  IERC1155_BALANCE_OF_BATCH,
+  BLOCK_NUMBER,
+  SENDER,
+  THIS_ADDRESS,
+  BLOCK_TIMESTAMP,
+  EXPLODE32,
+  SCALE18,
+  SCALE18_DIV,
+  SCALE18_MUL,
+  SCALE_BY,
+  SCALEN,
+  ANY,
+  EAGER_IF,
+  EQUAL_TO,
+  EVERY,
+  GREATER_THAN,
+  ISZERO,
+  LESS_THAN,
+  SATURATING_ADD,
+  SATURATING_MUL,
+  SATURATING_SUB,
+  ADD,
+  DIV,
+  EXP,
+  MAX,
+  MIN,
+  MOD,
+  MUL,
+  SUB,
+  ITIERV2_REPORT,
+  ITIERV2_REPORT_TIME_FOR_TIER,
+  SATURATING_DIFF,
+  SELECT_LTE,
+  UPDATE_TIMES_FOR_TIER_RANGE,
+  IERC721A_TOTAL_SUPPLY,
   IERC721A_TOTAL_MINTED,
   IERC721A_NUMBER_MINTED,
   IERC721A_NUMBER_BURNED,
 }
-
-export const Opcode = {
-  ...AllStandardOps,
-  ...LocalOpcodes,
-};
 
 export type Bytes = ArrayLike<number>;
 
@@ -352,7 +396,7 @@ export const getTokenID = (tokenURI: string): number => {
 };
 
 export function debug(): Uint8Array {
-  return op(Opcode.DEBUG);
+  return op(vapour721AOpcodes.DEBUG);
 }
 
 export async function getPrice(
@@ -416,4 +460,13 @@ export async function getPrivate_string(contractAddress: string, slotIndex: numb
 export async function getPrivate_address(contractAddress: string, slotIndex: number): Promise<string> {
   const variable = await ethers.provider.getStorageAt(contractAddress, slotIndex);
   return ("0x" + variable.slice(26));
+}
+
+export function memoryOperand(type: number, offset: number): number {
+  return (offset << 1) + type;
+}
+
+export enum MemoryType {
+  Stack,
+  Constant,
 }

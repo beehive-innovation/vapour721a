@@ -23,8 +23,10 @@ import {
 	getChild,
 	getEventArgs,
 	op,
-	Opcode,
+	vapour721AOpcodes as Opcode,
 	StorageOpcodes,
+	memoryOperand,
+	MemoryType,
 } from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
@@ -39,7 +41,7 @@ describe("Vapour721A localOpcodes test", () => {
 				sources: [
 					concat([
 						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 					]),
 				],
 				constants: [nftPrice],
@@ -108,11 +110,11 @@ describe("Vapour721A localOpcodes test", () => {
 				sources: [
 					concat([
 						op(Opcode.CONTEXT, 1),
-						op(Opcode.CONSTANT, 1),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)),
 						op(Opcode.IERC721A_TOTAL_SUPPLY),
 						op(Opcode.SUB, 2),
 						op(Opcode.MIN, 2),
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 					]),
 				],
 				constants: [nftPrice, cap],
@@ -222,11 +224,11 @@ describe("Vapour721A localOpcodes test", () => {
 				sources: [
 					concat([
 						op(Opcode.CONTEXT, 1),
-						op(Opcode.CONSTANT, 1),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)),
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
 						op(Opcode.MIN, 2),
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 					]),
 				],
 				constants: [nftPrice, cap],
@@ -337,13 +339,13 @@ describe("Vapour721A localOpcodes test", () => {
 			const vmStateConfig: StateConfig = {
 				sources: [
 					concat([
-						op(Opcode.CONSTANT, 1), // cap
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)), // cap
 						op(Opcode.CONTEXT, 0),
 						op(Opcode.IERC721A_NUMBER_MINTED), // how many they've minted
 						op(Opcode.SUB, 2), // the remaining units they can mint
 						op(Opcode.CONTEXT, 1), // target units
 						op(Opcode.MIN, 2), // the smaller of target units and the remaining units they can mint
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 					]),
 				],
 				constants: [nftPrice, cap],
@@ -436,15 +438,15 @@ describe("Vapour721A localOpcodes test", () => {
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
 						// price
-						op(Opcode.CONSTANT, 1), // 5
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)), // 5
 						op(Opcode.CONTEXT, 0),
 						op(Opcode.IERC721A_NUMBER_MINTED),
 						op(Opcode.GREATER_THAN),
-						op(Opcode.CONSTANT, 0), // nftPrice
-						op(Opcode.CONSTANT, 0), // nftPrice
-						op(Opcode.CONSTANT, 2), // 90
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // nftPrice
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // nftPrice
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 2)), // 90
 						op(Opcode.MUL, 2),
-						op(Opcode.CONSTANT, 3), // 100
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 3)), // 100
 						op(Opcode.DIV, 2),
 						op(Opcode.EAGER_IF),
 					]),
@@ -543,7 +545,7 @@ describe("Vapour721A localOpcodes test", () => {
 						// price
 						op(Opcode.CONTEXT, 0),
 						op(Opcode.IERC721A_NUMBER_BURNED),
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 						op(Opcode.MUL, 2),
 					]),
 				],
@@ -617,15 +619,15 @@ describe("Vapour721A localOpcodes test", () => {
 						op(Opcode.IERC721A_TOTAL_MINTED),
 						op(Opcode.SUB, 2),
 						// price
-						op(Opcode.CONSTANT, 1), // 5
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)), // 5
 						op(Opcode.CONTEXT, 0),
 						op(Opcode.IERC721A_NUMBER_BURNED),
 						op(Opcode.GREATER_THAN),
-						op(Opcode.CONSTANT, 0), // nftPrice
-						op(Opcode.CONSTANT, 0), // nftPrice
-						op(Opcode.CONSTANT, 2), // 90
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // nftPrice
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // nftPrice
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 2)), // 90
 						op(Opcode.MUL, 2),
-						op(Opcode.CONSTANT, 3), // 100
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 3)), // 100
 						op(Opcode.DIV, 2),
 						op(Opcode.EAGER_IF),
 					]),
@@ -726,7 +728,7 @@ describe("Vapour721A localOpcodes test", () => {
 						op(Opcode.CONTEXT, 1),
 						// price
 						op(Opcode.STORAGE, StorageOpcodes.AMOUNT_PAYABLE),
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 						op(Opcode.MAX, 2),
 					]),
 				],
@@ -837,7 +839,7 @@ describe("Vapour721A localOpcodes test", () => {
 						op(Opcode.CONTEXT, 1),
 						// price
 						op(Opcode.STORAGE, StorageOpcodes.AMOUNT_WITHDRAWN),
-						op(Opcode.CONSTANT, 0),
+						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
 						op(Opcode.MAX, 2),
 					]),
 				],

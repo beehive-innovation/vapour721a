@@ -24,7 +24,7 @@ let vapour721AInitializeConfig: InitializeConfigStruct;
 const nftPrice = BN(1);
 let totalWithdrawn = BN(0);
 
-describe.only("Token withdraw tests", () => {
+describe("Token withdraw tests", () => {
 	before(async () => {
 		totalWithdrawn = BN(0);
 		const vmStateConfig: StateConfig = {

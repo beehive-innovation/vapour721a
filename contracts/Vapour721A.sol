@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.8.10;
+pragma solidity =0.8.15;
 
-import "@beehiveinnovation/rain-protocol/contracts/vm/StandardVM.sol";
+import "@beehiveinnovation/rain-protocol/contracts/vm/runtime/StandardVM.sol";
+import "@beehiveinnovation/rain-protocol/contracts/vm/runtime/LibStackTop.sol";
+import "@beehiveinnovation/rain-protocol/contracts/vm/integrity/RainVMIntegrity.sol";
 import "@beehiveinnovation/rain-protocol/contracts/vm/ops/AllStandardOps.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/utils/math/Math.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "erc721a-upgradeable/contracts/ERC721AUpgradeable.sol";
 import "hardhat/console.sol";
@@ -39,18 +39,20 @@ struct EvalContext {
 	uint256 targetUnits;
 }
 
-uint256 constant STORAGE_OPCODES_LENGTH = 3;
-
 // the total numbers of tokens
-uint256 constant LOCAL_OP_TOTAL_SUPPLY = ALL_STANDARD_OPS_LENGTH;
+uint256 constant TRACKING_FLAG_TOTAL_SUPPLY = 0x1;
 // the total unites minted
-uint256 constant LOCAL_OP_TOTAL_MINTED = LOCAL_OP_TOTAL_SUPPLY + 1;
+uint256 constant TRACKING_FLAG_TOTAL_MINTED = 0x2;
 // number of tokens minted by `owner`.
-uint256 constant LOCAL_OP_NUMBER_MINTED = LOCAL_OP_TOTAL_MINTED + 1;
+uint256 constant TRACKING_FLAG_NUMBER_MINTED = 0x3;
 // number of tokens burned by `owner`.
-uint256 constant LOCAL_OP_NUMBER_BURNED = LOCAL_OP_NUMBER_MINTED + 1;
+uint256 constant TRACKING_FLAG_NUMBER_BURNED = 0x4;
 
 uint256 constant LOCAL_OPS_LENGTH = 4;
+
+uint256 constant MIN_FINAL_STACK_INDEX = 2;
+
+uint256 constant STORAGE_OPCODES_LENGTH = 3;
 
 library LibEvalContext {
 	function toContext(EvalContext memory evalContext_)
@@ -72,15 +74,19 @@ contract Vapour721A is
 {
 	using Strings for uint256;
 	using Math for uint256;
-	using LibFnPtrs for bytes;
 	using FixedPointMath for uint256;
+	using LibEvalContext for EvalContext;
+	using LibVMState for VMState;
+	using LibVMState for bytes;
+	using LibStackTop for StackTop;
+	using LibStackTop for uint256[];
+	using LibUint256Array for uint256;
 
 	// storage variables
 	uint256 private _supplyLimit;
 	uint256 private _amountWithdrawn;
 	uint256 private _amountPayable;
 
-	address private _vmStatePointer;
 	address private _currency;
 	address payable private _recipient;
 
@@ -103,7 +109,8 @@ contract Vapour721A is
 		keccak256("DELEGATED_MINTER_ADMIN");
 	/// Role for `DELEGATED_MINTER`.
 	bytes32 private constant DELEGATED_MINTER = keccak256("DELEGATED_MINTER");
-	constructor(address vmStateBuilder_) StandardVM(vmStateBuilder_) {}
+
+	constructor(address vmIntegrity_) StandardVM(vmIntegrity_) {}
 
 	function initialize(InitializeConfig memory config_)
 		external
@@ -129,11 +136,8 @@ contract Vapour721A is
 
 		_currency = config_.currency;
 
-		Bounds memory vmScript;
-		vmScript.entrypoint = 0;
-		Bounds[] memory boundss_ = new Bounds[](1);
-		boundss_[0] = vmScript;
-		_saveVMState(config_.vmStateConfig, boundss_);
+		_saveVMState(config_.vmStateConfig, MIN_FINAL_STACK_INDEX);
+
 		emit Initialize(config_);
 	}
 
@@ -172,20 +176,9 @@ contract Vapour721A is
 		returns (uint256 maxUnits_, uint256 price_)
 	{
 		require(StandardVM.vmStatePointer != address(0), "NOT_INITIALIZED");
-		State memory state_ = _loadVMState();
+		VMState memory vmState_ = _loadVMState(EvalContext(account_, targetUnits_).toContext());
 
-		bytes memory context_ = new bytes(0x40);
-		assembly {
-			mstore(add(context_, 0x20), account_)
-			mstore(add(add(context_, 0x20), 0x20), targetUnits_)
-		}
-
-		// eval(context_, state_, 0);
-
-		(maxUnits_, price_) = (
-			state_.stack[state_.stackIndex - 2],
-			state_.stack[state_.stackIndex - 1]
-		);
+		(maxUnits_, price_) = vmState_.eval().peek2();
 	}
 
 	function _mintNFT(address receiver, BuyConfig memory config_) internal {
@@ -287,77 +280,66 @@ contract Vapour721A is
 		return (_recipient, (_salePrice * _royaltyBPS) / 10_000);
 	}
 
-	function opTotalSupply(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 totalSupply_ = totalSupply();
-		assembly {
-			mstore(stackTopLocation_, totalSupply_)
-			stackTopLocation_ := add(stackTopLocation_, 0x20)
-		}
-		return stackTopLocation_;
+	function _opTotalSupply() internal view returns (uint256) {
+		return totalSupply();
 	}
 
-	function opTotalMinted(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 totalMinted_ = _totalMinted();
-		assembly {
-			mstore(stackTopLocation_, totalMinted_)
-			stackTopLocation_ := add(stackTopLocation_, 0x20)
-		}
-		return stackTopLocation_;
+	function opTotalSupply(
+		VMState memory,
+		Operand,
+		StackTop stackTop_
+	) internal view returns (StackTop) {
+		return stackTop_.push(_opTotalSupply());
 	}
 
-	function opNumberMinted(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 location_;
-		address account_;
-		assembly {
-			location_ := sub(stackTopLocation_, 0x20)
-			account_ := mload(location_)
-		}
-		uint256 totalMinted_ = _numberMinted(address(uint160(account_)));
-		assembly {
-			mstore(location_, totalMinted_)
-		}
-		return stackTopLocation_;
+	function _opTotalMinted() internal view returns (uint256) {
+		return _totalMinted();
 	}
 
-	function opNumberBurned(uint256, uint256 stackTopLocation_)
-		internal
-		view
-		returns (uint256)
-	{
-		uint256 location_;
-		address account_;
-		assembly {
-			location_ := sub(stackTopLocation_, 0x20)
-			account_ := mload(location_)
-		}
-		uint256 totalMinted_ = _numberBurned(address(uint160(account_)));
-		assembly {
-			mstore(location_, totalMinted_)
-		}
-		return stackTopLocation_;
+	function opTotalMinted(
+		VMState memory,
+		Operand,
+		StackTop stackTop_
+	) internal view returns (StackTop) {
+		return stackTop_.push(_opTotalMinted());
 	}
 
-	function localFnPtrs()
+	function _opNumberMinted(uint256 account_) internal view returns (uint256) {
+		return _numberMinted(address(uint160(account_)));
+	}
+
+	function opNumberMinted(
+		VMState memory,
+		Operand,
+		StackTop stackTop_
+	) internal view returns (StackTop) {
+		return stackTop_.applyFn(_opNumberMinted);
+	}
+
+	function _opNumberBurned(uint256 account_) internal view returns (uint256) {
+		return _numberBurned(address(uint160(account_)));
+	}
+
+	function opNumberBurned(
+		VMState memory,
+		Operand,
+		StackTop stackTop_
+	) internal view returns (StackTop) {
+		return stackTop_.applyFn(_opNumberBurned);
+	}
+
+	function localEvalFunctionPointers()
 		internal
 		pure
 		override
 		returns (
-			function(uint256, uint256) view returns (uint256)[] memory localFnPtrs_
+			function(VMState memory, Operand, StackTop) view returns (StackTop)[]
+				memory localFnPtrs_
 		)
 	{
-		localFnPtrs_ = new function(uint256, uint256) view returns (uint256)[](4);
+		localFnPtrs_ = new function(VMState memory, Operand, StackTop)
+			view
+			returns (StackTop)[](4);
 		localFnPtrs_[0] = opTotalSupply;
 		localFnPtrs_[1] = opTotalMinted;
 		localFnPtrs_[2] = opNumberMinted;

@@ -18,8 +18,10 @@ import {
   eighteenZeros,
   getChild,
   getPrice,
+  memoryOperand,
+  MemoryType,
   op,
-  Opcode,
+  vapour721AOpcodes as Opcode,
   StorageOpcodes,
 } from "../utils";
 
@@ -34,7 +36,7 @@ describe("Script Tests", () => {
       const vmStateConfig: StateConfig = {
         sources: [
           concat([
-            op(Opcode.CONSTANT, 0), // 5
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // 5
             op(Opcode.CONTEXT, 0), // address of minter
             op(Opcode.IERC721A_NUMBER_MINTED),
             op(Opcode.SUB, 2),
@@ -42,7 +44,7 @@ describe("Script Tests", () => {
             op(Opcode.IERC721A_TOTAL_SUPPLY),
             op(Opcode.SUB, 2),
             op(Opcode.MIN, 2),
-            op(Opcode.CONSTANT, 1),
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)),
           ]),
         ],
         constants: [MAX_CAP, ethers.BigNumber.from("1" + eighteenZeros)],
@@ -614,26 +616,26 @@ describe("Script Tests", () => {
             op(Opcode.IERC721A_TOTAL_MINTED), // total minted
             op(Opcode.IERC721A_TOTAL_MINTED), // total minted
 
-            op(Opcode.STACK, numberOfRules), // the eval of the q script
+            op(Opcode.STATE, memoryOperand(MemoryType.Stack, numberOfRules)), // the eval of the q script
 
-            op(Opcode.CONSTANT, 0), // 3
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // 3
             op(Opcode.ADD, 4),
-            op(Opcode.CONSTANT, 3), // starting token
-            op(Opcode.CONSTANT, 3), // starting token
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 3)), // starting token
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 3)), // starting token
             op(Opcode.SATURATING_SUB, 3),
 
-            op(Opcode.STACK, numberOfRules), // the eval of the q script
+            op(Opcode.STATE, memoryOperand(MemoryType.Stack, numberOfRules)), // the eval of the q script
 
             op(Opcode.MUL, 2),
-            op(Opcode.CONSTANT, 1), // 2
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)), // 2
             op(Opcode.DIV, 2),
-            op(Opcode.CONSTANT, 2), // price increase
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 2)), // price increase
             op(Opcode.MUL, 2),
 
-            op(Opcode.STACK, numberOfRules), // the eval of the q script
+            op(Opcode.STATE, memoryOperand(MemoryType.Stack, numberOfRules)), // the eval of the q script
             op(Opcode.ISZERO),
-            op(Opcode.CONSTANT, 4),
-            op(Opcode.STACK, numberOfRules), // the eval of the q script
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 4)),
+            op(Opcode.STATE, memoryOperand(MemoryType.Stack, numberOfRules)), // the eval of the q script
             op(Opcode.EAGER_IF), // avoiding division by zero here
 
             op(Opcode.DIV, 2),
@@ -647,7 +649,7 @@ describe("Script Tests", () => {
       return {
         sources: [
           concat([
-            op(Opcode.CONSTANT, 0)
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0))
           ]),
         ],
         constants: [0]
@@ -661,7 +663,7 @@ describe("Script Tests", () => {
             op(Opcode.IERC721A_TOTAL_MINTED),
             op(Opcode.CONTEXT, 1),
             op(Opcode.ADD, 2),
-            op(Opcode.CONSTANT, 0),
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
             op(Opcode.LESS_THAN),
           ]),
         ],
@@ -676,7 +678,7 @@ describe("Script Tests", () => {
             op(Opcode.IERC721A_TOTAL_MINTED),
             op(Opcode.CONTEXT, 1),
             op(Opcode.ADD, 2),
-            op(Opcode.CONSTANT, 0),
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)),
             op(Opcode.GREATER_THAN),
           ]),
         ],
@@ -691,7 +693,7 @@ describe("Script Tests", () => {
             ...addresses.map((address, i) =>
               concat([
                 op(Opcode.CONTEXT, 0),
-                op(Opcode.CONSTANT, i),
+                op(Opcode.STATE, memoryOperand(MemoryType.Constant, i)),
                 op(Opcode.EQUAL_TO)
               ])
             ),
@@ -706,7 +708,7 @@ describe("Script Tests", () => {
       return {
         sources: [
           concat([
-            op(Opcode.CONSTANT, 0), // cap
+            op(Opcode.STATE, memoryOperand(MemoryType.Constant, 0)), // cap
             op(Opcode.CONTEXT, 0), // address of minter
             op(Opcode.IERC721A_NUMBER_MINTED), // number they've minted
             op(Opcode.SATURATING_SUB, 2) // (the cap) - (what they've minted so far)
@@ -735,7 +737,7 @@ describe("Script Tests", () => {
       return {
         sources: [
           concat([
-            op(Opcode.STACK, number)
+            op(Opcode.STATE, memoryOperand(MemoryType.Stack, number))
           ])
         ],
         constants: []
