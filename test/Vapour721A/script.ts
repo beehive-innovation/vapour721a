@@ -689,7 +689,7 @@ describe("Script Tests", () => {
 			}
 		}
 
-		const nextTokenLessThan = (endToken: number): StateConfig => {
+		const tokenLessThanOrEqual = (token: number): StateConfig => {
 			return {
 				sources: [
 					concat([
@@ -698,13 +698,13 @@ describe("Script Tests", () => {
 						op(Opcode.LESS_THAN),
 					]),
 				],
-				constants: [endToken - 1],
+				constants: [token],
 				stackLength: 5,
 				argumentsLength: 0
 			}
 		}
 
-		const nextTokenGreaterThan = (token: number): StateConfig => {
+		const tokenGreaterThanOrEqual = (token: number): StateConfig => {
 			return {
 				sources: [
 					concat([
@@ -713,13 +713,13 @@ describe("Script Tests", () => {
 						op(Opcode.GREATER_THAN),
 					]),
 				],
-				constants: [token - 1],
+				constants: [token - 2],
 				stackLength: 5,
 				argumentsLength: 0
 			}
 		}
 
-		const nextTokenBetween = (startToken: number, endToken: number): StateConfig => {
+		const tokenInRange = (startToken: number, endToken: number): StateConfig => {
 			return {
 				sources: [
 					concat([
@@ -732,28 +732,8 @@ describe("Script Tests", () => {
 						op(Opcode.EVERY, 2)
 					]),
 				],
-				constants: [startToken - 1, endToken - 1],
+				constants: [startToken - 2, endToken],
 				stackLength: 10,
-				argumentsLength: 0
-			}
-		}
-
-		const receiverAddressIsIn = (addresses: string[]): StateConfig => {
-			return {
-				sources: [
-					concat([
-						...addresses.map((address, i) =>
-							concat([
-								op(Opcode.ACCOUNT),
-								op(Opcode.VAL, i),
-								op(Opcode.EQUAL_TO)
-							])
-						),
-						op(Opcode.ANY, addresses.length)
-					])
-				],
-				constants: [...addresses],
-				stackLength: (addresses.length * 3) + 5,
 				argumentsLength: 0
 			}
 		}
@@ -901,7 +881,7 @@ describe("Script Tests", () => {
 		const startingToken = 101
 
 		const phase0cap = 5
-		const phase1cap = 2
+		const phase1cap = 3
 		const phase2cap = 1
 		const phase3cap = 1
 
@@ -932,7 +912,7 @@ describe("Script Tests", () => {
 
 			founders = await generateWallets(2, 'founders')
 			friends = await generateWallets(5, 'friends')
-			community = await generateWallets(20, 'community')
+			community = await generateWallets(30, 'community')
 			anons = await generateWallets(60, 'anons')
 
 			everyone = [...founders, ...friends, ...community, ...anons]
@@ -1008,31 +988,31 @@ describe("Script Tests", () => {
 			const rules = [
 				// phase 0
 				VM.and([
-					nextTokenLessThan(11),
+					tokenLessThanOrEqual(10),
 					VM.hasAnyTier(
 						getReport(foundersVerifyTier)
 					),
 				]),
 				// phase 1
 				VM.and([
-					nextTokenLessThan(21),
+					tokenInRange(11, 25),
 					VM.hasAnyTier(
 						getReport(friendsVerifyTier)
 					),
 				]),
 				// phase 2
 				VM.and([
-					nextTokenLessThan(41),
+					tokenInRange(26, 55),
 					VM.hasAnyTier(
 						getReport(communityVerifyTier)
 					),
 				]),
 				// phase 3
-				nextTokenBetween(40, 101),
+				tokenInRange(56, 100),
 				// phase 4
-				nextTokenGreaterThan(100),
+				tokenGreaterThanOrEqual(101),
 				// rule 5 = phases 0 - 3
-				nextTokenLessThan(101),
+				tokenLessThanOrEqual(100),
 			]
 
 			const vmStateConfig: StateConfig = VM.multi(
@@ -1087,6 +1067,8 @@ describe("Script Tests", () => {
 				currency: currency.address,
 				vmStateConfig
 			};
+
+			console.log(vapour721AConstructorConfig.vmStateConfig)
 
 			const deployTrx = await vapour721AFactory.connect(buyer0).createChildTyped(
 				vapour721AConstructorConfig
@@ -1156,8 +1138,8 @@ describe("Script Tests", () => {
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigLarge)).to.revertedWith("INSUFFICIENT_STOCK")
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigSmall)).to.revertedWith("INSUFFICIENT_STOCK")
 
-			// price for founders should be 0
-			const [maxUnits_, price_] = await vapour721A.connect(founders[0]).calculateBuy(
+			// price for friends should be 0
+			const [maxUnits_, price_] = await vapour721A.connect(friends[0]).calculateBuy(
 				await founders[0].getAddress(),
 				units
 			);
@@ -1184,11 +1166,22 @@ describe("Script Tests", () => {
 				maximumPrice: 0,
 			};
 
+			const buyConfigTwo: BuyConfigStruct = {
+				minimumUnits: 2,
+				desiredUnits: 2,
+				maximumPrice: 0,
+			};
+
+			const buyConfigFifty: BuyConfigStruct = {
+				minimumUnits: 50,
+				desiredUnits: 50,
+				maximumPrice: 0,
+			};
+
 			// make sure anon can't mint small or large amounts
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigLarge)).to.revertedWith("INSUFFICIENT_STOCK")
 			await expect(vapour721A.connect(anons[0]).mintNFT(buyConfigSmall)).to.revertedWith("INSUFFICIENT_STOCK")
-
 
 			// price for community should be 0
 			const [maxUnits_, price_] = await vapour721A.connect(community[0]).calculateBuy(
@@ -1201,10 +1194,17 @@ describe("Script Tests", () => {
 
 			let index = 0
 			for (const signer of community) {
+				// make sure a commmunity member can't mint 2
+				await expect(vapour721A.connect(signer).mintNFT(buyConfigTwo)).to.revertedWith("INSUFFICIENT_STOCK")
+				// make sure a community member can't mint 50
+				await expect(vapour721A.connect(signer).mintNFT(buyConfigFifty)).to.revertedWith("INSUFFICIENT_STOCK")
+
 				await mintForSigner(signer, buyConfig, currency, vapour721A)
 				console.log(`minting #${(index * phase2cap) + 1}-${(index + 1) * phase2cap}/${community.length * phase2cap} (phase 2)`)
 				console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
 				console.log('=====')
+
+
 				index++
 
 			}
@@ -1220,12 +1220,30 @@ describe("Script Tests", () => {
 				maximumPrice: 0,
 			};
 
+			const buyConfigFive: BuyConfigStruct = {
+				minimumUnits: 5,
+				desiredUnits: 5,
+				maximumPrice: 0
+			}
+
 			console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
 
-			for (let index = 0; index < 60; index++) {
+			for (let index = 0; index < 45; index++) {
 				const signer = anons[index % anons.length]
+
+				// // make sure an anon can't mint 5
+				await expect(vapour721A.connect(signer).mintNFT(buyConfigFive)).to.revertedWith("INSUFFICIENT_STOCK")
+
+				// they mint 1
 				await mintForSigner(signer, buyConfig, currency, vapour721A)
-				console.log(`minting #${index + 1}/60 (phase 3)`)
+
+				// ensure an anon can't mint more than 1 in this phase (unless they're the last anon, in which case they would be able to mint another in the next phase)
+				console.log('the index is ', index)
+				const [maxUnits, price] = await vapour721A.connect(signer).calculateBuy(await signer.getAddress(), 1)
+				console.log(`max units is ${maxUnits.toString()} and price is ${price.toString()}`)
+				if (index !== 44) await expect(vapour721A.connect(signer).mintNFT(buyConfig)).to.revertedWith("INSUFFICIENT_STOCK")
+
+				console.log(`minting #${index + 1}/45 (phase 3)`)
 				console.log(`${await vapour721A.totalSupply()} tokens minted so far`)
 				console.log('=====')
 			}
