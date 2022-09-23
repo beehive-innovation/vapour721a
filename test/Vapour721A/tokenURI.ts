@@ -5,6 +5,7 @@ import {
 	BuyConfigStruct,
 	
 	InitializeConfigStruct,
+	StateConfigStruct,
 	Vapour721A,
 } from "../../typechain/Vapour721A";
 import {
@@ -16,22 +17,21 @@ import {
 	buyer5,
 	buyer6,
 	buyer7,
-	config,
 	owner,
 	recipient,
 	currency,
 	vapour721AFactory,
 } from "../1_setup";
-import { concat, eighteenZeros, getChild, op } from "../utils";
+import { concat, eighteenZeros, getChild, memoryOperand, MemoryType, op, vapour721AOpcodes } from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
 describe("Vapour721A tokenURI test", () => {
 	before(async () => {
-		const vmStateConfig: StateConfig = {
+		const vmStateConfig: StateConfigStruct = {
 			sources: [
-				concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+				concat([op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)), op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1))]),
 			],
 			constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
 		};
@@ -132,9 +132,9 @@ describe("Vapour721A tokenURI test", () => {
 });
 
 const deployWithBaseURI = async (baseURI: string) => {
-	const vmStateConfig: StateConfig = {
+	const vmStateConfig: StateConfigStruct = {
 		sources: [
-			concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+			concat([op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)), op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1))]),
 		],
 		constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
 	};

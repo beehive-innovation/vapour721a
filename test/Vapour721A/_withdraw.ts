@@ -1,12 +1,12 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { StateConfig, VM } from "rain-sdk";
+import {expect} from "chai";
+import {ethers} from "hardhat";
 import {
 	BuyConfigStruct,
+	StateConfigStruct,
 	Vapour721A,
 	WithdrawEvent,
 } from "../../typechain/Vapour721A";
-import { InitializeConfigStruct } from "../../typechain/Vapour721AFactory";
+import {InitializeConfigStruct} from "../../typechain/Vapour721AFactory";
 import {
 	buyer0,
 	buyer1,
@@ -17,7 +17,19 @@ import {
 	currency,
 	buyer7,
 } from "../1_setup";
-import { BN, concat, eighteenZeros, getBalance, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
+import {
+	BN,
+	concat,
+	eighteenZeros,
+	getBalance,
+	getChild,
+	getEventArgs,
+	memoryOperand,
+	MemoryType,
+	op,
+	vapour721AOpcodes,
+	ZERO_ADDRESS,
+} from "../utils";
 
 let vapour721A: Vapour721A;
 let vapour721AInitializeConfig: InitializeConfigStruct;
@@ -27,9 +39,12 @@ let totalWithdrawn = BN(0);
 describe("Token withdraw tests", () => {
 	before(async () => {
 		totalWithdrawn = BN(0);
-		const vmStateConfig: StateConfig = {
+		const vmStateConfig: StateConfigStruct = {
 			sources: [
-				concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+				concat([
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+				]),
 			],
 			constants: [20, nftPrice],
 		};
@@ -44,14 +59,17 @@ describe("Token withdraw tests", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: currency.address,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: vmStateConfig,
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
-			vapour721AInitializeConfig,
+			vapour721AInitializeConfig
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
-		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		vapour721A = (await ethers.getContractAt(
+			"Vapour721A",
+			child
+		)) as Vapour721A;
 	});
 
 	it("should withdraw the correct amount for one purchase", async () => {
@@ -74,20 +92,22 @@ describe("Token withdraw tests", () => {
 
 		const withdrawTx = await vapour721A.connect(recipient).withdraw();
 
-		const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+		const [withdrawer, amountWithdrawn, _totalWithdrawn] = (await getEventArgs(
 			withdrawTx,
 			"Withdraw",
 			vapour721A
-		) as WithdrawEvent["args"];
+		)) as WithdrawEvent["args"];
 
 		const recipientBalanceAfter = await currency.balanceOf(recipient.address);
 
 		expect(withdrawer).to.equals(recipient.address);
 		expect(amountWithdrawn).to.equals(nftPrice);
 		expect(_totalWithdrawn).to.equals(totalWithdrawn.add(nftPrice));
-		expect(recipientBalanceBefore.add(nftPrice)).to.equals(recipientBalanceAfter);
+		expect(recipientBalanceBefore.add(nftPrice)).to.equals(
+			recipientBalanceAfter
+		);
 
-		totalWithdrawn = _totalWithdrawn
+		totalWithdrawn = _totalWithdrawn;
 	});
 
 	it("should withdraw the correct amount for multiple purchases from multiple buyers", async () => {
@@ -102,7 +122,9 @@ describe("Token withdraw tests", () => {
 
 		// first buyer
 		await currency.connect(buyer1).mintTokens(units);
-		await currency.connect(buyer1).approve(vapour721A.address, units.mul(nftPrice));
+		await currency
+			.connect(buyer1)
+			.approve(vapour721A.address, units.mul(nftPrice));
 
 		await vapour721A.connect(buyer1).mintNFT(buyConfig);
 		expect(await vapour721A.balanceOf(buyer1.address)).to.equals(units);
@@ -111,7 +133,9 @@ describe("Token withdraw tests", () => {
 
 		// second buyer
 		await currency.connect(buyer2).mintTokens(units);
-		await currency.connect(buyer2).approve(vapour721A.address, units.mul(nftPrice));
+		await currency
+			.connect(buyer2)
+			.approve(vapour721A.address, units.mul(nftPrice));
 
 		await vapour721A.connect(buyer2).mintNFT(buyConfig);
 		expect(await vapour721A.balanceOf(buyer2.address)).to.equals(units);
@@ -130,12 +154,14 @@ describe("Token withdraw tests", () => {
 
 		expect(withdrawer).to.equals(recipient.address);
 		expect(amountWithdrawn).to.equals(buyer1Cost.add(buyer2Cost));
-		expect(_totalWithdrawn).to.equals(totalWithdrawn.add(buyer1Cost).add(buyer2Cost));
+		expect(_totalWithdrawn).to.equals(
+			totalWithdrawn.add(buyer1Cost).add(buyer2Cost)
+		);
 		expect(recipientBalanceBefore.add(buyer1Cost).add(buyer2Cost)).to.equals(
 			recipientBalanceAfter
 		);
 
-		totalWithdrawn = _totalWithdrawn
+		totalWithdrawn = _totalWithdrawn;
 	});
 
 	// it("should not allow withdrawals by non-recipient", async () => {
@@ -168,12 +194,13 @@ describe("Token withdraw tests", () => {
 	// });
 
 	it("should withdraw the correct amount after recipient has been changed", async () => {
-
 		// mint another 5 nfts
 		const units = ethers.BigNumber.from(5);
 
 		await currency.connect(buyer2).mintTokens(units);
-		await currency.connect(buyer2).approve(vapour721A.address, nftPrice.mul(units));
+		await currency
+			.connect(buyer2)
+			.approve(vapour721A.address, nftPrice.mul(units));
 
 		const buyConfig: BuyConfigStruct = {
 			minimumUnits: 1,
@@ -184,7 +211,7 @@ describe("Token withdraw tests", () => {
 		await vapour721A.connect(buyer2).mintNFT(buyConfig);
 
 		// set a new recipient
-		await vapour721A.connect(recipient).setRecipient(buyer1.address)
+		await vapour721A.connect(recipient).setRecipient(buyer1.address);
 
 		const recipientBalanceBefore = await currency.balanceOf(buyer1.address);
 
@@ -210,9 +237,12 @@ describe("Token withdraw tests", () => {
 describe("Native Token withdraw tests", () => {
 	before(async () => {
 		totalWithdrawn = BN(0);
-		const vmStateConfig: StateConfig = {
+		const vmStateConfig: StateConfigStruct = {
 			sources: [
-				concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+				concat([
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+				]),
 			],
 			constants: [20, nftPrice],
 		};
@@ -227,14 +257,17 @@ describe("Native Token withdraw tests", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: ZERO_ADDRESS,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: vmStateConfig,
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
 			vapour721AInitializeConfig
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
-		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		vapour721A = (await ethers.getContractAt(
+			"Vapour721A",
+			child
+		)) as Vapour721A;
 	});
 
 	it("should withdraw the correct amount for one purchase", async () => {
@@ -244,7 +277,9 @@ describe("Native Token withdraw tests", () => {
 			maximumPrice: BN(10),
 		};
 
-		await vapour721A.connect(buyer0).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
+		await vapour721A
+			.connect(buyer0)
+			.mintNFT(buyConfig, {value: buyConfig.maximumPrice});
 
 		expect(await vapour721A.balanceOf(buyer0.address)).to.equals(1);
 
@@ -252,20 +287,22 @@ describe("Native Token withdraw tests", () => {
 
 		const withdrawTx = await vapour721A.connect(buyer7).withdraw();
 
-		const [withdrawer, amountWithdrawn, _totalWithdrawn] = await getEventArgs(
+		const [withdrawer, amountWithdrawn, _totalWithdrawn] = (await getEventArgs(
 			withdrawTx,
 			"Withdraw",
 			vapour721A
-		) as WithdrawEvent["args"];
+		)) as WithdrawEvent["args"];
 
 		const recipientBalanceAfter = await getBalance(ZERO_ADDRESS, recipient);
 
 		expect(withdrawer).to.equals(buyer7.address);
 		expect(amountWithdrawn).to.equals(nftPrice);
 		expect(_totalWithdrawn).to.equals(totalWithdrawn.add(nftPrice));
-		expect(recipientBalanceBefore.add(nftPrice)).to.equals(recipientBalanceAfter);
+		expect(recipientBalanceBefore.add(nftPrice)).to.equals(
+			recipientBalanceAfter
+		);
 
-		totalWithdrawn = _totalWithdrawn
+		totalWithdrawn = _totalWithdrawn;
 	});
 
 	it("should withdraw the correct amount for multiple purchases from multiple buyers", async () => {
@@ -279,14 +316,18 @@ describe("Native Token withdraw tests", () => {
 		};
 
 		// first buyer
-		await vapour721A.connect(buyer1).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
+		await vapour721A
+			.connect(buyer1)
+			.mintNFT(buyConfig, {value: buyConfig.maximumPrice});
 		expect(await vapour721A.balanceOf(buyer1.address)).to.equals(units);
 
 		const buyer1Cost = nftPrice.mul(units);
 
 		// second buyer
 
-		await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
+		await vapour721A
+			.connect(buyer2)
+			.mintNFT(buyConfig, {value: buyConfig.maximumPrice});
 		expect(await vapour721A.balanceOf(buyer2.address)).to.equals(units);
 
 		const buyer2Cost = nftPrice.mul(units);
@@ -303,12 +344,14 @@ describe("Native Token withdraw tests", () => {
 
 		expect(withdrawer).to.equals(buyer7.address);
 		expect(amountWithdrawn).to.equals(buyer1Cost.add(buyer2Cost));
-		expect(_totalWithdrawn).to.equals(totalWithdrawn.add(buyer1Cost).add(buyer2Cost));
+		expect(_totalWithdrawn).to.equals(
+			totalWithdrawn.add(buyer1Cost).add(buyer2Cost)
+		);
 		expect(recipientBalanceBefore.add(buyer1Cost).add(buyer2Cost)).to.equals(
 			recipientBalanceAfter
 		);
 
-		totalWithdrawn = _totalWithdrawn
+		totalWithdrawn = _totalWithdrawn;
 	});
 
 	// it("should not allow withdrawals by non-recipient", async () => {
@@ -338,7 +381,6 @@ describe("Native Token withdraw tests", () => {
 	// });
 
 	it("should withdraw the correct amount after recipient has been changed", async () => {
-
 		// mint another 5 nfts
 		const units = ethers.BigNumber.from(5);
 
@@ -348,10 +390,12 @@ describe("Native Token withdraw tests", () => {
 			maximumPrice: BN(5),
 		};
 
-		await vapour721A.connect(buyer2).mintNFT(buyConfig, { value: buyConfig.maximumPrice });
+		await vapour721A
+			.connect(buyer2)
+			.mintNFT(buyConfig, {value: buyConfig.maximumPrice});
 
 		// set a new recipient
-		await vapour721A.connect(recipient).setRecipient(buyer1.address)
+		await vapour721A.connect(recipient).setRecipient(buyer1.address);
 
 		const recipientBalanceBefore = await getBalance(ZERO_ADDRESS, buyer1);
 

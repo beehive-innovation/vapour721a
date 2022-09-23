@@ -136,7 +136,7 @@ contract Vapour721A is
 
 		_currency = config_.currency;
 
-		_saveVMState(config_.vmStateConfig, MIN_FINAL_STACK_INDEX);
+		_saveVMState(config_.vmStateConfig, MIN_FINAL_STACK_INDEX.arrayFrom());
 
 		emit Initialize(config_);
 	}
@@ -339,7 +339,7 @@ contract Vapour721A is
 	{
 		localFnPtrs_ = new function(VMState memory, Operand, StackTop)
 			view
-			returns (StackTop)[](4);
+			returns (StackTop)[](LOCAL_OPS_LENGTH);
 		localFnPtrs_[0] = opTotalSupply;
 		localFnPtrs_[1] = opTotalMinted;
 		localFnPtrs_[2] = opNumberMinted;
@@ -352,6 +352,6 @@ contract Vapour721A is
 		override(AccessControlUpgradeable, ERC721AUpgradeable)
 		returns (bool)
 	{
-		return super.supportsInterface(interfaceId);
+		return ERC721AUpgradeable.supportsInterface(interfaceId);
 	}
 }

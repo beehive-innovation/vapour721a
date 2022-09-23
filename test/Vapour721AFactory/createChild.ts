@@ -1,7 +1,7 @@
 import {SignerWithAddress} from "@nomiclabs/hardhat-ethers/signers";
 import {ethers} from "hardhat";
-import {InitializeConfigStruct} from "../../typechain/Vapour721A";
-import {concat, eighteenZeros, getEventArgs, op, ZERO_ADDRESS} from "../utils";
+import {InitializeConfigStruct, StateConfigStruct} from "../../typechain/Vapour721A";
+import {concat, eighteenZeros, getEventArgs, memoryOperand, MemoryType, op, vapour721AOpcodes, ZERO_ADDRESS} from "../utils";
 import {checkChildIntegrity} from "./childIntegrity";
 import {NewChildEvent} from "../../typechain/Vapour721AFactory";
 
@@ -27,8 +27,8 @@ before(async () => {
 	recipient_ = signers[3];
 	owner_ = signers[4];
 
-	const vmStateConfig: StateConfig = {
-		sources: [concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)])],
+	const vmStateConfig: StateConfigStruct = {
+		sources: [concat([op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)), op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1))])],
 		constants: [200, ethers.BigNumber.from("1" + eighteenZeros)],
 	};
 

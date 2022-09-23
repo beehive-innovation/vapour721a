@@ -1,10 +1,11 @@
-import { expect } from "chai";
-import { ethers } from "hardhat";
-import { StateConfig, VM } from "rain-sdk";
+import {expect} from "chai";
+import {ethers} from "hardhat";
+import {StateConfig, VM} from "rain-sdk";
 import {
 	InitializeConfigStruct,
 	Vapour721A,
-	InitializeEvent
+	InitializeEvent,
+	StateConfigStruct,
 } from "../../typechain/Vapour721A";
 import {
 	buyer0,
@@ -16,23 +17,39 @@ import {
 	recipient,
 	currency,
 } from "../1_setup";
-import { concat, getChild, getEventArgs, op, ZERO_ADDRESS } from "../utils";
+import {
+	concat,
+	getChild,
+	getEventArgs,
+	memoryOperand,
+	MemoryType,
+	op,
+	vapour721AOpcodes,
+	ZERO_ADDRESS,
+} from "../utils";
 
 let vapour721AInitializeConfig: InitializeConfigStruct;
 let vapour721A: Vapour721A;
 
 describe("Vapour721A recipient test", () => {
 	before(async () => {
-		const vmStateConfig: StateConfig = {
-			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+		const vmStateConfig: StateConfigStruct = {
+			sources: [
+				concat([
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+				]),
+			],
 			constants: [1],
 		};
-
 	});
 
 	it("Should set the correct recipient", async () => {
-		const vmStateConfig: StateConfig = {
-			sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+		const vmStateConfig: StateConfigStruct = {
+			sources: [
+				concat([
+					op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+				]),
+			],
 			constants: [1],
 		};
 
@@ -46,7 +63,7 @@ describe("Vapour721A recipient test", () => {
 			royaltyBPS: 1000,
 			admin: buyer0.address,
 			currency: currency.address,
-			vmStateConfig: vmStateConfig
+			vmStateConfig: vmStateConfig,
 		};
 
 		const deployTrx = await vapour721AFactory.createChildTyped(
@@ -54,7 +71,10 @@ describe("Vapour721A recipient test", () => {
 		);
 		const child = await getChild(vapour721AFactory, deployTrx);
 
-		vapour721A = (await ethers.getContractAt("Vapour721A", child)) as Vapour721A;
+		vapour721A = (await ethers.getContractAt(
+			"Vapour721A",
+			child
+		)) as Vapour721A;
 
 		const [config_] = (await getEventArgs(
 			deployTrx,

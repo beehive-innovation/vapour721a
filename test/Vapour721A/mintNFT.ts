@@ -6,6 +6,7 @@ import {StateConfig, VM} from "rain-sdk";
 import {
 	BuyConfigStruct,
 	InitializeConfigStruct,
+	StateConfigStruct,
 	Vapour721A,
 	WithdrawEvent,
 } from "../../typechain/Vapour721A";
@@ -26,7 +27,10 @@ import {
 	getChild,
 	getEventArgs,
 	getGasUsed,
+	memoryOperand,
+	MemoryType,
 	op,
+	vapour721AOpcodes,
 	ZERO_ADDRESS,
 } from "../utils";
 
@@ -39,9 +43,12 @@ describe("mintNFT tests", () => {
 		before(async () => {
 			nftPrice = parseEther("1");
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [20, nftPrice],
 			};
@@ -126,9 +133,12 @@ describe("mintNFT tests", () => {
 		before(async () => {
 			nftPrice = parseEther("1");
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [100, nftPrice],
 			};
@@ -234,9 +244,12 @@ describe("mintNFT tests", () => {
 
 	describe("zero price tests", () => {
 		before(async () => {
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [20, 0],
 			};
@@ -288,11 +301,11 @@ describe("mintNFT tests", () => {
 	describe("revert tests", () => {
 		before(async () => {
 			nftPrice = parseEther("1");
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
-						op(VM.Opcodes.CONTEXT, 1), // always allow the target units
-						op(VM.Opcodes.CONSTANT, 0),
+						op(vapour721AOpcodes.CONTEXT, 1), // always allow the target units
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
 					]),
 				],
 				constants: [nftPrice],
@@ -402,9 +415,12 @@ describe("mintNFT tests (Native Tokens)", () => {
 		before(async () => {
 			nftPrice = parseEther("1");
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [20, nftPrice],
 			};
@@ -484,9 +500,12 @@ describe("mintNFT tests (Native Tokens)", () => {
 		before(async () => {
 			nftPrice = parseEther("1");
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [100, nftPrice],
 			};
@@ -577,9 +596,12 @@ describe("mintNFT tests (Native Tokens)", () => {
 
 	describe("zero price tests", () => {
 		before(async () => {
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [20, 0],
 			};
@@ -633,11 +655,11 @@ describe("mintNFT tests (Native Tokens)", () => {
 	describe("revert tests", () => {
 		before(async () => {
 			nftPrice = parseEther("1");
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
-						op(VM.Opcodes.CONTEXT, 1), // always allow the target units
-						op(VM.Opcodes.CONSTANT, 0),
+						op(vapour721AOpcodes.CONTEXT, 1), // always allow the target units
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
 					]),
 				],
 				constants: [nftPrice],
@@ -762,9 +784,12 @@ describe("mintNFT tests (Native Tokens)", () => {
 	describe("Native token extra value test", () => {
 		before(async () => {
 			const _supplyLimit = ethers.BigNumber.from(100);
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
-					concat([op(VM.Opcodes.CONSTANT, 0), op(VM.Opcodes.CONSTANT, 1)]),
+					concat([
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0)),
+						op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 1)),
+					]),
 				],
 				constants: [200, BN(1)],
 			};

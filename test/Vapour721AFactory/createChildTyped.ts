@@ -36,8 +36,8 @@ before(async () => {
 });
 
 it("should allow anyone to create a child (createChildTyped)", async () => {
-	const vmStateConfig: StateConfig = {
-		sources: [concat([op(VM.Opcodes.CONSTANT, 0)])],
+	const vmStateConfig: StateConfigStruct = {
+		sources: [concat([op(vapour721AOpcodes.STATE, memoryOperand(MemoryType.Constant, 0))])],
 		constants: [1],
 	};
 

@@ -4,6 +4,7 @@ import {StateConfig} from "rain-sdk";
 import {
 	BuyConfigStruct,
 	InitializeConfigStruct,
+	StateConfigStruct,
 	Vapour721A,
 	WithdrawEvent,
 } from "../../typechain/Vapour721A";
@@ -37,7 +38,7 @@ const nftPrice = ethers.BigNumber.from(1 + eighteenZeros);
 describe("Vapour721A localOpcodes test", () => {
 	describe("SUPPLY_LIMIT opcode", () => {
 		before(async () => {
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						op(Opcode.STORAGE, StorageOpcodes.SUPPLY_LIMIT),
@@ -106,7 +107,7 @@ describe("Vapour721A localOpcodes test", () => {
 			// creating a supply cap lower than the supplyLimit in the script
 			cap = ethers.BigNumber.from(5);
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						op(Opcode.CONTEXT, 1),
@@ -220,7 +221,7 @@ describe("Vapour721A localOpcodes test", () => {
 			// creating a supply cap lower than the supplyLimit in the script
 			cap = ethers.BigNumber.from(5);
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						op(Opcode.CONTEXT, 1),
@@ -336,7 +337,7 @@ describe("Vapour721A localOpcodes test", () => {
 			// creating a wallet cap
 			cap = ethers.BigNumber.from(5);
 
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						op(Opcode.STATE, memoryOperand(MemoryType.Constant, 1)), // cap
@@ -430,7 +431,7 @@ describe("Vapour721A localOpcodes test", () => {
 
 	describe("IERC721A_NUMBER_MINTED complex script", () => {
 		before(async () => {
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						// quantity
@@ -537,7 +538,7 @@ describe("Vapour721A localOpcodes test", () => {
 	describe("IERC721A_NUMBER_BURNED opcode", () => {
 		cap = ethers.BigNumber.from(5);
 		before(async () => {
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						// quantity
@@ -611,7 +612,7 @@ describe("Vapour721A localOpcodes test", () => {
 
 	describe("IERC721A_NUMBER_BURNED opcode complex script", () => {
 		before(async () => {
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						// quantity
@@ -721,7 +722,7 @@ describe("Vapour721A localOpcodes test", () => {
 		cap = ethers.BigNumber.from(5);
 		before(async () => {
 			// price will be the current amount payable after 2 NFTs have been minted
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						// quantity
@@ -832,7 +833,7 @@ describe("Vapour721A localOpcodes test", () => {
 		cap = ethers.BigNumber.from(5);
 		before(async () => {
 			// price will be the current amount payable after 2 NFTs have been minted
-			const vmStateConfig: StateConfig = {
+			const vmStateConfig: StateConfigStruct = {
 				sources: [
 					concat([
 						// quantity
