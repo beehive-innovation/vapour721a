@@ -5,7 +5,7 @@ import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { AllStandardOps, ERC20, } from "rain-sdk";
+import { AllStandardOps, ERC20, StateConfig, VM, } from "rain-sdk";
 import { NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
@@ -358,18 +358,15 @@ export async function getPrice(
   start_price: number,
   end_price: number,
   priceChange: number,
-  start_time: number,
-  isInc: boolean
+  start_time: number
 ): Promise<BigNumber> {
   const time = BigNumber.from((await ethers.provider.getBlock("latest")).timestamp);
   const startTime = BigNumber.from(start_time);
-  const startPrice = utils.parseUnits(start_price.toFixed(17).toString())
-  const endPrice = utils.parseUnits(end_price.toFixed(17).toString())
+  const startPrice = utils.parseUnits(start_price.toFixed(18).toString())
+  const endPrice = utils.parseUnits(end_price.toFixed(18).toString())
   const PriceChange = utils.parseUnits(priceChange.toFixed(17).toString())
 
-  let price_ = isInc
-    ? time.sub(startTime).mul(PriceChange).add(startPrice)
-    : startPrice.sub(time.sub(startTime).mul(PriceChange))
+  let price_ = time.sub(startTime).mul(PriceChange).add(startPrice)
 
   if (price_.lt(endPrice)) return price_;
   return endPrice;

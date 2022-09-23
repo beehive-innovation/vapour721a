@@ -8907,10 +8907,10 @@ queue-microtask@^1.2.2:
   resolved "https://registry.yarnpkg.com/queue-microtask/-/queue-microtask-1.2.3.tgz#4929228bbc724dfac43e0efb058caf7b6cfb6243"
   integrity sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==
 
-rain-sdk@1.3.8:
-  version "1.3.8"
-  resolved "https://registry.yarnpkg.com/rain-sdk/-/rain-sdk-1.3.8.tgz#ca679988b51de6132e7d0f7b20b3d9eb67cca974"
-  integrity sha512-m1Ijlyrfqdfqr0fjrXpb+57e/wphEwpPECPWwHqoO50ZUPEIxH5pM7puV+VIaMOrcDRrtMQd6SvFhe0Be9DUkw==
+rain-sdk@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/rain-sdk/-/rain-sdk-1.4.0.tgz#852aef0eefff483a9487cdfc282dee66289c013f"
+  integrity sha512-bYQCFWT4o1O6Ii34zOit43yGmJCir7eBTk3+mUn+9Z3W8HMMJkyIqmqGzG576j/Af7sgg2b/Fu3UzEu4RbHT1w==
   dependencies:
     ethers "^5.5.2"
     prettier "^2.6.2"
