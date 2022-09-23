@@ -316,6 +316,6 @@ contract Vapour721A is ERC721A, RainVM, VMState, Ownable, AccessControl {
 		override(ERC721A, AccessControl)
 		returns (bool)
 	{
-		return super.supportsInterface(interfaceId);
+		return ERC721A.supportsInterface(interfaceId);
 	}
 }
