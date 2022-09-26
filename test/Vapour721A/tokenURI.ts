@@ -1,6 +1,5 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { StateConfig, VM } from "rain-sdk";
 import {
 	BuyConfigStruct,
 	
@@ -173,4 +172,3 @@ const deployWithBaseURI = async (baseURI: string) => {
 
 	return await vapour721A.tokenURI(1)
 }
-VM

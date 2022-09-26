@@ -30,7 +30,7 @@
   dependencies:
     regenerator-runtime "^0.13.4"
 
-"@beehiveinnovation/rain-protocol@git+https://github.com/beehive-innovation/rain-protocol.git":
+"@beehiveinnovation/rain-protocol@git+https://github.com/beehive-innovation/rain-protocol.git#2c51b709da19e05107e49b677ec7ab03140c3a52":
   version "0.0.16"
   resolved "git+https://github.com/beehive-innovation/rain-protocol.git#2c51b709da19e05107e49b677ec7ab03140c3a52"
   dependencies:
@@ -8371,7 +8371,7 @@ prettier@^1.14.3:
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-1.19.1.tgz#f7d7f5ff8a9cd872a7be4ca142095956a60797cb"
   integrity sha512-s7PoyDv/II1ObgQunCbB9PdLmUcBZcnWOcxDh7O0N/UwDEsHyqkW+Qh28jW+mVuCdx7gLB0BotYI1Y6uI9iyew==
 
-prettier@^2.1.2, prettier@^2.3.2, prettier@^2.6.2:
+prettier@^2.1.2, prettier@^2.3.2:
   version "2.7.1"
   resolved "https://registry.yarnpkg.com/prettier/-/prettier-2.7.1.tgz#e235806850d057f97bb08368a4f7d899f7760c64"
   integrity sha512-ujppO+MkdPqoVINuDFDRLClm7D78qbDt0/NR+wp5FqEZOoTNAjPHWj17QRhu7geIHJfcNhRk1XVQmF8Bp3ye+g==
@@ -8576,14 +8576,6 @@ quick-lru@^5.1.1:
   version "5.1.1"
   resolved "https://registry.yarnpkg.com/quick-lru/-/quick-lru-5.1.1.tgz#366493e6b3e42a3a6885e2e99d18f80fb7a8c932"
   integrity sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==
-
-rain-sdk@1.3.8:
-  version "1.3.8"
-  resolved "https://registry.yarnpkg.com/rain-sdk/-/rain-sdk-1.3.8.tgz#ca679988b51de6132e7d0f7b20b3d9eb67cca974"
-  integrity sha512-m1Ijlyrfqdfqr0fjrXpb+57e/wphEwpPECPWwHqoO50ZUPEIxH5pM7puV+VIaMOrcDRrtMQd6SvFhe0Be9DUkw==
-  dependencies:
-    ethers "^5.5.2"
-    prettier "^2.6.2"
 
 randombytes@^2.0.0, randombytes@^2.0.1, randombytes@^2.0.5, randombytes@^2.0.6, randombytes@^2.1.0:
   version "2.1.0"

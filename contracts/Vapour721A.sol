@@ -176,7 +176,9 @@ contract Vapour721A is
 		returns (uint256 maxUnits_, uint256 price_)
 	{
 		require(StandardVM.vmStatePointer != address(0), "NOT_INITIALIZED");
-		VMState memory vmState_ = _loadVMState(EvalContext(account_, targetUnits_).toContext());
+		VMState memory vmState_ = _loadVMState(
+			EvalContext(account_, targetUnits_).toContext()
+		);
 
 		(maxUnits_, price_) = vmState_.eval().peek2();
 	}

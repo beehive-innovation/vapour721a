@@ -5,12 +5,11 @@ import { Result } from "ethers/lib/utils";
 import fs from "fs";
 import path from "path";
 import { execSync } from "child_process";
-import { ERC20 } from "rain-sdk";
 import { NewChildEvent } from "../typechain/Vapour721AFactory";
 import { ethers, web3 } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Factory } from "../typechain";
-import { vapour721A } from "./1_setup";
+import { Token } from "../typechain";
 const logger = new Logger(version);
 const utils = ethers.utils
 
@@ -425,7 +424,7 @@ export async function getBalance(contract: string, signer: SignerWithAddress): P
   if (contract == ZERO_ADDRESS) {
     return await ethers.provider.getBalance(signer.address);
   }
-  let token = new ERC20(contract, signer);
+  let token = await ethers.getContractAt("Token", contract);
   return await token.balanceOf(signer.address);
 }
 
