@@ -22,7 +22,7 @@ contract Vapour721AFactory is Factory {
 	{
 		InitializeConfig memory config_ = abi.decode(data_, (InitializeConfig));
 		address clone_ = Clones.clone(implementation);
-		Vapour721A(clone_).initialize(config_); 
+		Vapour721A(clone_).initialize(config_);
 		return clone_;
 	}
 

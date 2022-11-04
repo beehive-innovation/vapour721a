@@ -55,7 +55,13 @@ uint256 constant LOCAL_OP_NUMBER_BURNED = 8;
 
 uint256 constant LOCAL_OPS_LENGTH = 9;
 
-contract Vapour721A is ERC721AUpgradeable, RainVM, VMState, OwnableUpgradeable, AccessControlUpgradeable {
+contract Vapour721A is
+	ERC721AUpgradeable,
+	RainVM,
+	VMState,
+	OwnableUpgradeable,
+	AccessControlUpgradeable
+{
 	using Strings for uint256;
 	using Math for uint256;
 
@@ -92,11 +98,15 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, VMState, OwnableUpgradeable, 
 	constructor() {
 		localOpsStart = ALL_STANDARD_OPS_START + ALL_STANDARD_OPS_LENGTH;
 	}
-	
-	function initialize(InitializeConfig memory config_) initializerERC721A initializer external{
+
+	function initialize(InitializeConfig memory config_)
+		external
+		initializerERC721A
+		initializer
+	{
 		__ERC721A_init(config_.name, config_.symbol);
 		__Ownable_init();
-		
+
 		_supplyLimit = config_.supplyLimit;
 		baseURI = config_.baseURI;
 
@@ -110,7 +120,6 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, VMState, OwnableUpgradeable, 
 		_setRoleAdmin(DELEGATED_MINTER, DELEGATED_MINTER_ADMIN);
 
 		_grantRole(DELEGATED_MINTER_ADMIN, config_.admin);
-
 
 		_currency = config_.currency;
 
@@ -307,6 +316,6 @@ contract Vapour721A is ERC721AUpgradeable, RainVM, VMState, OwnableUpgradeable, 
 		override(AccessControlUpgradeable, ERC721AUpgradeable)
 		returns (bool)
 	{
-		return super.supportsInterface(interfaceId);
+		return ERC721AUpgradeable.supportsInterface(interfaceId);
 	}
 }
