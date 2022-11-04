@@ -1,0 +1,6 @@
+{
+  "network": "rinkeby",
+  "vapour721AStateBuilder": "0xa558ee95B3E8109B6fF6994de250A6f02776d1F7",
+  "vapour721AFactory": "0xE341BFF380322A1EaCE72833800da6412dAc6177",
+  "vapour721AFactoryBlock": 11138013
+}

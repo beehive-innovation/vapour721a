@@ -1,5 +1,4 @@
 {
   "network": "localhost",
-  "rain721aFactory": "0x6DcBc91229d812910b54dF91b5c2b592572CD6B0",
-  "allStandardOpsStateBuilder": "0x245e77E56b1514D77910c9303e4b44dDb44B788c"
+  "vapour721AFactory": "0xC9a43158891282A2B1475592D5719c001986Aaec"
 }

@@ -6,6 +6,9 @@ import "hardhat-contract-sizer";
 import "hardhat-gas-reporter";
 import "@nomiclabs/hardhat-waffle";
 import "@typechain/hardhat";
+import "@nomiclabs/hardhat-web3";
+
+
 
 dotenv.config();
 
@@ -37,7 +40,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 100,
+            runs: 10,
           },
           metadata: {
             useLiteralContent: true,
@@ -49,7 +52,7 @@ const config: HardhatUserConfig = {
         settings: {
           optimizer: {
             enabled: true,
-            runs: 200,
+            runs: 100,
           },
         },
       },
@@ -81,7 +84,9 @@ const config: HardhatUserConfig = {
     timeout: 600000,
   },
   etherscan: {
-    apiKey: process.env.POLYGONSCAN_API_KEY
+    apiKey: {
+      polygonMumbai: process.env.POLYGONSCAN_API_KEY
+    }
   }
 };
 
